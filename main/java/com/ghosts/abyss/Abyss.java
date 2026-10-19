@@ -65,7 +65,7 @@ public class Abyss {
 
       MinecraftForge.EVENT_BUS.register(ShadowDiveTickHandler.class);
 
-      LOGGER.info("Abyss + Abyss initialising...");
+      LOGGER.info("Abyss initialising...");
    }
 
    private void addCreativeTabs(BuildCreativeModeTabContentsEvent event) {
