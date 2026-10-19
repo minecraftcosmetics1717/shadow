@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "jujutsucraftv:hand_gun"
+    }
+  ],
+  "result": {
+    "item": "jujutsucraft:item_bullet",
+    "count": 10
+  }
+}

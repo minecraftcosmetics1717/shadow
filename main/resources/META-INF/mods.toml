@@ -1,0 +1,36 @@
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+license = "MIT"
+
+[[mods]]
+modId = "abyss"
+version = "${file.jarVersion}"
+displayName = "Abyss"
+authors = "Ghosts"
+description="Endlessly sinking"
+
+[[dependencies.abyss]]
+modId = "forge"
+mandatory = true
+versionRange = "${forge_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.abyss]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+# From Abyss – required
+[[dependencies.abyss]]
+modId = "jujutsucraft"
+mandatory = true
+versionRange = "[50,]"
+ordering = "BEFORE"
+side = "BOTH"
+
+# Abyss mixins
+[[mixins]]
+config = "abyss.mixins.json"

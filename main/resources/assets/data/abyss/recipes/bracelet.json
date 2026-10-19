@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "jujutsucraftv:demon_sword_bracelet_superhuman_strength"
+    }
+  ],
+  "result": {
+    "item": "jujutsucrafts:cursed_sword_bracelet",
+    "count": 1
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "jujutsucraft:blindfold_bandage_helmet"
+    }
+  ],
+  "result": {
+    "item": "jujutsucraft:uniform_gojo_helmet",
+    "count": 1
+  }
+}

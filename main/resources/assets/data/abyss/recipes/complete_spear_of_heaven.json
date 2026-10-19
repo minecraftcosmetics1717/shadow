@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " DG",
+    " # ",
+    "#  "
+  ],
+  "key": {
+    "D": {
+      "item": "minecraft:iron_ingot"
+    },
+    "G": {
+      "item": "jujutsucraft:inverted_spear_of_heaven"
+    },
+    "#": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "jujutsucrafts:complete_inspote_spear_of_heaven"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "jujutsucraft:mahoraga_wheel_helmet"
+    }
+  ],
+  "result": {
+    "item": "jujutsucraft:stevenson_screen_spawn_egg",
+    "count": 1
+  }
+}

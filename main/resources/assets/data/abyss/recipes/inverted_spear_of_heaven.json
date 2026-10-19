@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "jujutsucrafts:complete_inspote_spear_of_heaven"
+    }
+  ],
+  "result": {
+    "item": "jujutsucraft:inverted_spear_of_heaven",
+    "count": 1
+  }
+}

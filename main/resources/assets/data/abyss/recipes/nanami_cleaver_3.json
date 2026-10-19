@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "jujutsucraft:weapon_nanami",
+      "item": "jujutsucraft:clothes_nanami_leggings"
+    }
+  ],
+  "result": {
+    "item": "jujutsucrafts:nanami_knife",
+    "count": 1
+  }
+}

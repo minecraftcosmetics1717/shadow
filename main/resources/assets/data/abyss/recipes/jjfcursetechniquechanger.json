@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "jujutsucraft:cursed_technique_changer"
+    }
+  ],
+  "result": {
+    "item": "jujutsufin:customtechniquechanger",
+    "count": 1
+  }
+}
