@@ -37,7 +37,12 @@ public class AdvancedJujutsuScreen extends Screen {
    private final List<int[]> tabBounds = new ArrayList<>();
 
    public AdvancedJujutsuScreen() {
+      this(0);
+   }
+
+   public AdvancedJujutsuScreen(int startTab) {
       super(Component.translatable("screen.abyss.advanced_menu"));
+      this.activeTab = startTab;
    }
 
    @Override

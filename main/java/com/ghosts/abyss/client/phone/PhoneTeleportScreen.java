@@ -58,17 +58,17 @@ public class PhoneTeleportScreen extends Screen {
         g.drawString(font, getInGameTimeString(), left + 8, top + 10, 0xFFE6EDF3, false);
 
         // Title
-        g.drawCenteredString(font, "Teleport", left + PHONE_W / 2, top + 36, 0xFFFFFFFF);
-        g.drawCenteredString(font, "Select a player", left + PHONE_W / 2, top + 54, 0xFF8B949E);
+        g.drawCenteredString(font, "Teleport", left + PHONE_W / 2, top + 28, 0xFFFFFFFF);
+        g.drawCenteredString(font, "Select a player", left + PHONE_W / 2, top + 44, 0xFF8B949E);
 
         // Player list area
-        int listTop = top + 68;
+        int listTop = top + 54;
         int listBottom = top + PHONE_H - 36;
         int rowH = 16;
         int maxVisible = (listBottom - listTop) / rowH;
 
         if (playerNames.isEmpty()) {
-            g.drawCenteredString(font, "No players online", left + PHONE_W / 2, listTop + 20, 0xFF666666);
+            g.drawCenteredString(font, "No players online", left + PHONE_W / 2, listTop + 18, 0xFF666666);
         } else {
             for (int i = 0; i < maxVisible; i++) {
                 int idx = i + scroll;
