@@ -96,5 +96,11 @@ public class ModNetwork {
               RespondTeleportPacket::encode,
               RespondTeleportPacket::new,
               RespondTeleportPacket::handle);
+      CHANNEL.registerMessage(id++, PacketUnlockMinimap.class,
+              PacketUnlockMinimap::encode, PacketUnlockMinimap::new, PacketUnlockMinimap::handle);
+      CHANNEL.registerMessage(id++, PacketToggleMinimap.class,
+              PacketToggleMinimap::encode, PacketToggleMinimap::new, PacketToggleMinimap::handle);
+      CHANNEL.registerMessage(id++, PacketSyncMinimapState.class,
+              PacketSyncMinimapState::encode, PacketSyncMinimapState::new, PacketSyncMinimapState::handle);
    }
 }

@@ -155,13 +155,11 @@ public class PhoneTeleportScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        // Esc or I closes / goes back
-        if (keyCode == 256) { // ESC
-            minecraft.setScreen(new PhoneScreen());
-            return true;
-        }
-        if (com.ghosts.abyss.client.ClientEvents.OPEN_PHONE.matches(keyCode, scanCode)) {
-            onClose();
+        // Esc, phone key, or E → back to main phone
+        if (keyCode == 256 /* Esc */
+                || keyCode == 69 /* E */
+                || com.ghosts.abyss.client.ClientEvents.OPEN_PHONE.matches(keyCode, scanCode)) {
+            Minecraft.getInstance().setScreen(new PhoneScreen());
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);

@@ -2,13 +2,7 @@ package com.ghosts.abyss;
 
 import com.ghosts.abyss.csm.CsmRoster;
 import com.ghosts.abyss.csm.CsmSpiritData;
-import com.ghosts.abyss.network.CsmSync;
-import com.ghosts.abyss.network.ModNetwork;
-import com.ghosts.abyss.network.PacketSyncCopyToggle;
-import com.ghosts.abyss.network.PacketSyncGamerules;
-import com.ghosts.abyss.network.PacketSyncKeybinds;
-import com.ghosts.abyss.network.PacketSyncPerfectBodyVisible;
-import com.ghosts.abyss.network.PacketSyncYutaTechniques;
+import com.ghosts.abyss.network.*;
 import com.ghosts.abyss.rika.RikaInventory;
 import com.ghosts.abyss.rika.RikaInventoryMenu;
 
@@ -568,7 +562,12 @@ public class EventListeners {
          RctPoints.sync(player);
          BlackFlashPoints.sync(player);
          PacketSyncGamerules.sync(player);
-
+         boolean unlocked = player.getPersistentData().getBoolean("minimap_unlocked");
+         boolean enabled  = player.getPersistentData().getBoolean("minimap_enabled");
+         ModNetwork.CHANNEL.send(
+                 PacketDistributor.PLAYER.with(() -> player),
+                 new PacketSyncMinimapState(unlocked, enabled)
+         );
          ModNetwork.CHANNEL.send(
                  PacketDistributor.PLAYER.with(() -> player),
                  new PacketSyncCopyToggle(player.getPersistentData().getBoolean("jslop_disable_copy"))
@@ -1299,6 +1298,7 @@ public class EventListeners {
          }
       }
    }
+
    @SubscribeEvent
    public static void onRikaInteract(PlayerInteractEvent.EntityInteract event) {
       Entity target = event.getTarget();
