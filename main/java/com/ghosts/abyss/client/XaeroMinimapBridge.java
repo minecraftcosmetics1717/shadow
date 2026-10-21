@@ -1,32 +1,30 @@
 package com.ghosts.abyss.client;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.registries.ForgeRegistries;
 
 public class XaeroMinimapBridge {
+
+    public static final ResourceLocation NO_MINIMAP_ID =
+            new ResourceLocation("xaerominimap", "no_minimap");
+
     public static boolean clientUnlocked = false;
     public static boolean clientEnabled = false;
 
-    /** Xaero listens for these special strings in chat/system messages. */
-    private static final String DISABLE = "§n§o§m§i§n§i§m§a§p";
-    private static final String RESET   = "§r§e§s§e§t§x§a§e§r§o";
+    public static void applyTo(Player player) {
+        MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(NO_MINIMAP_ID);
+        if (effect == null) return; // Xaero not installed
 
-    public static void apply() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return;
+        boolean shouldBlock = !clientUnlocked || !clientEnabled;
 
-        if (!clientUnlocked || !clientEnabled) {
-            // Force minimap off
-            mc.player.displayClientMessage(Component.literal(DISABLE), false);
+        if (shouldBlock) {
+            // ambient=false, visible=false (no particles), showIcon=false (no top-right icon)
+            player.addEffect(new MobEffectInstance(effect, -1, 0, false, false, false));
         } else {
-            // Clear forced-off flag so normal minimap can show
-            mc.player.displayClientMessage(Component.literal(RESET), false);
-        }
-    }
-
-    public static void forceOffIfLocked() {
-        if (!clientUnlocked || !clientEnabled) {
-            apply();
+            player.removeEffect(effect);
         }
     }
 }

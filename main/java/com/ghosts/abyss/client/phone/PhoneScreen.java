@@ -3,8 +3,6 @@ package com.ghosts.abyss.client.phone;
 import com.ghosts.abyss.AdvancedJujutsuScreen;
 import com.ghosts.abyss.ClientSetup;
 import com.ghosts.abyss.gui.YutaTab;
-import com.ghosts.abyss.network.ModNetwork;
-import com.ghosts.abyss.network.PacketToggleMinimap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -191,6 +189,8 @@ public class PhoneScreen extends Screen {
             return true;
         }
 
+
+
         boolean isYuta = YutaTab.isLocalPlayerYuta();
         boolean isCsm  = ClientSetup.isLocalPlayerCsm(Minecraft.getInstance());
         if (isYuta || isCsm) {
@@ -202,7 +202,6 @@ public class PhoneScreen extends Screen {
             }
         }
 
-        // Dock positions (must be declared before use)
         int dockY = top + PHONE_H - 31;
         int dockTotalW = 3 * DOCK_ICON_SIZE + 2 * DOCK_GAP;
         int dockStartX = left + (PHONE_W - dockTotalW) / 2;
@@ -215,13 +214,7 @@ public class PhoneScreen extends Screen {
             return true;
         }
         if (isInside(mouseX, mouseY, mapX, dockY, DOCK_ICON_SIZE)) {
-            var p = Minecraft.getInstance().player;
-            boolean unlocked = p != null && p.getPersistentData().getBoolean("minimap_unlocked");
-            if (!unlocked) {
-                Minecraft.getInstance().setScreen(new PhoneMapScreen());
-            } else {
-                ModNetwork.CHANNEL.sendToServer(new PacketToggleMinimap());
-            }
+            Minecraft.getInstance().setScreen(new PhonePlaceholderScreen("Map", "Quest markers & structures coming soon."));
             return true;
         }
         if (isInside(mouseX, mouseY, tpX, dockY, DOCK_ICON_SIZE)) {
