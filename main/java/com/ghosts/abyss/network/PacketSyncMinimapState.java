@@ -31,7 +31,10 @@ public class PacketSyncMinimapState {
         ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
             XaeroMinimapBridge.clientUnlocked = unlocked;
             XaeroMinimapBridge.clientEnabled = enabled;
-            XaeroMinimapBridge.apply();
+            var player = net.minecraft.client.Minecraft.getInstance().player;
+            if (player != null) {
+                XaeroMinimapBridge.applyTo(player);
+            }
         }));
         ctx.get().setPacketHandled(true);
     }

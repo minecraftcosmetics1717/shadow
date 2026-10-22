@@ -75,8 +75,17 @@ public class PhoneMapScreen extends Screen {
         g.fill(cardX + cardW - 1, cardY, cardX + cardW, cardY + cardH, COL_CARD_BORDER);
 
         g.drawCenteredString(font, "Minimap Upgrade", left + PHONE_W / 2, cardY + 10, COL_HEADER);
-        g.drawCenteredString(font, "Have a minimap available to you", left + PHONE_W / 2, cardY + 26, COL_DESC);
+        // instead of:
+// g.drawCenteredString(font, "Have a minimap available to you", left + PHONE_W / 2, cardY + 26, COL_DESC);
 
+        var pose = g.pose();
+        pose.pushPose();
+        pose.scale(0.8f, 0.8f, 1f);
+        g.drawCenteredString(font, "Have a minimap available to you",
+                (int) ((left + PHONE_W / 2) / 0.8f),
+                (int) ((cardY + 26) / 0.8f),
+                COL_DESC);
+        pose.popPose();
         // Show progress toward 5 cost
         String prog = Math.min(at, 99) + "/5";
         g.drawCenteredString(font, prog, left + PHONE_W / 2, cardY + 42, COL_DESC);
@@ -96,9 +105,9 @@ public class PhoneMapScreen extends Screen {
             g.fill(btnX - 1, btnY, btnX, btnY + btnH, 0x66FFFFFF);
             g.fill(btnX + btnW, btnY, btnX + btnW + 1, btnY + btnH, 0x66FFFFFF);
         }
-        String label = unlocked ? "Unlocked" : "Spend point";
+        String label = unlocked ? "Unlocked" : "Spend Points";
         g.drawCenteredString(font, label, btnX + btnW / 2, btnY + 3,
-                (btnActive || unlocked) ? COL_BTN_TEXT : 0xFFAAAAAA);
+                (btnActive || unlocked) ? 0xFFFFFFFF : 0xFFAAAAAA);
 
         renderDock(g, mouseX, mouseY);
     }

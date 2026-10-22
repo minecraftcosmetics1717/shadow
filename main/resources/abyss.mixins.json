@@ -64,7 +64,8 @@
     "DivergentFistKeyMixin",
     "RangeAttackForceBlackFlashMixin",
     "CustomRarityMixin",
-    "DivergentFistLogicStartMixin"
+    "DivergentFistLogicStartMixin",
+    "HideXaeroEffectMixin"
   ],
   "client": [],
   "injectors": {

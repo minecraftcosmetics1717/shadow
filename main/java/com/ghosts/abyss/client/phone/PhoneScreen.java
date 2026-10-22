@@ -3,6 +3,8 @@ package com.ghosts.abyss.client.phone;
 import com.ghosts.abyss.AdvancedJujutsuScreen;
 import com.ghosts.abyss.ClientSetup;
 import com.ghosts.abyss.gui.YutaTab;
+import com.ghosts.abyss.network.ModNetwork;
+import com.ghosts.abyss.network.PacketToggleMinimap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -214,7 +216,13 @@ public class PhoneScreen extends Screen {
             return true;
         }
         if (isInside(mouseX, mouseY, mapX, dockY, DOCK_ICON_SIZE)) {
-            Minecraft.getInstance().setScreen(new PhonePlaceholderScreen("Map", "Quest markers & structures coming soon."));
+            var p = Minecraft.getInstance().player;
+            boolean unlocked = p != null && p.getPersistentData().getBoolean("minimap_unlocked");
+            if (!unlocked) {
+                Minecraft.getInstance().setScreen(new PhoneMapScreen());
+            } else {
+                ModNetwork.CHANNEL.sendToServer(new PacketToggleMinimap());
+            }
             return true;
         }
         if (isInside(mouseX, mouseY, tpX, dockY, DOCK_ICON_SIZE)) {

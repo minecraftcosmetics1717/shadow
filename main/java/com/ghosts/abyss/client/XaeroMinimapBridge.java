@@ -16,12 +16,22 @@ public class XaeroMinimapBridge {
 
     public static void applyTo(Player player) {
         MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(NO_MINIMAP_ID);
-        if (effect == null) return; // Xaero not installed
+        if (effect == null) return;
 
-        boolean shouldBlock = !clientUnlocked || !clientEnabled;
+        // Server + persistent data are source of truth; client statics are only a fallback
+        boolean unlocked;
+        boolean enabled;
+        if (!player.level().isClientSide) {
+            unlocked = player.getPersistentData().getBoolean("minimap_unlocked");
+            enabled  = player.getPersistentData().getBoolean("minimap_enabled");
+        } else {
+            unlocked = clientUnlocked;
+            enabled  = clientEnabled;
+        }
+
+        boolean shouldBlock = !unlocked || !enabled;
 
         if (shouldBlock) {
-            // ambient=false, visible=false (no particles), showIcon=false (no top-right icon)
             player.addEffect(new MobEffectInstance(effect, -1, 0, false, false, false));
         } else {
             player.removeEffect(effect);
