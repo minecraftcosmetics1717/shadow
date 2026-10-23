@@ -67,7 +67,8 @@
     "DivergentFistLogicStartMixin",
     "HideXaeroEffectMixin",
     "JcBlockDestroyDomainDimMixin",
-    "JcCreateBarrierDomainDimMixin"
+    "JcCreateBarrierDomainDimMixin",
+    "DomainDimSetBlockMixin"
   ],
   "client": [],
   "injectors": {

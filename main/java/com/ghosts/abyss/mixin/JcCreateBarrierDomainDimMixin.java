@@ -6,16 +6,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Stops JC from placing/rewriting barrier rings inside abyss:domain.
- * Our DomainArenaBuilder already built the arena.
- */
-@Pseudo
 @Mixin(
         targets = "net.mcreator.jujutsucraft.procedures.DomainExpansionCreateBarrierProcedure",
         remap = false
@@ -25,18 +19,17 @@ public class JcCreateBarrierDomainDimMixin {
     @Inject(method = "execute", at = @At("HEAD"), cancellable = true, remap = false)
     private static void abyss$noCreateBarrierInDomainDim(
             LevelAccessor world, double x, double y, double z, Entity entity, CallbackInfo ci) {
-        if (isAbyssDomain(world)) {
+        if (entity != null && entity.level() != null
+                && entity.level().dimension().equals(DomainDimension.ID)) {
+            ci.cancel();
+            return;
+        }
+        if (world instanceof ServerLevel sl && sl.dimension().equals(DomainDimension.ID)) {
+            ci.cancel();
+            return;
+        }
+        if (world instanceof Level level && level.dimension().equals(DomainDimension.ID)) {
             ci.cancel();
         }
-    }
-
-    private static boolean isAbyssDomain(LevelAccessor world) {
-        if (world instanceof ServerLevel level) {
-            return level.dimension().equals(DomainDimension.ID);
-        }
-        if (world instanceof Level level) {
-            return level.dimension().equals(DomainDimension.ID);
-        }
-        return false;
     }
 }

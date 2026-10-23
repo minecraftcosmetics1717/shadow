@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Map;
@@ -34,7 +35,7 @@ public class DomainInstanceManager {
                 return inst;
             }
         }
-        return null; // all slots full
+        return null;
     }
 
     public static DomainInstance getByOwner(UUID ownerId) {
@@ -53,15 +54,19 @@ public class DomainInstanceManager {
     }
 
     public static void clearArena(ServerLevel domainLevel, DomainInstance inst) {
-        // simple clear of bounding cube; fine for now
-        int r = DomainDimension.OUTER_RADIUS + 2;
-        BlockPos c = inst.arenaCenter;
-        for (int x = -r; x <= r; x++) {
-            for (int y = -r; y <= r; y++) {
-                for (int z = -r; z <= r; z++) {
-                    domainLevel.removeBlock(c.offset(x, y, z), false);
+        DomainDimBlockGuard.open();
+        try {
+            int r = DomainDimension.OUTER_RADIUS + 2;
+            BlockPos c = inst.arenaCenter;
+            for (int x = -r; x <= r; x++) {
+                for (int y = -r; y <= r; y++) {
+                    for (int z = -r; z <= r; z++) {
+                        domainLevel.setBlock(c.offset(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+                    }
                 }
             }
+        } finally {
+            DomainDimBlockGuard.close();
         }
     }
 }

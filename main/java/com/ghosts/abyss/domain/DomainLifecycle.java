@@ -11,6 +11,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -321,10 +322,6 @@ public class DomainLifecycle {
         }
     }
 
-    /**
-     * Flags JC's domain controller to run its normal break/restore.
-     * Do NOT discard immediately — that skips terrain restore.
-     */
     private static void triggerJcDomainBreak(ServerLevel overworld, Vec3 center) {
         if (overworld == null || center == null) return;
 
@@ -341,8 +338,54 @@ public class DomainLifecycle {
             if (id == null) continue;
             if (!"jujutsucraft".equals(id.getNamespace())) continue;
             if (!id.getPath().contains("domain_expansion")) continue;
-
             e.getPersistentData().putBoolean("Break", true);
+        }
+
+        forceRestoreBarriers(overworld, center, DomainDimension.OUTER_RADIUS + 2);
+    }
+
+    private static void forceRestoreBarriers(ServerLevel level, Vec3 center, int radius) {
+        int cx = (int) Math.floor(center.x);
+        int cy = (int) Math.floor(center.y);
+        int cz = (int) Math.floor(center.z);
+        int r2 = radius * radius;
+
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    if (x * x + y * y + z * z > r2) continue;
+
+                    BlockPos pos = new BlockPos(cx + x, cy + y, cz + z);
+                    var state = level.getBlockState(pos);
+                    ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+                    if (id == null || !"jujutsucraft".equals(id.getNamespace())) continue;
+
+                    String path = id.getPath();
+                    if (!(path.equals("jujutsu_barrier")
+                            || path.startsWith("domain")
+                            || path.contains("barrier"))) {
+                        continue;
+                    }
+
+                    var be = level.getBlockEntity(pos);
+                    String old = be != null ? be.getPersistentData().getString("old_block") : "";
+                    if (old != null && !old.isEmpty()) {
+                        try {
+                            String name = old.contains("[") ? old.substring(0, old.indexOf('[')) : old;
+                            ResourceLocation oldId = name.contains(":")
+                                    ? new ResourceLocation(name)
+                                    : new ResourceLocation("minecraft", name);
+                            var block = ForgeRegistries.BLOCKS.getValue(oldId);
+                            if (block != null) {
+                                level.setBlock(pos, block.defaultBlockState(), 3);
+                                continue;
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
         }
     }
 
@@ -364,7 +407,6 @@ public class DomainLifecycle {
         ServerLevel returnLevel = server.getLevel(inst.returnDim);
         if (returnLevel == null) returnLevel = server.overworld();
 
-        // Point JC back at the real overworld center
         owner.getPersistentData().putDouble("x_pos_doma", inst.overworldCenter.x);
         owner.getPersistentData().putDouble("y_pos_doma", inst.overworldCenter.y);
         owner.getPersistentData().putDouble("z_pos_doma", inst.overworldCenter.z);
@@ -385,7 +427,6 @@ public class DomainLifecycle {
             unloadArena(domainLevel, inst);
         }
 
-        // Break pulses so the controller can tick even if it was briefly unloaded
         triggerJcDomainBreak(returnLevel, inst.overworldCenter);
 
         final Vec3 overCenter = inst.overworldCenter;
