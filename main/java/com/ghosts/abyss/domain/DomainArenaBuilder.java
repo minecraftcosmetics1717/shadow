@@ -131,25 +131,43 @@ public class DomainArenaBuilder {
     public static void repairFloorCenter(ServerLevel level, BlockPos center, double skillDomain, int radius) {
         BlockState under = barrier();
         BlockState floor = floorState(skillDomain);
+
         int cx = center.getX();
         int cy = center.getY();
         int cz = center.getZ();
         int r = Math.max(1, radius);
+        int id = (int) Math.round(skillDomain);
+
+        BlockState edgeA = block("domain_stone_bricks", Blocks.STONE_BRICKS.defaultBlockState());
+        BlockState edgeB = block("domain_planks", Blocks.OAK_PLANKS.defaultBlockState());
+        int floorR = DomainDimension.INNER_RADIUS;
+        int edgeWidth = 4;
 
         for (int x = -r; x <= r; x++) {
             for (int z = -r; z <= r; z++) {
                 if (x * x + z * z > r * r) continue;
+
                 BlockPos underPos = new BlockPos(cx + x, cy - 1, cz + z);
                 BlockPos floorPos = new BlockPos(cx + x, cy, cz + z);
-                String underId = String.valueOf(ForgeRegistries.BLOCKS.getKey(level.getBlockState(underPos).getBlock()));
-                String floorId = String.valueOf(ForgeRegistries.BLOCKS.getKey(level.getBlockState(floorPos).getBlock()));
-                if (level.getBlockState(underPos).isAir() || underId.contains("hole")) {
+
+                // Always keep underlayer
+                if (!level.getBlockState(underPos).is(under.getBlock())) {
                     level.setBlock(underPos, under, 2);
                 }
-                if (level.getBlockState(floorPos).isAir() || floorId.contains("hole")) {
-                    level.setBlock(floorPos, floor, 2);
+
+                BlockState top = floor;
+                if (id == 27) {
+                    int ax = Math.abs(x);
+                    int az = Math.abs(z);
+                    // rim relative to full floor only matters near edge; for center repair use plain floor
+                    boolean onRim = (Math.abs(cx + x - cx) >= floorR - edgeWidth)
+                            || (Math.abs(cz + z - cz) >= floorR - edgeWidth);
+                    // For center repair radius << floorR, onRim is false — just use planks/floor
+                    top = edgeB;
                 }
+
+                // FORCE restamp top — JC may have placed domain_hole or air
+                level.setBlock(floorPos, top, 2);
             }
         }
-    }
-}
+    }}

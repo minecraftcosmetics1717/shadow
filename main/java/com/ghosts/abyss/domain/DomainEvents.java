@@ -8,7 +8,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.MobEffectEvent;
@@ -87,14 +86,14 @@ public class DomainEvents {
                 data.putDouble("x_pos_doma", inst.arenaCenter.getX() + 0.5);
                 data.putDouble("y_pos_doma", inst.arenaCenter.getY());
                 data.putDouble("z_pos_doma", inst.arenaCenter.getZ() + 0.5);
-                // After spoofing x_pos_doma / amp refresh:
-                if (entity.tickCount % 20 == 0) {
-                    if (entity.level() instanceof net.minecraft.server.level.ServerLevel sl) {
-                        // Repair a wide center so clash holes fill in
-                        DomainArenaBuilder.repairFloorCenter(
-                                sl, inst.arenaCenter, inst.skillDomain, 12);
-                    }
+
+                // Restamp floor often — covers JC domain-radius ring (~22)
+                if (entity.tickCount % 5 == 0
+                        && entity.level() instanceof ServerLevel sl) {
+                    DomainArenaBuilder.repairFloorCenter(
+                            sl, inst.arenaCenter, inst.skillDomain, 28);
                 }
+
                 MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(DOMAIN_EFFECT_ID);
                 if (domainEffect != null
                         && !entity.getPersistentData().getBoolean("abyss_domain_transferring")) {
@@ -122,7 +121,6 @@ public class DomainEvents {
         }
     }
 
-    /** HIGH priority so we run before drops are finalized when possible */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onDeath(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide) return;
@@ -131,7 +129,6 @@ public class DomainEvents {
         DomainInstance inst = DomainInstanceManager.getByOwner(entity.getUUID());
         if (inst == null) return;
 
-        // Stash drop location on the entity so onDrops still works after release
         entity.getPersistentData().putBoolean("abyss_domain_owner_dead", true);
         entity.getPersistentData().putDouble("abyss_drop_x", inst.overworldCenter.x);
         entity.getPersistentData().putDouble("abyss_drop_y", inst.overworldCenter.y);
@@ -189,7 +186,7 @@ public class DomainEvents {
 
         LivingEntity entity = event.getEntity();
         if (entity.getPersistentData().getBoolean("abyss_domain_transferring")) return;
-        if (!entity.isAlive()) return; // death path handles end()
+        if (!entity.isAlive()) return;
 
         entity.getPersistentData().putBoolean("abyss_domain_handled", false);
         entity.getPersistentData().putBoolean("abyss_domain_pending", false);

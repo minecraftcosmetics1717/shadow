@@ -281,7 +281,6 @@ public class DomainLifecycle {
         }
     }
 
-    /** Remove JC shikigami / domain props left in the arena so they don't leak into the next domain */
     private static void cleanupDomainMobs(ServerLevel domainLevel, DomainInstance inst) {
         if (domainLevel == null) return;
 
@@ -322,8 +321,16 @@ public class DomainLifecycle {
         }
     }
 
+    /**
+     * Flags JC's domain controller to run its normal break/restore.
+     * Do NOT discard immediately — that skips terrain restore.
+     */
     private static void triggerJcDomainBreak(ServerLevel overworld, Vec3 center) {
-        double r = DomainDimension.OUTER_RADIUS + 8;
+        if (overworld == null || center == null) return;
+
+        overworld.getChunkAt(BlockPos.containing(center));
+
+        double r = DomainDimension.OUTER_RADIUS + 16;
         AABB box = new AABB(
                 center.x - r, center.y - r, center.z - r,
                 center.x + r, center.y + r, center.z + r
@@ -333,10 +340,9 @@ public class DomainLifecycle {
             ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(e.getType());
             if (id == null) continue;
             if (!"jujutsucraft".equals(id.getNamespace())) continue;
-            if (id.getPath().contains("domain_expansion")) {
-                e.getPersistentData().putBoolean("Break", true);
-                e.discard();
-            }
+            if (!id.getPath().contains("domain_expansion")) continue;
+
+            e.getPersistentData().putBoolean("Break", true);
         }
     }
 
@@ -358,9 +364,12 @@ public class DomainLifecycle {
         ServerLevel returnLevel = server.getLevel(inst.returnDim);
         if (returnLevel == null) returnLevel = server.overworld();
 
+        // Point JC back at the real overworld center
         owner.getPersistentData().putDouble("x_pos_doma", inst.overworldCenter.x);
         owner.getPersistentData().putDouble("y_pos_doma", inst.overworldCenter.y);
         owner.getPersistentData().putDouble("z_pos_doma", inst.overworldCenter.z);
+
+        returnLevel.getChunkAt(BlockPos.containing(inst.overworldCenter));
 
         if (domainLevel != null) {
             cleanupDomainMobs(domainLevel, inst);
@@ -376,7 +385,14 @@ public class DomainLifecycle {
             unloadArena(domainLevel, inst);
         }
 
+        // Break pulses so the controller can tick even if it was briefly unloaded
         triggerJcDomainBreak(returnLevel, inst.overworldCenter);
+
+        final Vec3 overCenter = inst.overworldCenter;
+        final ServerLevel over = returnLevel;
+        server.tell(new TickTask(server.getTickCount() + 20, () -> triggerJcDomainBreak(over, overCenter)));
+        server.tell(new TickTask(server.getTickCount() + 40, () -> triggerJcDomainBreak(over, overCenter)));
+
         DomainInstanceManager.release(owner.getUUID());
 
         owner.getPersistentData().putBoolean("abyss_domain_handled", false);
