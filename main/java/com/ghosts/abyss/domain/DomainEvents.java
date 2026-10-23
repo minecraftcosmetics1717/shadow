@@ -1,6 +1,7 @@
 package com.ghosts.abyss.domain;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -12,6 +13,7 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.MobEffectEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -65,9 +67,7 @@ public class DomainEvents {
             double ox = data.getDouble("x_pos_doma");
             double oy = data.getDouble("y_pos_doma");
             double oz = data.getDouble("z_pos_doma");
-            boolean hasCenter = ox != 0 || oy != 0 || oz != 0;
-
-            if (hasCenter) {
+            if (ox != 0 || oy != 0 || oz != 0) {
                 entity.getPersistentData().putBoolean("abyss_domain_pending", false);
                 DomainLifecycle.tryStart(entity);
             }
@@ -87,8 +87,14 @@ public class DomainEvents {
                 data.putDouble("x_pos_doma", inst.arenaCenter.getX() + 0.5);
                 data.putDouble("y_pos_doma", inst.arenaCenter.getY());
                 data.putDouble("z_pos_doma", inst.arenaCenter.getZ() + 0.5);
-
-                // Keep amp >= 1 every tick so JC's ~22-block leave check does not fire
+                // After spoofing x_pos_doma / amp refresh:
+                if (entity.tickCount % 20 == 0) {
+                    if (entity.level() instanceof net.minecraft.server.level.ServerLevel sl) {
+                        // Repair a wide center so clash holes fill in
+                        DomainArenaBuilder.repairFloorCenter(
+                                sl, inst.arenaCenter, inst.skillDomain, 12);
+                    }
+                }
                 MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(DOMAIN_EFFECT_ID);
                 if (domainEffect != null
                         && !entity.getPersistentData().getBoolean("abyss_domain_transferring")) {
@@ -104,7 +110,6 @@ public class DomainEvents {
                     }
                 }
             } else {
-                // Only our arena edge (r=63) should end the domain
                 entity.getPersistentData().putDouble("x_pos_doma", inst.overworldCenter.x);
                 entity.getPersistentData().putDouble("y_pos_doma", inst.overworldCenter.y);
                 entity.getPersistentData().putDouble("z_pos_doma", inst.overworldCenter.z);
@@ -117,8 +122,8 @@ public class DomainEvents {
         }
     }
 
-    /** Owner dies in domain dim (or anywhere) → end domain + overworld barrier */
-    @SubscribeEvent
+    /** HIGH priority so we run before drops are finalized when possible */
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onDeath(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide) return;
 
@@ -126,52 +131,54 @@ public class DomainEvents {
         DomainInstance inst = DomainInstanceManager.getByOwner(entity.getUUID());
         if (inst == null) return;
 
-        // end() restores people, clears arena, triggers JC break
+        // Stash drop location on the entity so onDrops still works after release
+        entity.getPersistentData().putBoolean("abyss_domain_owner_dead", true);
+        entity.getPersistentData().putDouble("abyss_drop_x", inst.overworldCenter.x);
+        entity.getPersistentData().putDouble("abyss_drop_y", inst.overworldCenter.y);
+        entity.getPersistentData().putDouble("abyss_drop_z", inst.overworldCenter.z);
+        entity.getPersistentData().putString("abyss_drop_dim", inst.returnDim.location().toString());
+
         entity.getPersistentData().putBoolean("abyss_domain_transferring", false);
         DomainLifecycle.end(entity);
     }
 
-    /** Drops from a domain owner → spawn at overworld domain origin instead of domain dim */
     @SubscribeEvent
     public static void onDrops(LivingDropsEvent event) {
         if (event.getEntity().level().isClientSide) return;
 
         LivingEntity entity = event.getEntity();
-        DomainInstance inst = DomainInstanceManager.getByOwner(entity.getUUID());
-        // Owner may already be released by onDeath — check persistent flag or still-in-dim
-        if (inst == null) {
-            // Fallback: if they died in domain dim and had skill_domain data, still redirect
-            if (!entity.level().dimension().equals(DomainDimension.ID)) return;
-            // Try find instance by scanning slots for matching return entry
-            inst = findInstanceContaining(entity.getUUID());
-            if (inst == null) return;
+        var data = entity.getPersistentData();
+        if (!data.getBoolean("abyss_domain_owner_dead") && !data.contains("abyss_drop_x")) {
+            return;
         }
 
-        net.minecraft.server.MinecraftServer server = entity.level().getServer();
+        MinecraftServer server = entity.level().getServer();
         if (server == null) return;
-        ServerLevel overworld = server.getLevel(inst.returnDim);
-        if (overworld == null) overworld = server.overworld();
 
-        Vec3 dropAt = inst.overworldCenter;
+        double dx = data.getDouble("abyss_drop_x");
+        double dy = data.getDouble("abyss_drop_y");
+        double dz = data.getDouble("abyss_drop_z");
+
+        ServerLevel overworld = server.overworld();
+        String dimStr = data.getString("abyss_drop_dim");
+        if (dimStr != null && !dimStr.isEmpty()) {
+            ResourceLocation dimId = new ResourceLocation(dimStr);
+            for (ServerLevel level : server.getAllLevels()) {
+                if (level.dimension().location().equals(dimId)) {
+                    overworld = level;
+                    break;
+                }
+            }
+        }
 
         for (ItemEntity drop : event.getDrops()) {
             ItemStack stack = drop.getItem().copy();
-            ItemEntity overDrop = new ItemEntity(
-                    overworld, dropAt.x, dropAt.y + 0.5, dropAt.z, stack);
+            if (stack.isEmpty()) continue;
+            ItemEntity overDrop = new ItemEntity(overworld, dx, dy + 0.5, dz, stack);
             overDrop.setDefaultPickUpDelay();
             overworld.addFreshEntity(overDrop);
         }
         event.getDrops().clear();
-    }
-
-    private static DomainInstance findInstanceContaining(java.util.UUID id) {
-        for (int i = 0; i < DomainDimension.MAX_SLOTS; i++) {
-            DomainInstance inst = DomainInstanceManager.getBySlot(i);
-            if (inst != null && (id.equals(inst.ownerId) || inst.returnPositions.containsKey(id))) {
-                return inst;
-            }
-        }
-        return null;
     }
 
     @SubscribeEvent
@@ -182,10 +189,7 @@ public class DomainEvents {
 
         LivingEntity entity = event.getEntity();
         if (entity.getPersistentData().getBoolean("abyss_domain_transferring")) return;
-        if (!entity.isAlive()) {
-            // Death handled by onDeath — avoid double end
-            return;
-        }
+        if (!entity.isAlive()) return; // death path handles end()
 
         entity.getPersistentData().putBoolean("abyss_domain_handled", false);
         entity.getPersistentData().putBoolean("abyss_domain_pending", false);

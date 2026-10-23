@@ -1,5 +1,6 @@
 package com.ghosts.abyss.domain;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
@@ -40,14 +41,12 @@ public class DomainLifecycle {
         double oy = data.getDouble("y_pos_doma");
         double oz = data.getDouble("z_pos_doma");
 
-        // Need real domain center — not just keys existing at 0
         boolean hasCenter = (ox != 0 || oy != 0 || oz != 0);
         boolean hasSkill = skillDomain != 0;
         if (!hasCenter && !hasSkill) {
             owner.getPersistentData().putBoolean("abyss_domain_pending", true);
             return;
         }
-        // Prefer waiting until center exists (JC writes it in CreateBarrier)
         if (!hasCenter) {
             owner.getPersistentData().putBoolean("abyss_domain_pending", true);
             return;
@@ -91,25 +90,9 @@ public class DomainLifecycle {
         double cz = inst.arenaCenter.getZ() + 0.5;
 
         owner.getPersistentData().putBoolean("abyss_domain_transferring", true);
-        LivingEntity arrived = DomainTeleport.teleport(owner, domainLevel, cx, floorY, cz);
+        DomainTeleport.teleport(owner, domainLevel, cx, floorY, cz);
 
-        UUID ownerId = owner.getUUID();
-        // If clone returned a living entity, prefer that UUID (same id if we preserved it)
-        if (arrived != null) {
-            ownerId = arrived.getUUID();
-            // Re-key instance if needed (should be same UUID)
-            if (DomainInstanceManager.getByOwner(ownerId) == null
-                    && DomainInstanceManager.getBySlot(inst.slot) != null) {
-                // already keyed by original owner UUID
-            }
-        }
-
-        final UUID finalOwnerId = owner.getUUID();
-        final int slot = inst.slot;
-        final Vec3 center = overCenter;
-        final double radius = catchRadius;
-
-        scheduleFinishEnter(server, finalOwnerId, slot, center, radius, 0);
+        scheduleFinishEnter(server, owner.getUUID(), inst.slot, overCenter, catchRadius, 0);
     }
 
     private static void scheduleFinishEnter(MinecraftServer server, UUID ownerId, int slot,
@@ -138,7 +121,6 @@ public class DomainLifecycle {
 
         LivingEntity ownerInDim = findLivingIn(domainLevel, ownerId);
 
-        // Still in overworld with effect? retry teleport
         if (ownerInDim == null) {
             LivingEntity ownerOver = findLivingIn(overworld, ownerId);
             if (ownerOver != null && attempt < MAX_ENTER_RETRIES) {
@@ -299,16 +281,61 @@ public class DomainLifecycle {
         }
     }
 
-    private static void triggerJcDomainBreak(ServerLevel overworld, Vec3 center) {
+    /** Remove JC shikigami / domain props left in the arena so they don't leak into the next domain */
+    private static void cleanupDomainMobs(ServerLevel domainLevel, DomainInstance inst) {
+        if (domainLevel == null) return;
+
+        int r = DomainDimension.OUTER_RADIUS + 4;
+        BlockPos c = inst.arenaCenter;
         AABB box = new AABB(
-                center.x - 2, center.y - 2, center.z - 2,
-                center.x + 2, center.y + 2, center.z + 2
+                c.getX() - r, c.getY() - r, c.getZ() - r,
+                c.getX() + r, c.getY() + r, c.getZ() + r
         );
+
+        for (Entity e : domainLevel.getEntities((Entity) null, box, ent -> true)) {
+            if (e instanceof Player) continue;
+
+            ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(e.getType());
+            if (id == null || !"jujutsucraft".equals(id.getNamespace())) continue;
+
+            String path = id.getPath();
+            if (path.contains("shikigami")
+                    || path.contains("divine_dog")
+                    || path.contains("nue")
+                    || path.contains("toad")
+                    || path.contains("elephant")
+                    || path.contains("rabbit")
+                    || path.contains("max_elephant")
+                    || path.contains("mahoraga")
+                    || path.contains("piercing_ox")
+                    || path.contains("round_deer")
+                    || path.contains("tiger")
+                    || path.contains("domain_expansion_entity")
+                    || path.contains("deer")
+                    || path.contains("ox")
+                    || path.contains("wolf")
+                    || path.contains("dog")
+                    || path.contains("serpent")
+                    || path.contains("snake")) {
+                e.discard();
+            }
+        }
+    }
+
+    private static void triggerJcDomainBreak(ServerLevel overworld, Vec3 center) {
+        double r = DomainDimension.OUTER_RADIUS + 8;
+        AABB box = new AABB(
+                center.x - r, center.y - r, center.z - r,
+                center.x + r, center.y + r, center.z + r
+        );
+
         for (Entity e : overworld.getEntities((Entity) null, box, ent -> true)) {
             ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(e.getType());
-            if (id != null && "jujutsucraft".equals(id.getNamespace())
-                    && id.getPath().contains("domain_expansion")) {
+            if (id == null) continue;
+            if (!"jujutsucraft".equals(id.getNamespace())) continue;
+            if (id.getPath().contains("domain_expansion")) {
                 e.getPersistentData().putBoolean("Break", true);
+                e.discard();
             }
         }
     }
@@ -336,6 +363,8 @@ public class DomainLifecycle {
         owner.getPersistentData().putDouble("z_pos_doma", inst.overworldCenter.z);
 
         if (domainLevel != null) {
+            cleanupDomainMobs(domainLevel, inst);
+
             for (var entry : inst.returnPositions.entrySet()) {
                 Entity e = domainLevel.getEntity(entry.getKey());
                 if (e == null) e = returnLevel.getEntity(entry.getKey());
