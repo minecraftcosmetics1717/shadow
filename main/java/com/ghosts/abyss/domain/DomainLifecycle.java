@@ -5,10 +5,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -20,18 +20,12 @@ import java.util.UUID;
 
 public class DomainLifecycle {
 
-    private static final ResourceLocation DOMAIN_EFFECT_ID =
-            new ResourceLocation("jujutsucraft", "domain_expansion");
-
-    /** Temporary chunk ticket for active domain arenas */
     private static final TicketType<ChunkPos> DOMAIN_TICKET =
             TicketType.create("abyss:domain", Comparator.comparingLong(ChunkPos::toLong), 300);
 
-    /** Chunk ticket radius (chunks) around arena center — covers r=64 sphere */
     private static final int TICKET_RADIUS = 5;
-
-    /** Ticks to wait after owner teleport before verify + pull others */
-    private static final int OWNER_VERIFY_DELAY = 2;
+    private static final int OWNER_VERIFY_DELAY = 5;
+    private static final int MAX_ENTER_RETRIES = 3;
 
     public static void tryStart(LivingEntity owner) {
         if (owner.level().isClientSide) return;
@@ -46,7 +40,15 @@ public class DomainLifecycle {
         double oy = data.getDouble("y_pos_doma");
         double oz = data.getDouble("z_pos_doma");
 
-        if (ox == 0 && oy == 0 && oz == 0 && skillDomain == 0) {
+        // Need real domain center — not just keys existing at 0
+        boolean hasCenter = (ox != 0 || oy != 0 || oz != 0);
+        boolean hasSkill = skillDomain != 0;
+        if (!hasCenter && !hasSkill) {
+            owner.getPersistentData().putBoolean("abyss_domain_pending", true);
+            return;
+        }
+        // Prefer waiting until center exists (JC writes it in CreateBarrier)
+        if (!hasCenter) {
             owner.getPersistentData().putBoolean("abyss_domain_pending", true);
             return;
         }
@@ -64,11 +66,7 @@ public class DomainLifecycle {
         }
 
         DomainInstance inst = DomainInstanceManager.claim(
-                owner.getUUID(),
-                skillDomain,
-                overworld.dimension(),
-                overCenter
-        );
+                owner.getUUID(), skillDomain, overworld.dimension(), overCenter);
         if (inst == null) return;
 
         MinecraftServer server = overworld.getServer();
@@ -78,34 +76,51 @@ public class DomainLifecycle {
             return;
         }
 
-        // Force-load arena chunks BEFORE build / teleport
         forceLoadArena(domainLevel, inst);
-
         DomainArenaBuilder.build(domainLevel, inst.arenaCenter, skillDomain);
-        ensureDomainAmp(owner);
+
+        if (owner instanceof Mob mob) {
+            mob.setTarget(null);
+            mob.getNavigation().stop();
+        }
+
+        inst.returnPositions.put(owner.getUUID(), owner.position());
 
         double floorY = inst.arenaCenter.getY() + 1.1;
         double cx = inst.arenaCenter.getX() + 0.5;
         double cz = inst.arenaCenter.getZ() + 0.5;
 
-        inst.returnPositions.put(owner.getUUID(), owner.position());
-
-        // Owner first — keep overworld x_pos_doma for now
-        DomainTeleport.sendToArenaAt(owner, domainLevel, cx, floorY, cz);
+        owner.getPersistentData().putBoolean("abyss_domain_transferring", true);
+        LivingEntity arrived = DomainTeleport.teleport(owner, domainLevel, cx, floorY, cz);
 
         UUID ownerId = owner.getUUID();
-        int when = server.getTickCount() + OWNER_VERIFY_DELAY;
+        // If clone returned a living entity, prefer that UUID (same id if we preserved it)
+        if (arrived != null) {
+            ownerId = arrived.getUUID();
+            // Re-key instance if needed (should be same UUID)
+            if (DomainInstanceManager.getByOwner(ownerId) == null
+                    && DomainInstanceManager.getBySlot(inst.slot) != null) {
+                // already keyed by original owner UUID
+            }
+        }
 
-        server.tell(new TickTask(when, () -> {
-            finishEnter(ownerId, inst.slot, overCenter, catchRadius);
-        }));
+        final UUID finalOwnerId = owner.getUUID();
+        final int slot = inst.slot;
+        final Vec3 center = overCenter;
+        final double radius = catchRadius;
+
+        scheduleFinishEnter(server, finalOwnerId, slot, center, radius, 0);
     }
 
-    /**
-     * Runs a few ticks after owner teleport: verify owner in dim, then pull others.
-     * Soft-aborts without breaking the overworld JC domain if owner never arrived.
-     */
-    private static void finishEnter(UUID ownerId, int slot, Vec3 overCenter, double catchRadius) {
+    private static void scheduleFinishEnter(MinecraftServer server, UUID ownerId, int slot,
+                                            Vec3 overCenter, double catchRadius, int attempt) {
+        int when = server.getTickCount() + OWNER_VERIFY_DELAY;
+        server.tell(new TickTask(when, () ->
+                finishEnter(ownerId, slot, overCenter, catchRadius, attempt)));
+    }
+
+    private static void finishEnter(UUID ownerId, int slot, Vec3 overCenter,
+                                    double catchRadius, int attempt) {
         DomainInstance inst = DomainInstanceManager.getBySlot(slot);
         if (inst == null) return;
         if (!ownerId.equals(inst.ownerId)) return;
@@ -117,12 +132,31 @@ public class DomainLifecycle {
         ServerLevel overworld = server.getLevel(inst.returnDim);
         if (overworld == null) overworld = server.overworld();
         if (domainLevel == null) {
-            softAbort(inst, domainLevel, overworld, ownerId);
+            softAbort(inst, null, overworld, ownerId);
             return;
         }
 
         LivingEntity ownerInDim = findLivingIn(domainLevel, ownerId);
+
+        // Still in overworld with effect? retry teleport
         if (ownerInDim == null) {
+            LivingEntity ownerOver = findLivingIn(overworld, ownerId);
+            if (ownerOver != null && attempt < MAX_ENTER_RETRIES) {
+                double floorY = inst.arenaCenter.getY() + 1.1;
+                double cx = inst.arenaCenter.getX() + 0.5;
+                double cz = inst.arenaCenter.getZ() + 0.5;
+
+                if (ownerOver instanceof Mob mob) {
+                    mob.setTarget(null);
+                    mob.getNavigation().stop();
+                }
+
+                ownerOver.getPersistentData().putBoolean("abyss_domain_transferring", true);
+                DomainTeleport.teleport(ownerOver, domainLevel, cx, floorY, cz);
+                scheduleFinishEnter(server, ownerId, slot, overCenter, catchRadius, attempt + 1);
+                return;
+            }
+
             softAbort(inst, domainLevel, overworld, ownerId);
             return;
         }
@@ -133,24 +167,27 @@ public class DomainLifecycle {
         ownerInDim.getPersistentData().putDouble("x_pos_doma", cx);
         ownerInDim.getPersistentData().putDouble("y_pos_doma", inst.arenaCenter.getY());
         ownerInDim.getPersistentData().putDouble("z_pos_doma", cz);
+        ownerInDim.getPersistentData().putDouble("skill_domain", inst.skillDomain);
         ownerInDim.getPersistentData().putBoolean("abyss_domain_handled", true);
+        ownerInDim.getPersistentData().putBoolean("abyss_domain_transferring", false);
 
-        ensureDomainAmp(ownerInDim);
+        if (ownerInDim instanceof Mob mob) {
+            mob.setTarget(null);
+            mob.getNavigation().stop();
+        }
+
         pullOthers(overworld, domainLevel, inst, overCenter, catchRadius, ownerInDim);
     }
 
-    /**
-     * Owner failed to enter domain dim.
-     * Clean up OUR arena only — do NOT trigger JC overworld break.
-     */
     private static void softAbort(DomainInstance inst, ServerLevel domainLevel,
                                   ServerLevel overworld, UUID ownerId) {
-        // If owner somehow ended up in dim, send them back
         if (domainLevel != null) {
             LivingEntity inDim = findLivingIn(domainLevel, ownerId);
             if (inDim != null && overworld != null) {
                 Vec3 back = inst.returnPositions.getOrDefault(ownerId, inst.overworldCenter);
+                inDim.getPersistentData().putBoolean("abyss_domain_transferring", true);
                 DomainTeleport.sendBack(inDim, overworld, back);
+                inDim.getPersistentData().putBoolean("abyss_domain_transferring", false);
             }
             DomainInstanceManager.clearArena(domainLevel, inst);
             unloadArena(domainLevel, inst);
@@ -158,12 +195,12 @@ public class DomainLifecycle {
 
         DomainInstanceManager.release(ownerId);
 
-        // Allow a future domain cast; this one failed
         if (overworld != null) {
             LivingEntity owner = findLivingIn(overworld, ownerId);
             if (owner != null) {
                 owner.getPersistentData().putBoolean("abyss_domain_handled", false);
                 owner.getPersistentData().putBoolean("abyss_domain_pending", false);
+                owner.getPersistentData().putBoolean("abyss_domain_transferring", false);
             }
         }
     }
@@ -171,7 +208,6 @@ public class DomainLifecycle {
     private static void forceLoadArena(ServerLevel level, DomainInstance inst) {
         ChunkPos cp = new ChunkPos(inst.arenaCenter);
         level.getChunkSource().addRegionTicket(DOMAIN_TICKET, cp, TICKET_RADIUS, cp);
-        // Touch center chunk so it exists before teleport
         level.getChunk(cp.x, cp.z);
     }
 
@@ -180,20 +216,16 @@ public class DomainLifecycle {
         level.getChunkSource().removeRegionTicket(DOMAIN_TICKET, cp, TICKET_RADIUS, cp);
     }
 
-    private static void ensureDomainAmp(LivingEntity entity) {
-        MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(DOMAIN_EFFECT_ID);
-        if (domainEffect == null) return;
-        MobEffectInstance cur = entity.getEffect(domainEffect);
-        if (cur == null || cur.getAmplifier() >= 1) return;
-        entity.getPersistentData().putBoolean("abyss_domain_handled", true);
-        entity.addEffect(new MobEffectInstance(
-                domainEffect, cur.getDuration(), 1, false, false, true));
-    }
-
     private static LivingEntity findLivingIn(ServerLevel level, UUID id) {
         if (level == null) return null;
         Entity e = level.getEntity(id);
-        return e instanceof LivingEntity living ? living : null;
+        if (e instanceof LivingEntity living) return living;
+        for (Entity ent : level.getAllEntities()) {
+            if (id.equals(ent.getUUID()) && ent instanceof LivingEntity living) {
+                return living;
+            }
+        }
+        return null;
     }
 
     private static DomainInstance findNearbyDomain(Vec3 center, double maxDist) {
@@ -220,14 +252,15 @@ public class DomainLifecycle {
         double cz = inst.arenaCenter.getZ() + 0.5;
 
         inst.returnPositions.putIfAbsent(owner.getUUID(), owner.position());
-        DomainTeleport.sendToArenaAt(owner, domainLevel, cx, floorY, cz);
+        if (owner instanceof Mob mob) {
+            mob.setTarget(null);
+            mob.getNavigation().stop();
+        }
 
-        UUID ownerId = owner.getUUID();
-        Vec3 overCenter = inst.overworldCenter;
-        int when = server.getTickCount() + OWNER_VERIFY_DELAY;
-        server.tell(new TickTask(when, () -> {
-            finishEnter(ownerId, inst.slot, overCenter, catchRadius);
-        }));
+        owner.getPersistentData().putBoolean("abyss_domain_transferring", true);
+        DomainTeleport.teleport(owner, domainLevel, cx, floorY, cz);
+
+        scheduleFinishEnter(server, owner.getUUID(), inst.slot, inst.overworldCenter, catchRadius, 0);
     }
 
     private static void pullOthers(ServerLevel overworld, ServerLevel domainLevel,
@@ -244,9 +277,7 @@ public class DomainLifecycle {
                         && !e.getUUID().equals(ownerInDim.getUUID())
         );
 
-        Vec3 ownerReturn = inst.returnPositions.getOrDefault(
-                ownerInDim.getUUID(), center);
-
+        Vec3 ownerReturn = inst.returnPositions.getOrDefault(ownerInDim.getUUID(), center);
         double maxSpawnR = DomainDimension.INNER_RADIUS - 3;
         double floorY = inst.arenaCenter.getY() + 1.1;
         double cx = inst.arenaCenter.getX() + 0.5;
@@ -264,7 +295,7 @@ public class DomainLifecycle {
                 ox *= scale;
                 oz *= scale;
             }
-            DomainTeleport.sendToArenaAt(e, domainLevel, cx + ox, floorY, cz + oz);
+            DomainTeleport.teleport(e, domainLevel, cx + ox, floorY, cz + oz);
         }
     }
 
@@ -273,11 +304,9 @@ public class DomainLifecycle {
                 center.x - 2, center.y - 2, center.z - 2,
                 center.x + 2, center.y + 2, center.z + 2
         );
-
         for (Entity e : overworld.getEntities((Entity) null, box, ent -> true)) {
             ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(e.getType());
-            if (id != null
-                    && "jujutsucraft".equals(id.getNamespace())
+            if (id != null && "jujutsucraft".equals(id.getNamespace())
                     && id.getPath().contains("domain_expansion")) {
                 e.getPersistentData().putBoolean("Break", true);
             }
@@ -286,6 +315,7 @@ public class DomainLifecycle {
 
     public static void end(LivingEntity owner) {
         if (owner.level().isClientSide) return;
+        if (owner.getPersistentData().getBoolean("abyss_domain_transferring")) return;
 
         DomainInstance inst = DomainInstanceManager.getByOwner(owner.getUUID());
         if (inst == null) {
@@ -308,9 +338,7 @@ public class DomainLifecycle {
         if (domainLevel != null) {
             for (var entry : inst.returnPositions.entrySet()) {
                 Entity e = domainLevel.getEntity(entry.getKey());
-                if (e == null) {
-                    e = returnLevel.getEntity(entry.getKey());
-                }
+                if (e == null) e = returnLevel.getEntity(entry.getKey());
                 if (e instanceof LivingEntity living) {
                     DomainTeleport.sendBack(living, returnLevel, entry.getValue());
                 }
@@ -320,10 +348,10 @@ public class DomainLifecycle {
         }
 
         triggerJcDomainBreak(returnLevel, inst.overworldCenter);
-
         DomainInstanceManager.release(owner.getUUID());
 
         owner.getPersistentData().putBoolean("abyss_domain_handled", false);
         owner.getPersistentData().putBoolean("abyss_domain_pending", false);
+        owner.getPersistentData().putBoolean("abyss_domain_transferring", false);
     }
 }

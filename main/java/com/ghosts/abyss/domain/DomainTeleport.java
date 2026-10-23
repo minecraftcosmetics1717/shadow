@@ -2,17 +2,26 @@ package com.ghosts.abyss.domain;
 
 import com.ghosts.abyss.client.XaeroMinimapBridge;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.util.ITeleporter;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.UUID;
 import java.util.function.Function;
 
 public class DomainTeleport {
+
+    private static final ResourceLocation DOMAIN_EFFECT_ID =
+            new ResourceLocation("jujutsucraft", "domain_expansion");
 
     public static void sendToArena(LivingEntity entity, ServerLevel domainLevel, BlockPos arenaCenter) {
         sendToArenaAt(entity, domainLevel,
@@ -44,20 +53,38 @@ public class DomainTeleport {
         }
     }
 
-    private static void teleport(LivingEntity entity, ServerLevel dest, double x, double y, double z) {
+    /**
+     * @return the entity that exists in dest after the move (may be a new instance for mobs),
+     *         or null if teleport failed.
+     */
+    public static LivingEntity teleport(LivingEntity entity, ServerLevel dest, double x, double y, double z) {
         if (entity instanceof ServerPlayer player) {
             player.teleportTo(dest, x, y, z, player.getYRot(), player.getXRot());
             XaeroMinimapBridge.applyTo(player);
-            return;
+            return player;
         }
 
-        // Already in destination dimension
         if (entity.level() == dest) {
             entity.moveTo(x, y, z, entity.getYRot(), entity.getXRot());
-            return;
+            return entity;
         }
 
-        // Try Forge changeDimension first
+        // Snapshot data before anything is discarded
+        CompoundTag persistCopy = entity.getPersistentData().copy();
+        float health = entity.getHealth();
+        float yRot = entity.getYRot();
+        float xRot = entity.getXRot();
+        UUID id = entity.getUUID();
+
+        // Calm mobs so AI doesn't fight the move
+        if (entity instanceof Mob mob) {
+            mob.setTarget(null);
+            mob.getNavigation().stop();
+        }
+
+        entity.getPersistentData().putBoolean("abyss_domain_transferring", true);
+
+        // 1) Try changeDimension
         Entity moved = entity.changeDimension(dest, new ITeleporter() {
             @Override
             public Entity placeEntity(Entity e, ServerLevel current, ServerLevel destination,
@@ -75,23 +102,55 @@ public class DomainTeleport {
             }
         });
 
-        if (moved != null) return;
+        LivingEntity result = null;
 
-        // Fallback: clone into dest, discard original (keeps same UUID for owner tracking)
-        if (!entity.isAlive()) return;
+        if (moved instanceof LivingEntity livingMoved) {
+            result = livingMoved;
+        } else if (entity.isAlive()) {
+            // 2) Controlled clone path for JC mobs
+            Entity copy = entity.getType().create(dest);
+            if (copy instanceof LivingEntity livingCopy) {
+                // Discard original first so UUID can be reused
+                entity.discard();
 
-        Entity copy = entity.getType().create(dest);
-        if (copy == null) return;
+                copy.restoreFrom(entity);
+                copy.setUUID(id);
+                copy.moveTo(x, y, z, yRot, xRot);
 
-        UUID id = entity.getUUID();
-        entity.discard();
+                // Restore persistent data explicitly
+                livingCopy.getPersistentData().merge(persistCopy);
+                livingCopy.setHealth(health);
 
-        copy.restoreFrom(entity);
-        copy.setUUID(id);
-        copy.moveTo(x, y, z, entity.getYRot(), entity.getXRot());
-        if (copy instanceof LivingEntity livingCopy) {
-            livingCopy.setHealth(entity.getHealth());
+                dest.addFreshEntity(copy);
+                result = livingCopy;
+            }
         }
-        dest.addFreshEntity(copy);
+
+        if (result != null) {
+            // Re-apply critical domain state on whatever instance landed
+            result.getPersistentData().merge(persistCopy);
+            result.getPersistentData().putBoolean("abyss_domain_transferring", true);
+            result.getPersistentData().putBoolean("abyss_domain_handled", true);
+            reapplyDomainEffect(result);
+            result.getPersistentData().putBoolean("abyss_domain_transferring", false);
+
+            if (result instanceof Mob mob) {
+                mob.setTarget(null);
+                mob.getNavigation().stop();
+            }
+        } else if (entity.isAlive()) {
+            entity.getPersistentData().putBoolean("abyss_domain_transferring", false);
+        }
+
+        return result;
+    }
+
+    private static void reapplyDomainEffect(LivingEntity entity) {
+        MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(DOMAIN_EFFECT_ID);
+        if (effect == null) return;
+
+        MobEffectInstance cur = entity.getEffect(effect);
+        int duration = cur != null ? Math.max(cur.getDuration(), 20 * 60) : 20 * 60 * 5;
+        entity.addEffect(new MobEffectInstance(effect, duration, 1, false, false, true));
     }
 }
