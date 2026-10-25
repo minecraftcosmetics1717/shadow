@@ -9,13 +9,16 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -43,11 +46,6 @@ public class DomainLifecycle {
         double oz = data.getDouble("z_pos_doma");
 
         boolean hasCenter = (ox != 0 || oy != 0 || oz != 0);
-        boolean hasSkill = skillDomain != 0;
-        if (!hasCenter && !hasSkill) {
-            owner.getPersistentData().putBoolean("abyss_domain_pending", true);
-            return;
-        }
         if (!hasCenter) {
             owner.getPersistentData().putBoolean("abyss_domain_pending", true);
             return;
@@ -57,7 +55,7 @@ public class DomainLifecycle {
         owner.getPersistentData().putBoolean("abyss_domain_pending", false);
 
         Vec3 overCenter = new Vec3(ox, oy, oz);
-        double catchRadius = DomainDimension.OUTER_RADIUS;
+        double catchRadius = 22.0;
 
         DomainInstance near = findNearbyDomain(overCenter, catchRadius * 2.0);
         if (near != null) {
@@ -322,6 +320,34 @@ public class DomainLifecycle {
         }
     }
 
+    private static void evacuateArena(ServerLevel domainLevel, ServerLevel returnLevel,
+                                      DomainInstance inst) {
+        if (domainLevel == null || returnLevel == null) return;
+
+        int r = DomainDimension.OUTER_RADIUS + 4;
+        BlockPos c = inst.arenaCenter;
+        AABB box = new AABB(
+                c.getX() - r, c.getY() - r, c.getZ() - r,
+                c.getX() + r, c.getY() + r, c.getZ() + r
+        );
+
+        List<LivingEntity> toSend = new ArrayList<>(
+                domainLevel.getEntitiesOfClass(LivingEntity.class, box, e -> true)
+        );
+
+        for (LivingEntity living : toSend) {
+            // Don't yank corpses mid death-anim — lets drops spawn first
+            if (living.isDeadOrDying()) continue;
+
+            Vec3 back = inst.returnPositions.get(living.getUUID());
+            if (back == null) back = inst.overworldCenter;
+
+            living.getPersistentData().putBoolean("abyss_domain_transferring", true);
+            DomainTeleport.sendBack(living, returnLevel, back);
+            living.getPersistentData().putBoolean("abyss_domain_transferring", false);
+        }
+    }
+
     private static void triggerJcDomainBreak(ServerLevel overworld, Vec3 center) {
         if (overworld == null || center == null) return;
 
@@ -358,12 +384,9 @@ public class DomainLifecycle {
                     BlockPos pos = new BlockPos(cx + x, cy + y, cz + z);
                     var state = level.getBlockState(pos);
                     ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
-                    if (id == null || !"jujutsucraft".equals(id.getNamespace())) continue;
-
-                    String path = id.getPath();
-                    if (!(path.equals("jujutsu_barrier")
-                            || path.startsWith("domain")
-                            || path.contains("barrier"))) {
+                    if (id == null) continue;
+                    if (!"jujutsucraft".equals(id.getNamespace())
+                            && !"jujutsucraftv".equals(id.getNamespace())) {
                         continue;
                     }
 
@@ -387,6 +410,71 @@ public class DomainLifecycle {
                 }
             }
         }
+    }
+
+    /** Move any item entities still in the arena to the overworld cast position */
+    private static void sweepArenaItems(ServerLevel domainLevel, ServerLevel returnLevel,
+                                        DomainInstance inst) {
+        if (domainLevel == null || returnLevel == null) return;
+
+        int r = DomainDimension.OUTER_RADIUS + 4;
+        BlockPos c = inst.arenaCenter;
+        AABB box = new AABB(
+                c.getX() - r, c.getY() - r, c.getZ() - r,
+                c.getX() + r, c.getY() + r, c.getZ() + r
+        );
+
+        Vec3 dropAt = inst.overworldCenter;
+        List<ItemEntity> items = new ArrayList<>(
+                domainLevel.getEntitiesOfClass(ItemEntity.class, box, e -> true)
+        );
+
+        for (ItemEntity item : items) {
+            ItemStack stack = item.getItem().copy();
+            if (stack.isEmpty()) {
+                item.discard();
+                continue;
+            }
+            ItemEntity over = new ItemEntity(
+                    returnLevel, dropAt.x, dropAt.y + 0.5, dropAt.z, stack);
+            over.setDefaultPickUpDelay();
+            returnLevel.addFreshEntity(over);
+            item.discard();
+        }
+    }
+
+    /** Used when owner entity is already gone after death delay */
+    public static void endByOwnerId(UUID ownerId) {
+        DomainInstance inst = DomainInstanceManager.getByOwner(ownerId);
+        if (inst == null) return;
+
+        MinecraftServer server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+
+        ServerLevel domainLevel = server.getLevel(DomainDimension.ID);
+        ServerLevel returnLevel = server.getLevel(inst.returnDim);
+        if (returnLevel == null) returnLevel = server.overworld();
+
+        final ServerLevel over = returnLevel;
+        final Vec3 overCenter = inst.overworldCenter;
+
+        over.getChunkAt(BlockPos.containing(overCenter));
+
+        if (domainLevel != null) {
+            evacuateArena(domainLevel, over, inst);
+            sweepArenaItems(domainLevel, over, inst);
+            cleanupDomainMobs(domainLevel, inst);
+            DomainInstanceManager.clearArena(domainLevel, inst);
+            unloadArena(domainLevel, inst);
+        }
+
+        triggerJcDomainBreak(over, overCenter);
+        server.tell(new TickTask(server.getTickCount() + 20,
+                () -> triggerJcDomainBreak(over, overCenter)));
+        server.tell(new TickTask(server.getTickCount() + 40,
+                () -> triggerJcDomainBreak(over, overCenter)));
+
+        DomainInstanceManager.release(ownerId);
     }
 
     public static void end(LivingEntity owner) {
@@ -414,15 +502,9 @@ public class DomainLifecycle {
         returnLevel.getChunkAt(BlockPos.containing(inst.overworldCenter));
 
         if (domainLevel != null) {
+            evacuateArena(domainLevel, returnLevel, inst);
+            sweepArenaItems(domainLevel, returnLevel, inst);
             cleanupDomainMobs(domainLevel, inst);
-
-            for (var entry : inst.returnPositions.entrySet()) {
-                Entity e = domainLevel.getEntity(entry.getKey());
-                if (e == null) e = returnLevel.getEntity(entry.getKey());
-                if (e instanceof LivingEntity living) {
-                    DomainTeleport.sendBack(living, returnLevel, entry.getValue());
-                }
-            }
             DomainInstanceManager.clearArena(domainLevel, inst);
             unloadArena(domainLevel, inst);
         }
