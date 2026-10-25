@@ -11,8 +11,8 @@ import java.util.UUID;
 
 public class DomainInstance {
     public final int slot;
-    public final UUID ownerId;
-    public final double skillDomain;
+    public UUID ownerId;
+    public double skillDomain;
     public final BlockPos arenaCenter;          // in domain dim
     public final ResourceKey<Level> returnDim;  // usually overworld
     public final Vec3 overworldCenter;          // JC sphere center

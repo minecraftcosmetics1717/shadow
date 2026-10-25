@@ -45,7 +45,12 @@ public class DomainInstanceManager {
     public static DomainInstance getBySlot(int slot) {
         return BY_SLOT.get(slot);
     }
-
+    public static void reassignOwner(UUID oldOwner, UUID newOwner) {
+        DomainInstance inst = BY_OWNER.remove(oldOwner);
+        if (inst == null) return;
+        inst.ownerId = newOwner;
+        BY_OWNER.put(newOwner, inst);
+    }
     public static void release(UUID ownerId) {
         DomainInstance inst = BY_OWNER.remove(ownerId);
         if (inst != null) {

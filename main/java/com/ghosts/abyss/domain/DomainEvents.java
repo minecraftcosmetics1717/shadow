@@ -24,10 +24,9 @@ public class DomainEvents {
 
     private static final ResourceLocation DOMAIN_EFFECT_ID =
             new ResourceLocation("jujutsucraft", "domain_expansion");
-
     /** Wait after owner death so death anim + drops can finish (~4s at 80) */
     private static final int DEATH_END_DELAY = 80;
-
+    private static final int DOMAIN_DURATION_TICKS = 20 * 160;
     private static boolean isDomainEffect(MobEffect effect) {
         ResourceLocation id = ForgeRegistries.MOB_EFFECTS.getKey(effect);
         return DOMAIN_EFFECT_ID.equals(id);
@@ -142,12 +141,14 @@ public class DomainEvents {
                     if (cur == null) {
                         entity.getPersistentData().putBoolean("abyss_domain_handled", true);
                         entity.addEffect(new MobEffectInstance(
-                                domainEffect, 20 * 60 * 5, 1, false, false, true));
-                    } else if (cur.getAmplifier() < 1) {
+                                domainEffect, DOMAIN_DURATION_TICKS, 1, false, false, true));
+                    } else if (cur.getAmplifier() < 1 || cur.getDuration() < DOMAIN_DURATION_TICKS) {
                         entity.getPersistentData().putBoolean("abyss_domain_handled", true);
                         entity.addEffect(new MobEffectInstance(
-                                domainEffect, cur.getDuration(), 1, false, false, true));
+                                domainEffect, DOMAIN_DURATION_TICKS,
+                                Math.max(cur.getAmplifier(), 1), false, false, true));
                     }
+
                 }
             } else {
                 entity.getPersistentData().putDouble("x_pos_doma", inst.overworldCenter.x);

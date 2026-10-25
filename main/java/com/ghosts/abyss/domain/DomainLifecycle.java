@@ -6,6 +6,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -31,13 +33,23 @@ public class DomainLifecycle {
     private static final int TICKET_RADIUS = 5;
     private static final int OWNER_VERIFY_DELAY = 5;
     private static final int MAX_ENTER_RETRIES = 3;
-
+    private static final int DOMAIN_DURATION_TICKS = 20 * 160;
+    private static final ResourceLocation DOMAIN_EFFECT_ID =
+            new ResourceLocation("jujutsucraft", "domain_expansion");
     public static void tryStart(LivingEntity owner) {
         if (owner.level().isClientSide) return;
+
+        // Already inside domain dimension → clash, don't build a new arena
+        if (owner.level().dimension().equals(DomainDimension.ID)) {
+            tryStartClashInDimension(owner);
+            return;
+        }
+
         if (!(owner.level() instanceof ServerLevel overworld)) return;
 
         if (owner.getPersistentData().getBoolean("abyss_domain_handled")) return;
         if (DomainInstanceManager.getByOwner(owner.getUUID()) != null) return;
+
 
         var data = owner.getPersistentData();
         double skillDomain = data.getDouble("skill_domain");
@@ -59,13 +71,23 @@ public class DomainLifecycle {
 
         DomainInstance near = findNearbyDomain(overCenter, catchRadius * 2.0);
         if (near != null) {
-            joinExisting(owner, overworld, near, catchRadius);
+            joinAsClashParticipant(owner, overworld, near);
             return;
         }
+
 
         DomainInstance inst = DomainInstanceManager.claim(
                 owner.getUUID(), skillDomain, overworld.dimension(), overCenter);
         if (inst == null) return;
+
+// Someone else claimed a nearby domain in the same tick
+        DomainInstance raced = findNearbyDomainExcluding(
+                overCenter, catchRadius * 2.0, inst.slot);
+        if (raced != null) {
+            DomainInstanceManager.release(owner.getUUID());
+            joinAsClashParticipant(owner, overworld, raced);
+            return;
+        }
 
         MinecraftServer server = overworld.getServer();
         ServerLevel domainLevel = server.getLevel(DomainDimension.ID);
@@ -218,6 +240,90 @@ public class DomainLifecycle {
             }
         }
         return null;
+    }
+
+    private static DomainInstance findNearbyDomainExcluding(
+            Vec3 center, double maxDist, int excludeSlot) {
+        for (int i = 0; i < DomainDimension.MAX_SLOTS; i++) {
+            if (i == excludeSlot) continue;
+
+            DomainInstance inst = DomainInstanceManager.getBySlot(i);
+            if (inst == null) continue;
+
+            if (inst.overworldCenter.distanceTo(center) < maxDist) {
+                return inst;
+            }
+        }
+        return null;
+    }
+
+    /** Pull into an existing arena and treat this expander as a domain clasher. */
+    private static void joinAsClashParticipant(
+            LivingEntity challenger, ServerLevel overworld, DomainInstance inst) {
+        MinecraftServer server = overworld.getServer();
+        if (server == null) return;
+
+        ServerLevel domainLevel = server.getLevel(DomainDimension.ID);
+        if (domainLevel == null) return;
+
+        forceLoadArena(domainLevel, inst);
+
+        var data = challenger.getPersistentData();
+        double skillDomain = data.getDouble("skill_domain");
+        if (skillDomain == 0) {
+            skillDomain = data.getDouble("select");
+            if (skillDomain != 0) {
+                data.putDouble("skill_domain", skillDomain);
+            }
+        }
+
+        // Same arena center as defender — JC clash / sure-hit use this
+        double cx = inst.arenaCenter.getX() + 0.5;
+        double cy = inst.arenaCenter.getY();
+        double cz = inst.arenaCenter.getZ() + 0.5;
+        data.putDouble("x_pos_doma", cx);
+        data.putDouble("y_pos_doma", cy);
+        data.putDouble("z_pos_doma", cz);
+
+        inst.returnPositions.putIfAbsent(
+                challenger.getUUID(), challenger.position());
+
+        data.putBoolean("abyss_domain_handled", true);
+        data.putBoolean("abyss_domain_pending", false);
+        data.putBoolean("abyss_domain_clashing", true);
+
+        if (challenger instanceof Mob mob) {
+            mob.setTarget(null);
+            mob.getNavigation().stop();
+        }
+
+        // Keep / refresh domain effect so they stay in the clash
+        MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(
+                new ResourceLocation("jujutsucraft", "domain_expansion"));
+        if (domainEffect != null) {
+            MobEffectInstance cur = challenger.getEffect(domainEffect);
+            int amp = cur != null ? Math.max(cur.getAmplifier(), 1) : 1;
+            challenger.addEffect(new MobEffectInstance(
+                    domainEffect, DOMAIN_DURATION_TICKS,
+                    amp, false, false, true));
+        }
+
+        double floorY = inst.arenaCenter.getY() + 1.1;
+        data.putBoolean("abyss_domain_transferring", true);
+        DomainTeleport.teleport(challenger, domainLevel, cx, floorY, cz);
+        data.putBoolean("abyss_domain_transferring", false);
+
+        // Extend defender duration too
+        LivingEntity owner = findLivingIn(domainLevel, inst.ownerId);
+        if (owner != null && domainEffect != null) {
+            MobEffectInstance oCur = owner.getEffect(domainEffect);
+            if (oCur != null && oCur.getDuration() < DOMAIN_DURATION_TICKS) {
+                owner.addEffect(new MobEffectInstance(
+                        domainEffect, DOMAIN_DURATION_TICKS,
+                        Math.max(oCur.getAmplifier(), 1),
+                        false, false, true));
+            }
+        }
     }
 
     private static void joinExisting(LivingEntity owner, ServerLevel overworld,
@@ -443,6 +549,152 @@ public class DomainLifecycle {
         }
     }
 
+    private static void tryStartClashInDimension(LivingEntity challenger) {
+        if (!(challenger.level() instanceof ServerLevel domainLevel)) return;
+
+        DomainInstance inst = findInstanceContaining(challenger.position());
+        if (inst == null) {
+            // Not inside a known arena — ignore / fail soft
+            challenger.getPersistentData().putBoolean("abyss_domain_handled", false);
+            challenger.getPersistentData().putBoolean("abyss_domain_pending", false);
+            return;
+        }
+
+        // Already the owner of this instance
+        if (inst.ownerId.equals(challenger.getUUID())) {
+            challenger.getPersistentData().putBoolean("abyss_domain_handled", true);
+            return;
+        }
+
+        var data = challenger.getPersistentData();
+        double skillDomain = data.getDouble("skill_domain");
+        if (skillDomain == 0) {
+            skillDomain = data.getDouble("select");
+            if (skillDomain != 0) {
+                data.putDouble("skill_domain", skillDomain);
+            }
+        }
+
+        // Point JC at this arena center so clash/sure-hit logic uses the right sphere
+        double cx = inst.arenaCenter.getX() + 0.5;
+        double cy = inst.arenaCenter.getY();
+        double cz = inst.arenaCenter.getZ() + 0.5;
+        data.putDouble("x_pos_doma", cx);
+        data.putDouble("y_pos_doma", cy);
+        data.putDouble("z_pos_doma", cz);
+
+        // Stay in same arena; record for evacuate/return
+        inst.returnPositions.putIfAbsent(
+                challenger.getUUID(),
+                inst.returnPositions.getOrDefault(challenger.getUUID(), challenger.position())
+        );
+
+        challenger.getPersistentData().putBoolean("abyss_domain_handled", true);
+        challenger.getPersistentData().putBoolean("abyss_domain_pending", false);
+        challenger.getPersistentData().putBoolean("abyss_domain_transferring", false);
+        challenger.getPersistentData().putBoolean("abyss_domain_clashing", true);
+
+        // Ensure domain effect lasts 2:40
+        MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(
+                new ResourceLocation("jujutsucraft", "domain_expansion"));
+        if (domainEffect != null) {
+            MobEffectInstance cur = challenger.getEffect(domainEffect);
+            int amp = cur != null ? Math.max(cur.getAmplifier(), 1) : 1;
+            challenger.addEffect(new MobEffectInstance(
+                    domainEffect, DOMAIN_DURATION_TICKS, amp, false, false, true));
+        }
+
+        // Also extend the defending owner's effect
+        LivingEntity owner = findLivingIn(domainLevel, inst.ownerId);
+        if (owner != null && domainEffect != null) {
+            MobEffectInstance oCur = owner.getEffect(domainEffect);
+            if (oCur != null && oCur.getDuration() < DOMAIN_DURATION_TICKS) {
+                owner.addEffect(new MobEffectInstance(
+                        domainEffect, DOMAIN_DURATION_TICKS,
+                        Math.max(oCur.getAmplifier(), 1),
+                        false, false, true));
+            }
+        }
+    }
+
+    private static DomainInstance findInstanceContaining(Vec3 pos) {
+        for (int i = 0; i < DomainDimension.MAX_SLOTS; i++) {
+            DomainInstance inst = DomainInstanceManager.getBySlot(i);
+            if (inst == null) continue;
+
+            double dx = pos.x - (inst.arenaCenter.getX() + 0.5);
+            double dy = pos.y - inst.arenaCenter.getY();
+            double dz = pos.z - (inst.arenaCenter.getZ() + 0.5);
+            double r = DomainDimension.OUTER_RADIUS + 2;
+
+            if (dx * dx + dy * dy + dz * dz <= r * r) {
+                return inst;
+            }
+        }
+        return null;
+    }
+
+    private static LivingEntity findActiveDomainInArena(ServerLevel domainLevel,
+                                                        DomainInstance inst,
+                                                        UUID excluding) {
+        if (domainLevel == null) return null;
+
+        MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(DOMAIN_EFFECT_ID);
+        if (domainEffect == null) return null;
+
+        int r = DomainDimension.OUTER_RADIUS + 4;
+        BlockPos c = inst.arenaCenter;
+        AABB box = new AABB(
+                c.getX() - r, c.getY() - r, c.getZ() - r,
+                c.getX() + r, c.getY() + r, c.getZ() + r
+        );
+
+        LivingEntity best = null;
+        for (LivingEntity e : domainLevel.getEntitiesOfClass(LivingEntity.class, box, ent -> true)) {
+            if (e.getUUID().equals(excluding)) continue;
+            if (e.isDeadOrDying()) continue;
+            if (!e.hasEffect(domainEffect)) continue;
+
+            if (e.getPersistentData().getBoolean("abyss_domain_clashing")) {
+                return e;
+            }
+            if (best == null) {
+                best = e;
+            }
+        }
+        return best;
+    }
+
+    private static void transferOwnership(DomainInstance inst, LivingEntity loser,
+                                          LivingEntity winner, ServerLevel domainLevel) {
+        UUID oldOwner = inst.ownerId;
+        UUID newOwner = winner.getUUID();
+
+        DomainInstanceManager.reassignOwner(oldOwner, newOwner);
+
+        double skill = winner.getPersistentData().getDouble("skill_domain");
+        if (skill == 0) {
+            skill = winner.getPersistentData().getDouble("select");
+        }
+        if (skill != 0) {
+            inst.skillDomain = skill;
+        }
+
+        winner.getPersistentData().putBoolean("abyss_domain_clashing", false);
+        winner.getPersistentData().putBoolean("abyss_domain_handled", true);
+        winner.getPersistentData().putDouble("x_pos_doma", inst.arenaCenter.getX() + 0.5);
+        winner.getPersistentData().putDouble("y_pos_doma", inst.arenaCenter.getY());
+        winner.getPersistentData().putDouble("z_pos_doma", inst.arenaCenter.getZ() + 0.5);
+
+        loser.getPersistentData().putBoolean("abyss_domain_handled", false);
+        loser.getPersistentData().putBoolean("abyss_domain_pending", false);
+        loser.getPersistentData().putBoolean("abyss_domain_clashing", false);
+
+        if (domainLevel != null) {
+            DomainArenaBuilder.placeFloor(domainLevel, inst.arenaCenter, inst.skillDomain);
+        }
+    }
+
     /** Used when owner entity is already gone after death delay */
     public static void endByOwnerId(UUID ownerId) {
         DomainInstance inst = DomainInstanceManager.getByOwner(ownerId);
@@ -477,49 +729,62 @@ public class DomainLifecycle {
         DomainInstanceManager.release(ownerId);
     }
 
-    public static void end(LivingEntity owner) {
-        if (owner.level().isClientSide) return;
-        if (owner.getPersistentData().getBoolean("abyss_domain_transferring")) return;
+    public static void end(LivingEntity entity) {
+        if (entity.level().isClientSide) return;
+        if (entity.getPersistentData().getBoolean("abyss_domain_transferring")) return;
 
-        DomainInstance inst = DomainInstanceManager.getByOwner(owner.getUUID());
-        if (inst == null) {
-            owner.getPersistentData().putBoolean("abyss_domain_handled", false);
-            owner.getPersistentData().putBoolean("abyss_domain_pending", false);
+        // Challenger lost — do not tear down the arena
+        DomainInstance asOwner = DomainInstanceManager.getByOwner(entity.getUUID());
+        if (asOwner == null) {
+            entity.getPersistentData().putBoolean("abyss_domain_handled", false);
+            entity.getPersistentData().putBoolean("abyss_domain_pending", false);
+            entity.getPersistentData().putBoolean("abyss_domain_clashing", false);
             return;
         }
 
-        MinecraftServer server = owner.level().getServer();
+        MinecraftServer server = entity.level().getServer();
         if (server == null) return;
 
         ServerLevel domainLevel = server.getLevel(DomainDimension.ID);
-        ServerLevel returnLevel = server.getLevel(inst.returnDim);
+        ServerLevel returnLevel = server.getLevel(asOwner.returnDim);
         if (returnLevel == null) returnLevel = server.overworld();
 
-        owner.getPersistentData().putDouble("x_pos_doma", inst.overworldCenter.x);
-        owner.getPersistentData().putDouble("y_pos_doma", inst.overworldCenter.y);
-        owner.getPersistentData().putDouble("z_pos_doma", inst.overworldCenter.z);
-
-        returnLevel.getChunkAt(BlockPos.containing(inst.overworldCenter));
-
-        if (domainLevel != null) {
-            evacuateArena(domainLevel, returnLevel, inst);
-            sweepArenaItems(domainLevel, returnLevel, inst);
-            cleanupDomainMobs(domainLevel, inst);
-            DomainInstanceManager.clearArena(domainLevel, inst);
-            unloadArena(domainLevel, inst);
+        // Owner lost clash — try to hand arena to another active domain
+        LivingEntity winner = findActiveDomainInArena(domainLevel, asOwner, entity.getUUID());
+        if (winner != null) {
+            transferOwnership(asOwner, entity, winner, domainLevel);
+            return;
         }
 
-        triggerJcDomainBreak(returnLevel, inst.overworldCenter);
+        // Nobody else holding a domain — fully end the arena
+        entity.getPersistentData().putDouble("x_pos_doma", asOwner.overworldCenter.x);
+        entity.getPersistentData().putDouble("y_pos_doma", asOwner.overworldCenter.y);
+        entity.getPersistentData().putDouble("z_pos_doma", asOwner.overworldCenter.z);
 
-        final Vec3 overCenter = inst.overworldCenter;
+        returnLevel.getChunkAt(BlockPos.containing(asOwner.overworldCenter));
+
+        if (domainLevel != null) {
+            evacuateArena(domainLevel, returnLevel, asOwner);
+            sweepArenaItems(domainLevel, returnLevel, asOwner);
+            cleanupDomainMobs(domainLevel, asOwner);
+            DomainInstanceManager.clearArena(domainLevel, asOwner);
+            unloadArena(domainLevel, asOwner);
+        }
+
+        triggerJcDomainBreak(returnLevel, asOwner.overworldCenter);
+
+        final Vec3 overCenter = asOwner.overworldCenter;
         final ServerLevel over = returnLevel;
-        server.tell(new TickTask(server.getTickCount() + 20, () -> triggerJcDomainBreak(over, overCenter)));
-        server.tell(new TickTask(server.getTickCount() + 40, () -> triggerJcDomainBreak(over, overCenter)));
+        server.tell(new TickTask(server.getTickCount() + 20,
+                () -> triggerJcDomainBreak(over, overCenter)));
+        server.tell(new TickTask(server.getTickCount() + 40,
+                () -> triggerJcDomainBreak(over, overCenter)));
 
-        DomainInstanceManager.release(owner.getUUID());
+        DomainInstanceManager.release(entity.getUUID());
 
-        owner.getPersistentData().putBoolean("abyss_domain_handled", false);
-        owner.getPersistentData().putBoolean("abyss_domain_pending", false);
-        owner.getPersistentData().putBoolean("abyss_domain_transferring", false);
+        entity.getPersistentData().putBoolean("abyss_domain_handled", false);
+        entity.getPersistentData().putBoolean("abyss_domain_pending", false);
+        entity.getPersistentData().putBoolean("abyss_domain_transferring", false);
+        entity.getPersistentData().putBoolean("abyss_domain_clashing", false);
     }
 }
