@@ -129,7 +129,9 @@ public class DomainEvents {
             double ox = data.getDouble("x_pos_doma");
             double oy = data.getDouble("y_pos_doma");
             double oz = data.getDouble("z_pos_doma");
-            if (ox != 0 || oy != 0 || oz != 0) {
+
+            boolean inDim = entity.level().dimension().equals(DomainDimension.ID);
+            if (inDim || ox != 0 || oy != 0 || oz != 0) {
                 entity.getPersistentData().putBoolean("abyss_domain_pending", false);
                 DomainLifecycle.tryStart(entity);
             }

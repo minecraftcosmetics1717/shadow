@@ -91,7 +91,53 @@ public class DomainLifecycle {
 
         scheduleFinishEnter(server, owner.getUUID(), inst.slot, overCenter, catchRadius, 0);
     }
+    public static void startAbyssDomain(LivingEntity owner, double skillDomain,
+                                        Vec3 overCenter, double catchRadius) {
+        if (owner.level().isClientSide) return;
+        if (!(owner.level() instanceof ServerLevel overworld)) return;
+        if (DomainInstanceManager.getByOwner(owner.getUUID()) != null) return;
 
+        owner.getPersistentData().putBoolean("abyss_domain_handled", true);
+        owner.getPersistentData().putBoolean("abyss_domain_pending", false);
+
+        DomainInstance near = findNearbyDomain(overCenter, catchRadius * 2.0);
+        if (near != null) {
+            DomainClash.joinAsClashParticipant(owner, overworld, near);
+            return;
+        }
+
+        DomainInstance inst = DomainInstanceManager.claim(
+                owner.getUUID(), skillDomain, overworld.dimension(), overCenter);
+        if (inst == null) return;
+
+        DomainInstance raced = findNearbyDomainExcluding(overCenter, catchRadius * 2.0, inst.slot);
+        if (raced != null) {
+            DomainInstanceManager.release(owner.getUUID());
+            DomainClash.joinAsClashParticipant(owner, overworld, raced);
+            return;
+        }
+
+        var server = overworld.getServer();
+        ServerLevel domainLevel = server.getLevel(DomainDimension.ID);
+        if (domainLevel == null) {
+            DomainInstanceManager.release(owner.getUUID());
+            return;
+        }
+
+        DomainArenaService.forceLoadArena(domainLevel, inst);
+        DomainArenaBuilder.build(domainLevel, inst.arenaCenter, skillDomain);
+
+        inst.returnPositions.put(owner.getUUID(), owner.position());
+
+        double floorY = inst.arenaCenter.getY() + 1.1;
+        double cx = inst.arenaCenter.getX() + 0.5;
+        double cz = inst.arenaCenter.getZ() + 0.5;
+
+        owner.getPersistentData().putBoolean("abyss_domain_transferring", true);
+        DomainTeleport.teleport(owner, domainLevel, cx, floorY, cz);
+
+        scheduleFinishEnter(server, owner.getUUID(), inst.slot, overCenter, catchRadius, 0);
+    }
     private static void scheduleFinishEnter(MinecraftServer server, UUID ownerId, int slot,
                                             Vec3 overCenter, double catchRadius, int attempt) {
         int when = server.getTickCount() + OWNER_VERIFY_DELAY;
@@ -256,7 +302,7 @@ public class DomainLifecycle {
 
         final ServerLevel over = returnLevel;
         final Vec3 overCenter = inst.overworldCenter;
-
+        DomainOverworldShell.clear(returnLevel, inst.overworldCenter, AbyssDomainCast.OVERWORLD_RADIUS);
         over.getChunkAt(BlockPos.containing(overCenter));
 
         if (domainLevel != null) {

@@ -69,7 +69,10 @@
     "JcBlockDestroyDomainDimMixin",
     "JcCreateBarrierDomainDimMixin",
     "DomainDimSetBlockMixin",
-    "JcDomainCeDrainMixin"
+    "JcDomainCeDrainMixin",
+    "CursedTechniqueDagonMixin",
+    "DagonDomainDisplayMixin",
+    "DagonDomainExecuteMixin"
   ],
   "client": [],
   "injectors": {

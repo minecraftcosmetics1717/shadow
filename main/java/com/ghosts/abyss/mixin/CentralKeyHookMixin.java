@@ -61,6 +61,12 @@ public class CentralKeyHookMixin {
                }
                break;
 
+            case 8: // Dagon
+               if (selected == 20.0) { // Domain / Horizon
+                  entity.getPersistentData().putBoolean("abyss_dagon_domain_auth", true);
+               }
+               break;
+
             case 38: // Takako Uro
                if (selected == 9.0) { // Infinite Sky
                   entity.getPersistentData().putBoolean("jreborn_infsky_auth", true);

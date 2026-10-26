@@ -25,13 +25,18 @@ public final class DomainClash {
 
         DomainInstance inst = findInstanceContaining(challenger.position());
         if (inst == null) {
-            challenger.getPersistentData().putBoolean("abyss_domain_handled", false);
-            challenger.getPersistentData().putBoolean("abyss_domain_pending", false);
+            abortFailedDomainStart(challenger);
             return;
         }
 
+        // Already the owner of this arena — don't restart domain; keep current domain
         if (inst.ownerId.equals(challenger.getUUID())) {
             challenger.getPersistentData().putBoolean("abyss_domain_handled", true);
+            challenger.getPersistentData().putBoolean("abyss_domain_pending", false);
+            // Clear soft-lock flags so abilities keep working while you own the domain
+            challenger.getPersistentData().putBoolean("Failed", false);
+            challenger.getPersistentData().putBoolean("Cover", false);
+            challenger.getPersistentData().putBoolean("DomainDefeated", false);
             return;
         }
 
@@ -42,6 +47,12 @@ public final class DomainClash {
             if (skillDomain != 0) {
                 data.putDouble("skill_domain", skillDomain);
             }
+        }
+
+        // Must have a real domain id or JC will sit in a broken expand
+        if (skillDomain == 0) {
+            abortFailedDomainStart(challenger);
+            return;
         }
 
         double cx = inst.arenaCenter.getX() + 0.5;
@@ -60,25 +71,53 @@ public final class DomainClash {
         data.putBoolean("abyss_domain_pending", false);
         data.putBoolean("abyss_domain_transferring", false);
         data.putBoolean("abyss_domain_clashing", true);
+        data.putBoolean("Failed", false);
+        data.putBoolean("Cover", false);
+        data.putBoolean("DomainDefeated", false);
 
         MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(DomainEvents.DOMAIN_EFFECT_ID);
         if (domainEffect != null) {
             MobEffectInstance cur = challenger.getEffect(domainEffect);
             int amp = cur != null ? Math.max(cur.getAmplifier(), 1) : 1;
+            int dur = cur != null ? Math.max(cur.getDuration(), 20 * 20) : DomainEvents.DOMAIN_DURATION_TICKS;
+            // Do not constantly reset to full 2:40 every call — keep remaining time
             challenger.addEffect(new MobEffectInstance(
-                    domainEffect, DomainEvents.DOMAIN_DURATION_TICKS, amp, false, false, true));
+                    domainEffect, dur, amp, false, false, true));
         }
 
         LivingEntity owner = DomainArenaService.findLivingIn(domainLevel, inst.ownerId);
         if (owner != null && domainEffect != null) {
             MobEffectInstance oCur = owner.getEffect(domainEffect);
-            if (oCur != null && oCur.getDuration() < DomainEvents.DOMAIN_DURATION_TICKS) {
+            if (oCur != null && oCur.getAmplifier() < 1) {
                 owner.addEffect(new MobEffectInstance(
-                        domainEffect, DomainEvents.DOMAIN_DURATION_TICKS,
-                        Math.max(oCur.getAmplifier(), 1),
-                        false, false, true));
+                        domainEffect, oCur.getDuration(), 1, false, false, true));
             }
+            owner.getPersistentData().putBoolean("Failed", false);
         }
+    }
+
+    /** Undo a half-started domain so JC abilities work again */
+    public static void abortFailedDomainStart(LivingEntity entity) {
+        var data = entity.getPersistentData();
+        data.putBoolean("abyss_domain_handled", false);
+        data.putBoolean("abyss_domain_pending", false);
+        data.putBoolean("abyss_domain_clashing", false);
+        data.putBoolean("abyss_domain_transferring", true);
+
+        MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(DomainEvents.DOMAIN_EFFECT_ID);
+        if (domainEffect != null) {
+            entity.removeEffect(domainEffect);
+        }
+
+        data.putBoolean("Failed", false);
+        data.putBoolean("Cover", false);
+        data.putBoolean("DomainDefeated", false);
+        // JC combat/technique gate
+        data.putDouble("skill", 0);
+        // Don't wipe skill_domain permanently if they already had a domain; only clear if we never joined
+        // data.putDouble("skill_domain", 0);
+
+        data.putBoolean("abyss_domain_transferring", false);
     }
 
     public static void joinAsClashParticipant(LivingEntity challenger, ServerLevel overworld,
