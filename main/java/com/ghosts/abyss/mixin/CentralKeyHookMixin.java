@@ -82,7 +82,10 @@ public class CentralKeyHookMixin {
             default:
                break;
          }
-
+// After you resolve `selected` (PlayerSelectCurseTechnique):
+         if (selected == 21.0) {
+            entity.getPersistentData().putBoolean("abyss_cancel_domain_auth", true);
+         }
       } catch (Exception ignored) {}
    }
 }

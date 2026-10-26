@@ -1,12 +1,16 @@
 package com.ghosts.abyss.domain;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.registries.ForgeRegistries;
+
+import static com.ghosts.abyss.domain.DomainLifecycle.clearCastState;
 
 public final class AbyssDomainCast {
 
@@ -51,24 +55,34 @@ public final class AbyssDomainCast {
 
         if (cnt3 < LONG_PRESS_MAX) {
             if (entity instanceof Player) {
-                if (pressZ) {
-                    int boxes = (int) Math.round((LONG_PRESS_MAX - cnt3) * 0.25);
-                    // cnt3=0 → 5 boxes; cnt3=20 → 0 boxes
-                    boxes = Math.max(0, Math.min(5, boxes));
+                if (!pressZ) {
+                    cancelLongPress(entity);
+                    return;
+                }
 
-                    String core = Component.translatable("jujutsu.message.long_press").getString();
-                    // If lang is wrong/empty, force the exact string you want:
-                    if (core == null || core.isEmpty() || core.startsWith("jujutsu.")) {
-                        core = "Activate on Long Press";
-                    }
+                double next = cnt3 + 1.0;
 
-                    String block = "⬛".repeat(boxes);
-                    String bar = block + core + block;
-                    ((Player) entity).displayClientMessage(Component.literal(bar), true);
+                // This tick finishes the hold → start domain, no message
+                if (next >= LONG_PRESS_MAX) {
+                    data.putDouble("cnt3", next);
+                    // commitDomain(...) here — sphere + dim
+                    // clear skill / cursed_technique as you already do after commit
+                    return;
+                }
 
-                    data.putDouble("cnt3", cnt3 + 1.0);
-                }}
-            return;
+                // Still charging → update cnt3 and show boxes for *next* step
+                data.putDouble("cnt3", next);
+
+                int boxes = (int) Math.round((LONG_PRESS_MAX - next) * 0.25);
+                boxes = Math.max(0, Math.min(5, boxes));
+
+                String core = "Activate on Long Press";
+                String block = "⬛".repeat(boxes);
+                ((Player) entity).displayClientMessage(
+                        Component.literal(block + core + block), true);
+                return;
+            }
+            // mobs: auto-charge...
         }
 
         // ----- Long press complete → Abyss domain -----
@@ -156,5 +170,85 @@ public final class AbyssDomainCast {
         } catch (Throwable ignored) {
             // capability missing in dev, etc.
         }
+    }
+    public static final String NBT_CANCEL_CHARGING = "abyss_domain_cancel_charging";
+    public static final String NBT_CANCEL_CHARGE = "abyss_domain_cancel_charge";
+    /** Same length as domain long-press */
+    public static final int CANCEL_CHARGE_TICKS = 20;
+
+    /**
+     * Called every tick while Cancel Domain (slot 21) is the active technique and skill is running.
+     * Long-press required — same ⬛ pattern as expand.
+     */
+    public static void tickCancelDomain(LivingEntity entity) {
+        if (entity.level().isClientSide) return;
+        if (!(entity.level() instanceof ServerLevel level)) return;
+
+        var data = entity.getPersistentData();
+
+        // Only owners of an Abyss session can cancel this way
+        DomainInstance inst = DomainInstanceManager.getByOwner(entity.getUUID());
+        if (inst == null) {
+            resetCancelCharge(entity);
+            // Not our domain — do not soft-lock; clear technique
+            data.putDouble("skill", 0);
+            removeCursedTechniqueEffect(entity);
+            return;
+        }
+
+        boolean pressZ = data.getBoolean("PRESS_Z");
+        int charge = data.getInt(NBT_CANCEL_CHARGE);
+
+        if (!pressZ) {
+            // Released early — abort cancel, keep domain running
+            resetCancelCharge(entity);
+            data.putDouble("skill", 0);
+            removeCursedTechniqueEffect(entity);
+            return;
+        }
+
+        if (!data.getBoolean(NBT_CANCEL_CHARGING)) {
+            data.putBoolean(NBT_CANCEL_CHARGING, true);
+            charge = 0;
+        }
+
+        int next = charge + 1;
+
+        // Same tick last box would disappear → actually cancel
+        if (next >= CANCEL_CHARGE_TICKS) {
+            resetCancelCharge(entity);
+            commitCancel(entity);
+            return;
+        }
+
+        data.putInt(NBT_CANCEL_CHARGE, next);
+
+        if (entity instanceof Player player) {
+            int boxes = (int) Math.round((CANCEL_CHARGE_TICKS - next) * 0.25);
+            boxes = Math.max(0, Math.min(5, boxes));
+            String core = "Cancel Domain"; // or translatable if you add lang
+            String block = "⬛".repeat(boxes);
+            player.displayClientMessage(Component.literal(block + core + block), true);
+        }
+    }
+
+    public static void commitCancel(LivingEntity entity) {
+        // Full Abyss teardown
+        DomainLifecycle.end(entity);
+        clearCastState(entity);
+        removeCursedTechniqueEffect(entity);
+        entity.getPersistentData().putDouble("skill", 0);
+    }
+
+    private static void resetCancelCharge(LivingEntity entity) {
+        var data = entity.getPersistentData();
+        data.putBoolean(NBT_CANCEL_CHARGING, false);
+        data.putInt(NBT_CANCEL_CHARGE, 0);
+    }
+
+    private static void removeCursedTechniqueEffect(LivingEntity entity) {
+        var ct = ForgeRegistries.MOB_EFFECTS.getValue(
+                new ResourceLocation("jujutsucraft", "cursed_technique"));
+        if (ct != null) entity.removeEffect(ct);
     }
 }

@@ -1,6 +1,7 @@
 package com.ghosts.abyss.domain;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
@@ -8,9 +9,13 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 import java.util.UUID;
+
+import static com.ghosts.abyss.domain.AbyssDomainCast.NBT_CANCEL_CHARGE;
+import static com.ghosts.abyss.domain.AbyssDomainCast.NBT_CANCEL_CHARGING;
 
 public class DomainLifecycle {
 
@@ -321,7 +326,38 @@ public class DomainLifecycle {
 
         DomainInstanceManager.release(ownerId);
     }
+    public static void clearCastState(LivingEntity entity) {
+        var data = entity.getPersistentData();
+        data.putBoolean("abyss_domain_active", false);
+        data.putBoolean("abyss_domain_committed", false);
+        data.putBoolean("abyss_domain_handled", false);
+        data.putBoolean("abyss_domain_pending", false);
+        data.putBoolean("abyss_domain_clashing", false);
+        data.putBoolean("abyss_domain_transferring", false);
+        data.putBoolean("abyss_dagon_domain_auth", false);
+        data.putDouble("cnt1", 0);
+        data.putDouble("cnt2", 0);
+        data.putDouble("cnt3", 0);
+        data.putDouble("skill", 0);
+        data.putDouble("select", 0);
+        data.putBoolean("Failed", false);
+        data.putBoolean("Cover", false);
+        data.putBoolean("DomainDefeated", false);
+        data.putBoolean(NBT_CANCEL_CHARGING, false);
+        data.putInt(NBT_CANCEL_CHARGE, 0);
 
+        var ct = ForgeRegistries.MOB_EFFECTS.getValue(
+                new ResourceLocation("jujutsucraft", "cursed_technique"));
+        if (ct != null) entity.removeEffect(ct);
+
+        var domain = ForgeRegistries.MOB_EFFECTS.getValue(
+                new ResourceLocation("jujutsucraft", "domain_expansion"));
+        if (domain != null && entity.hasEffect(domain)) {
+            data.putBoolean("abyss_domain_transferring", true);
+            entity.removeEffect(domain);
+            data.putBoolean("abyss_domain_transferring", false);
+        }
+    }
     public static void end(LivingEntity entity) {
         if (entity.level().isClientSide) return;
         if (entity.getPersistentData().getBoolean("abyss_domain_transferring")) return;

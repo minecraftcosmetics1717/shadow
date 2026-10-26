@@ -11,6 +11,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.MobEffectEvent;
@@ -292,5 +293,28 @@ public class DomainEvents {
         entity.getPersistentData().putBoolean("abyss_domain_handled", false);
         entity.getPersistentData().putBoolean("abyss_domain_pending", false);
         DomainLifecycle.end(entity);
+    }
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        if (event.player.level().isClientSide) return;
+
+        var data = event.player.getPersistentData();
+        boolean cancelMode = data.getBoolean("abyss_cancel_domain_auth")
+                || data.getBoolean("abyss_domain_cancel_charging");
+        if (!cancelMode) return;
+
+        // Still holding technique key?
+        if (!data.getBoolean("PRESS_Z")) {
+            // KeyStartTechniqueReleased should set PRESS_Z false — abort charge
+            if (data.getBoolean("abyss_domain_cancel_charging")) {
+                data.putBoolean("abyss_domain_cancel_charging", false);
+                data.putInt("abyss_domain_cancel_charge", 0);
+                data.putBoolean("abyss_cancel_domain_auth", false);
+            }
+            return;
+        }
+
+        AbyssDomainCast.tickCancelDomain(event.player);
     }
 }

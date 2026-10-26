@@ -72,7 +72,8 @@
     "JcDomainCeDrainMixin",
     "CursedTechniqueDagonMixin",
     "DagonDomainDisplayMixin",
-    "DagonDomainExecuteMixin"
+    "DagonDomainExecuteMixin",
+    "CancelDomainKeyMixin"
   ],
   "client": [],
   "injectors": {
