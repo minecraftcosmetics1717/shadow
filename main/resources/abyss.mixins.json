@@ -69,7 +69,6 @@
     "JcBlockDestroyDomainDimMixin",
     "JcCreateBarrierDomainDimMixin",
     "DomainDimSetBlockMixin",
-    "JcDomainBattleAllowMixin",
     "JcDomainCeDrainMixin"
   ],
   "client": [],

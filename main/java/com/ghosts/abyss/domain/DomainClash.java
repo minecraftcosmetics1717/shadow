@@ -1,9 +1,11 @@
 package com.ghosts.abyss.domain;
 
+import com.ghosts.abyss.RefinementPoints;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -212,13 +214,17 @@ public final class DomainClash {
         winner.getPersistentData().putBoolean("Failed", false);
         winner.getPersistentData().putBoolean("Cover", false);
         winner.getPersistentData().putBoolean("DomainDefeated", false);
-
+        if (winner instanceof ServerPlayer sp) {
+            // Available points to spend in the phone — adjust amount as you like
+            RefinementPoints.grantRefinementPoints(sp, 1);
+        }
         loser.getPersistentData().putBoolean("abyss_domain_handled", false);
         loser.getPersistentData().putBoolean("abyss_domain_pending", false);
         loser.getPersistentData().putBoolean("abyss_domain_clashing", false);
 
         if (domainLevel != null) {
             DomainArenaBuilder.placeFloor(domainLevel, inst.arenaCenter, inst.skillDomain);
+            DomainArenaBuilder.repairFloorCenter(domainLevel, inst.arenaCenter, inst.skillDomain, 12);
         }
     }
 }

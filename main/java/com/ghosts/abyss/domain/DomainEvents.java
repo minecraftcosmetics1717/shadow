@@ -157,13 +157,14 @@ public class DomainEvents {
                     if (cur == null) {
                         entity.getPersistentData().putBoolean("abyss_domain_handled", true);
                         entity.addEffect(new MobEffectInstance(
-                                domainEffect, DOMAIN_DURATION_TICKS, 1, false, false, true));
-                    } else if (cur.getAmplifier() < 1 || cur.getDuration() < DOMAIN_DURATION_TICKS) {
+                                domainEffect, DomainEvents.DOMAIN_DURATION_TICKS, 1, false, false, true));
+                    } else if (cur.getAmplifier() < 1) {
+                        // Keep remaining time; only fix amplifier
                         entity.getPersistentData().putBoolean("abyss_domain_handled", true);
                         entity.addEffect(new MobEffectInstance(
-                                domainEffect, DOMAIN_DURATION_TICKS,
-                                Math.max(cur.getAmplifier(), 1), false, false, true));
+                                domainEffect, cur.getDuration(), 1, false, false, true));
                     }
+// Do NOT refresh just because duration < DOMAIN_DURATION_TICKS
                 }
             } else {
                 entity.getPersistentData().putDouble("x_pos_doma", inst.overworldCenter.x);

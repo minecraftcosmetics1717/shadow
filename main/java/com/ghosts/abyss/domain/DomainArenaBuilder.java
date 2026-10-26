@@ -1,5 +1,6 @@
 package com.ghosts.abyss.domain;
 
+import com.ghosts.abyss.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -20,38 +21,82 @@ public class DomainArenaBuilder {
         return block("jujutsucraft", path, fallback);
     }
 
-    private static BlockState jcv(String path, BlockState fallback) {
-        return block("jujutsucraftv", path, fallback);
+    /** Abyss domain dim blocks */
+    private static BlockState abyssBarrier() {
+        return ModBlocks.DOMAIN_BARRIER.get().defaultBlockState();
     }
 
-    private static BlockState barrier() {
+    private static BlockState abyssSand() {
+        return ModBlocks.DOMAIN_SAND.get().defaultBlockState();
+    }
+
+    private static BlockState abyssGravel() {
+        return ModBlocks.DOMAIN_GRAVEL.get().defaultBlockState();
+    }
+
+    private static BlockState abyssRed() {
+        return ModBlocks.DOMAIN_RED.get().defaultBlockState();
+    }
+
+    private static BlockState abyssFlower() {
+        return ModBlocks.DOMAIN_FLOWER.get().defaultBlockState();
+    }
+
+    private static BlockState abyssBone() {
+        return ModBlocks.DOMAIN_BONE.get().defaultBlockState();
+    }
+
+    private static BlockState abyssBirch() {
+        return ModBlocks.DOMAIN_BIRCH.get().defaultBlockState();
+    }
+
+    private static BlockState abyssWhite() {
+        return ModBlocks.DOMAIN_WHITE.get().defaultBlockState();
+    }
+
+    private static BlockState abyssBlueSky() {
+        return ModBlocks.DOMAIN_BLUE_SKY.get().defaultBlockState();
+    }
+
+    private static BlockState abyssBlack() {
+        return ModBlocks.DOMAIN_BLACK.get().defaultBlockState();
+    }
+
+    private static BlockState abyssRock() {
+        return ModBlocks.DOMAIN_ROCK.get().defaultBlockState();
+    }
+
+    /** JC barrier — overworld only */
+    private static BlockState jcBarrier() {
         return jc("jujutsu_barrier", Blocks.OBSIDIAN.defaultBlockState());
     }
 
-    private static BlockState universe() {
-        return jc("block_universe", Blocks.BLACK_CONCRETE.defaultBlockState());
+    /** Fallback interior when we have no dedicated block yet (universe / blue sky) */
+    private static BlockState universeLook() {
+        // No abyss universe block yet — dark barrier look is fine in-dim
+        return abyssBarrier();
     }
 
     private static BlockState domainDefault() {
-        return jc("domain", Blocks.BLACK_CONCRETE.defaultBlockState());
+        return abyssBarrier();
     }
 
     /** Walkable floor for this skill_domain */
     public static BlockState floorState(double skillDomain) {
         int id = (int) Math.round(skillDomain);
         return switch (id) {
-            case 1 -> jc("block_red", Blocks.RED_CONCRETE.defaultBlockState());              // Sukuna
-            case 2 -> universe();                                                             // Gojo
-            case 5 -> jc("block_gravel", Blocks.GRAVEL.defaultBlockState());                 // Yuta
-            case 6 -> universe();                                                             // Megumi
-            case 8 -> jc("domain_sand", Blocks.SAND.defaultBlockState());                    // Dagon
-            case 9 -> jc("domain_sand", Blocks.SAND.defaultBlockState());                    // Yuki
-            case 14 -> jc("domain_flower", Blocks.PINK_CONCRETE.defaultBlockState());        // Hanami
-            case 15 -> jc("domain_bone", Blocks.BONE_BLOCK.defaultBlockState());             // Mahito
-            case 19 -> universe();                                                            // Naoya
-            case 27 -> jc("domain_planks", Blocks.OAK_PLANKS.defaultBlockState());           // Higuruma
-            case 29 -> jc("domain_white", Blocks.WHITE_CONCRETE.defaultBlockState());        // Hakari
-            case 613 -> jcv("domain_rock_1", Blocks.STONE.defaultBlockState());              // Whack-a-Mole
+            case 1 -> abyssRed();           // Sukuna
+            case 2 -> abyssBlack();        // Gojo
+            case 5 -> abyssGravel();        // Yuta
+            case 6 -> abyssBlack();        // Megumi
+            case 8 -> abyssSand();          // Dagon
+            case 9 -> abyssSand();          // Yuki
+            case 14 -> abyssFlower();       // Hanami
+            case 15 -> abyssBone();         // Mahito
+            case 19 -> abyssBlack();       // Naoya
+            case 27 -> abyssBirch();        // Higuruma (base; rim handled in placeFloor)
+            case 29 -> abyssWhite();        // Hakari
+            case 613 -> abyssRock();        // Whack-a-Mole
             default -> domainDefault();
         };
     }
@@ -60,18 +105,18 @@ public class DomainArenaBuilder {
     public static BlockState interiorState(double skillDomain) {
         int id = (int) Math.round(skillDomain);
         return switch (id) {
-            case 1 -> universe();                                                             // Sukuna
-            case 2 -> universe();                                                             // Gojo
-            case 5 -> universe();                                                             // Yuta
-            case 6 -> universe();                                                             // Megumi
-            case 8 -> jc("domain_blue_sky", Blocks.LIGHT_BLUE_CONCRETE.defaultBlockState());  // Dagon
-            case 9 -> universe();                                                             // Yuki
-            case 14 -> jc("domain_blue_sky", Blocks.LIGHT_BLUE_CONCRETE.defaultBlockState()); // Hanami
-            case 15 -> jc("domain_bone", Blocks.BONE_BLOCK.defaultBlockState());             // Mahito
-            case 19 -> universe();                                                            // Naoya
-            case 27 -> universe();                                                            // Higuruma
-            case 29 -> jc("domain_white", Blocks.WHITE_CONCRETE.defaultBlockState());        // Hakari
-            case 613 -> jcv("domain_rock_1", Blocks.STONE.defaultBlockState());              // Whack-a-Mole
+            case 1 -> abyssBlack();        // Sukuna
+            case 2 -> abyssBlack();        // Gojo
+            case 5 -> abyssBlack();        // Yuta
+            case 6 -> abyssBlack();        // Megumi
+            case 8 -> abyssBlueSky();          // Dagon (no blue_sky block yet)
+            case 9 -> abyssBlack();        // Yuki
+            case 14 -> abyssBlueSky();       // Hanami (or sand/sky later)
+            case 15 -> abyssBone();         // Mahito
+            case 19 -> abyssBlack();       // Naoya
+            case 27 -> abyssBlack();       // Higuruma
+            case 29 -> abyssWhite();        // Hakari
+            case 613 -> abyssRock();        // Whack-a-Mole
             default -> domainDefault();
         };
     }
@@ -79,7 +124,7 @@ public class DomainArenaBuilder {
     public static void build(ServerLevel level, BlockPos center, double skillDomain) {
         DomainDimBlockGuard.open();
         try {
-            BlockState outer = barrier();
+            BlockState outer = abyssBarrier();
             BlockState interior = interiorState(skillDomain);
 
             int cx = center.getX();
@@ -117,10 +162,10 @@ public class DomainArenaBuilder {
     }
 
     private static void placeFloorInternal(ServerLevel level, BlockPos center, double skillDomain) {
-        BlockState under = barrier();
+        BlockState under = abyssBarrier();
         BlockState floor = floorState(skillDomain);
-        BlockState edgeA = jc("domain_stone_bricks", Blocks.STONE_BRICKS.defaultBlockState());
-        BlockState edgeB = jc("domain_planks", Blocks.OAK_PLANKS.defaultBlockState());
+        BlockState edgeA = abyssRock();
+        BlockState edgeB = abyssBirch();
 
         int cx = center.getX();
         int cy = center.getY();
@@ -151,7 +196,7 @@ public class DomainArenaBuilder {
     public static void repairFloorCenter(ServerLevel level, BlockPos center, double skillDomain, int radius) {
         DomainDimBlockGuard.open();
         try {
-            BlockState under = barrier();
+            BlockState under = abyssBarrier();
             BlockState floor = floorState(skillDomain);
             int cx = center.getX();
             int cy = center.getY();
@@ -171,12 +216,11 @@ public class DomainArenaBuilder {
     }
 
     /**
-     * Places a thin jujutsu_barrier outer shell in the OVERWORLD at JC domain radius.
-     * Used for domains (e.g. Whack-a-Mole) that only place interior V blocks.
+     * Overworld outer shell — still JC jujutsu_barrier so JC break/restore works.
      */
     public static void ensureOverworldOuterShell(ServerLevel overworld, Vec3 center, int radius) {
         if (overworld == null || center == null) return;
-        BlockState outer = barrier();
+        BlockState outer = jcBarrier();
         int cx = (int) Math.floor(center.x);
         int cy = (int) Math.floor(center.y);
         int cz = (int) Math.floor(center.z);
@@ -188,7 +232,6 @@ public class DomainArenaBuilder {
                     double dist = Math.sqrt(x * x + y * y + z * z);
                     if (dist <= r + 0.5 && dist >= r - 0.5) {
                         BlockPos pos = new BlockPos(cx + x, cy + y, cz + z);
-                        // Don't overwrite solid non-domain terrain heavily; prefer air / V domain blocks
                         var state = overworld.getBlockState(pos);
                         ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
                         boolean replace = state.isAir()

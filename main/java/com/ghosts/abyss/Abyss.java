@@ -1,5 +1,6 @@
 package com.ghosts.abyss;
 
+import com.ghosts.abyss.block.ModBlocks;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.rika.RikaMenuTypes;
 
@@ -55,7 +56,7 @@ public class Abyss {
       JujutsuSlopEntities.ENTITY_TYPES.register(modBus);
       ModMenus.MENUS.register(modBus);
       ModEffects.register(modBus);
-
+      ModBlocks.register(FMLJavaModLoadingContext.get().getModEventBus());
       // Network (already merged – only call once)
       ModNetwork.register();
 
