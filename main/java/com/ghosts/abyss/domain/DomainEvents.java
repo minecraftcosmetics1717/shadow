@@ -4,6 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
@@ -22,17 +23,17 @@ import net.minecraftforge.registries.ForgeRegistries;
 @Mod.EventBusSubscriber(modid = "abyss")
 public class DomainEvents {
 
-    private static final ResourceLocation DOMAIN_EFFECT_ID =
+    public static final ResourceLocation DOMAIN_EFFECT_ID =
             new ResourceLocation("jujutsucraft", "domain_expansion");
-    /** Wait after owner death so death anim + drops can finish (~4s at 80) */
+
     private static final int DEATH_END_DELAY = 80;
-    private static final int DOMAIN_DURATION_TICKS = 20 * 160;
+    public static final int DOMAIN_DURATION_TICKS = 20 * 160;
+
     private static boolean isDomainEffect(MobEffect effect) {
         ResourceLocation id = ForgeRegistries.MOB_EFFECTS.getKey(effect);
         return DOMAIN_EFFECT_ID.equals(id);
     }
 
-    /** True if this living entity is already in the death pipeline */
     private static boolean isDyingOrDead(LivingEntity entity) {
         return !entity.isAlive()
                 || entity.isDeadOrDying()
@@ -45,7 +46,6 @@ public class DomainEvents {
         if (server == null) return;
 
         final java.util.UUID ownerId = entity.getUUID();
-        // Avoid stacking multiple delayed ends
         if (entity.getPersistentData().getBoolean("abyss_domain_end_scheduled")) return;
         entity.getPersistentData().putBoolean("abyss_domain_end_scheduled", true);
 
@@ -93,7 +93,23 @@ public class DomainEvents {
     public static void onLivingTick(LivingEvent.LivingTickEvent event) {
         LivingEntity entity = event.getEntity();
         if (entity.level().isClientSide) return;
-
+// If no active clasher nearby, clear JC sure-hit suppression flags
+        if (!entity.getPersistentData().getBoolean("abyss_domain_clashing")) {
+            boolean otherDomain = false;
+            MobEffect de = ForgeRegistries.MOB_EFFECTS.getValue(DOMAIN_EFFECT_ID);
+            if (de != null && entity.level() instanceof ServerLevel sl) {
+                DomainInstance inst2 = DomainInstanceManager.getByOwner(entity.getUUID());
+                if (inst2 != null) {
+                    LivingEntity other = DomainClash.findActiveDomainInArena(sl, inst2, entity.getUUID());
+                    otherDomain = other != null;
+                }
+            }
+            if (!otherDomain) {
+                entity.getPersistentData().putBoolean("Failed", false);
+                entity.getPersistentData().putBoolean("Cover", false);
+                entity.getPersistentData().putBoolean("DomainDefeated", false);
+            }
+        }
         if (entity.getPersistentData().getBoolean("abyss_domain_pending")
                 && !entity.getPersistentData().getBoolean("abyss_domain_handled")) {
 
@@ -148,7 +164,6 @@ public class DomainEvents {
                                 domainEffect, DOMAIN_DURATION_TICKS,
                                 Math.max(cur.getAmplifier(), 1), false, false, true));
                     }
-
                 }
             } else {
                 entity.getPersistentData().putDouble("x_pos_doma", inst.overworldCenter.x);
@@ -160,6 +175,9 @@ public class DomainEvents {
                     entity.removeEffect(effect);
                 }
             }
+        }
+        if (entity instanceof ServerPlayer sp && entity.tickCount % 20 == 0) {
+            DomainHudSync.tick(sp);
         }
     }
 
@@ -177,7 +195,6 @@ public class DomainEvents {
         entity.getPersistentData().putDouble("abyss_drop_z", inst.overworldCenter.z);
         entity.getPersistentData().putString("abyss_drop_dim", inst.returnDim.location().toString());
 
-        // Delay only — do NOT call end() here
         scheduleEndAfterDeath(entity, inst);
     }
 
@@ -229,7 +246,6 @@ public class DomainEvents {
         LivingEntity entity = event.getEntity();
         if (entity.getPersistentData().getBoolean("abyss_domain_transferring")) return;
 
-        // Death removes the effect BEFORE LivingDeathEvent — must not end here
         if (isDyingOrDead(entity)) {
             DomainInstance inst = DomainInstanceManager.getByOwner(entity.getUUID());
             if (inst != null) {

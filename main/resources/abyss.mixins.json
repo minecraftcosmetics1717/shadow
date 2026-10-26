@@ -68,7 +68,9 @@
     "HideXaeroEffectMixin",
     "JcBlockDestroyDomainDimMixin",
     "JcCreateBarrierDomainDimMixin",
-    "DomainDimSetBlockMixin"
+    "DomainDimSetBlockMixin",
+    "JcDomainBattleAllowMixin",
+    "JcDomainCeDrainMixin"
   ],
   "client": [],
   "injectors": {

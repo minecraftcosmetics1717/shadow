@@ -102,5 +102,9 @@ public class ModNetwork {
               PacketToggleMinimap::encode, PacketToggleMinimap::new, PacketToggleMinimap::handle);
       CHANNEL.registerMessage(id++, PacketSyncMinimapState.class,
               PacketSyncMinimapState::encode, PacketSyncMinimapState::new, PacketSyncMinimapState::handle);
+      CHANNEL.registerMessage(id++, PacketSyncDomainHud.class,
+              PacketSyncDomainHud::encode,
+              PacketSyncDomainHud::new,
+              PacketSyncDomainHud::handle);
    }
 }

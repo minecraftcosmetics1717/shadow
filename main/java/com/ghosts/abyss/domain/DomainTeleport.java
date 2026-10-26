@@ -1,5 +1,6 @@
 package com.ghosts.abyss.domain;
 
+import com.ghosts.abyss.RefinementPoints;
 import com.ghosts.abyss.client.XaeroMinimapBridge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -43,6 +44,7 @@ public class DomainTeleport {
             player.server.execute(() -> {
                 if (!player.isAlive()) return;
                 XaeroMinimapBridge.applyTo(player);
+                RefinementPoints.sync(player);
                 boolean unlocked = player.getPersistentData().getBoolean("minimap_unlocked");
                 boolean enabled  = player.getPersistentData().getBoolean("minimap_enabled");
                 com.ghosts.abyss.network.ModNetwork.CHANNEL.send(
@@ -53,14 +55,18 @@ public class DomainTeleport {
         }
     }
 
-    /**
-     * @return the entity that exists in dest after the move (may be a new instance for mobs),
-     *         or null if teleport failed.
-     */
     public static LivingEntity teleport(LivingEntity entity, ServerLevel dest, double x, double y, double z) {
         if (entity instanceof ServerPlayer player) {
+            // Snapshot refinement before dimension move (safety)
+            double refinement = player.getPersistentData().getDouble(RefinementPoints.KEY_SPENT);
+            double available = player.getPersistentData().getDouble(RefinementPoints.KEY_AVAILABLE);
+
             player.teleportTo(dest, x, y, z, player.getYRot(), player.getXRot());
+
+            player.getPersistentData().putDouble(RefinementPoints.KEY_SPENT, refinement);
+            player.getPersistentData().putDouble(RefinementPoints.KEY_AVAILABLE, available);
             XaeroMinimapBridge.applyTo(player);
+            RefinementPoints.sync(player);
             return player;
         }
 
@@ -69,22 +75,19 @@ public class DomainTeleport {
             return entity;
         }
 
-        // Snapshot data before anything is discarded
         CompoundTag persistCopy = entity.getPersistentData().copy();
         float health = entity.getHealth();
         float yRot = entity.getYRot();
         float xRot = entity.getXRot();
         UUID id = entity.getUUID();
 
-        // Calm mobs so AI doesn't fight the move
+        // Only pause pathfinding briefly — do NOT permanently clear combat AI after land
         if (entity instanceof Mob mob) {
-            mob.setTarget(null);
             mob.getNavigation().stop();
         }
 
         entity.getPersistentData().putBoolean("abyss_domain_transferring", true);
 
-        // 1) Try changeDimension
         Entity moved = entity.changeDimension(dest, new ITeleporter() {
             @Override
             public Entity placeEntity(Entity e, ServerLevel current, ServerLevel destination,
@@ -107,17 +110,14 @@ public class DomainTeleport {
         if (moved instanceof LivingEntity livingMoved) {
             result = livingMoved;
         } else if (entity.isAlive()) {
-            // 2) Controlled clone path for JC mobs
             Entity copy = entity.getType().create(dest);
             if (copy instanceof LivingEntity livingCopy) {
-                // Discard original first so UUID can be reused
                 entity.discard();
 
                 copy.restoreFrom(entity);
                 copy.setUUID(id);
                 copy.moveTo(x, y, z, yRot, xRot);
 
-                // Restore persistent data explicitly
                 livingCopy.getPersistentData().merge(persistCopy);
                 livingCopy.setHealth(health);
 
@@ -127,17 +127,16 @@ public class DomainTeleport {
         }
 
         if (result != null) {
-            // Re-apply critical domain state on whatever instance landed
             result.getPersistentData().merge(persistCopy);
             result.getPersistentData().putBoolean("abyss_domain_transferring", true);
             result.getPersistentData().putBoolean("abyss_domain_handled", true);
+            // Clear JC clash-loss flags so they can act / sure-hit after transfer
+            result.getPersistentData().putBoolean("Failed", false);
+            result.getPersistentData().putBoolean("Cover", false);
+            result.getPersistentData().putBoolean("DomainDefeated", false);
             reapplyDomainEffect(result);
             result.getPersistentData().putBoolean("abyss_domain_transferring", false);
-
-            if (result instanceof Mob mob) {
-                mob.setTarget(null);
-                mob.getNavigation().stop();
-            }
+            // Do not setTarget(null) here — let AI retarget
         } else if (entity.isAlive()) {
             entity.getPersistentData().putBoolean("abyss_domain_transferring", false);
         }
@@ -150,7 +149,9 @@ public class DomainTeleport {
         if (effect == null) return;
 
         MobEffectInstance cur = entity.getEffect(effect);
-        int duration = cur != null ? Math.max(cur.getDuration(), 20 * 60) : 20 * 60 * 5;
+        int duration = cur != null
+                ? Math.max(cur.getDuration(), DomainEvents.DOMAIN_DURATION_TICKS)
+                : DomainEvents.DOMAIN_DURATION_TICKS;
         entity.addEffect(new MobEffectInstance(effect, duration, 1, false, false, true));
     }
 }
