@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "jujutsucraft:block/domain_bone"
+    "all": "minecraft:block/bone_block"
   }
 }
