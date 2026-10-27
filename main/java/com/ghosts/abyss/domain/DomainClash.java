@@ -199,36 +199,84 @@ public final class DomainClash {
         return null;
     }
 
-    public static LivingEntity findActiveDomainInArena(ServerLevel domainLevel,
-                                                       DomainInstance inst,
-                                                       UUID excluding) {
-        if (domainLevel == null) return null;
 
-        MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(DomainEvents.DOMAIN_EFFECT_ID);
-        if (domainEffect == null) return null;
+    public static LivingEntity findActiveDomainInArena(
+            ServerLevel domainLevel,
+            DomainInstance inst,
+            UUID excluding
+    ) {
+        if (domainLevel == null || inst == null) {
+            return null;
+        }
+
+        MobEffect domainEffect =
+                ForgeRegistries.MOB_EFFECTS.getValue(DomainEvents.DOMAIN_EFFECT_ID);
+
+        if (domainEffect == null) {
+            return null;
+        }
 
         int r = DomainDimension.OUTER_RADIUS + 4;
         BlockPos c = inst.arenaCenter;
+
         AABB box = new AABB(
                 c.getX() - r, c.getY() - r, c.getZ() - r,
                 c.getX() + r, c.getY() + r, c.getZ() + r
         );
 
-        LivingEntity best = null;
-        for (LivingEntity e : domainLevel.getEntitiesOfClass(LivingEntity.class, box, ent -> true)) {
-            if (e.getUUID().equals(excluding)) continue;
-            if (e.isDeadOrDying()) continue;
-            if (!e.hasEffect(domainEffect)) continue;
+        for (LivingEntity candidate :
+                domainLevel.getEntitiesOfClass(
+                        LivingEntity.class,
+                        box,
+                        entity -> true
+                )) {
 
-            if (e.getPersistentData().getBoolean("abyss_domain_clashing")) {
-                return e;
+            // Never allow the current owner to be selected as their own challenger.
+            if (candidate.getUUID().equals(excluding)) {
+                continue;
             }
-            if (best == null) {
-                best = e;
+
+            if (candidate.isDeadOrDying()) {
+                continue;
             }
+
+            var data = candidate.getPersistentData();
+
+            // This flag is set when an entity actually attempts to expand its domain
+            // while another domain is already active.
+            if (!data.getBoolean("abyss_domain_clashing")) {
+                continue;
+            }
+
+            // A defeated domain user must not inherit the arena.
+            if (data.getBoolean("DomainDefeated")) {
+                continue;
+            }
+
+            // The entity must still have an active domain effect.
+            if (!candidate.hasEffect(domainEffect)) {
+                continue;
+            }
+
+            // Require a valid domain technique.
+            double skillDomain = data.getDouble("skill_domain");
+
+            if (skillDomain == 0) {
+                skillDomain = data.getDouble("select");
+            }
+
+            if (skillDomain == 0) {
+                continue;
+            }
+
+            // This entity has passed every check and is a valid active challenger.
+            return candidate;
         }
-        return best;
+
+        // No valid active challenger exists.
+        return null;
     }
+
 
     public static void transferOwnership(DomainInstance inst, LivingEntity loser,
                                          LivingEntity winner, ServerLevel domainLevel) {
