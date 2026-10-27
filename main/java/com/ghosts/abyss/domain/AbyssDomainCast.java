@@ -53,9 +53,6 @@ public final class AbyssDomainCast {
             return;
         }
 
-        if (entity.level().dimension().equals(DomainDimension.ID)) {
-            return;
-        }
 
         // Don't re-enter long-press after we've committed this cast.
         if (data.getBoolean(NBT_COMMITTED)) {
@@ -118,10 +115,27 @@ public final class AbyssDomainCast {
         }
 
         // ----- Long press complete: activate the Abyss domain -----
+        // ----- Long press complete: activate the Abyss domain -----
         data.putBoolean(NBT_COMMITTED, true);
 
         data.putDouble("select", DAGON_SKILL_DOMAIN);
         data.putDouble("skill_domain", DAGON_SKILL_DOMAIN);
+
+// If we're already inside a domain, challenge its owner.
+// Do not create another arena or overworld barrier.
+        if (entity.level().dimension().equals(DomainDimension.ID)) {
+
+            DomainClash.tryStartClashInDimension(entity);
+
+            // Release JC's active technique state.
+            data.putDouble("skill", 0.0);
+            data.putDouble("cnt3", 0.0);
+
+            // Allow another attempt if this clash ends or fails.
+            data.putBoolean(NBT_COMMITTED, false);
+
+            return;
+        }
 
         Vec3 center = entity.position();
 

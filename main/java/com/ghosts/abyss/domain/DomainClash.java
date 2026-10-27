@@ -174,6 +174,18 @@ public final class DomainClash {
                 "abyss_domain_transferring", false
         );
 
+        arrived.getPersistentData().putBoolean(
+                "abyss_domain_clashing", true
+        );
+
+        arrived.getPersistentData().putBoolean(
+                "abyss_domain_handled", true
+        );
+
+        arrived.getPersistentData().putBoolean(
+                "abyss_domain_pending", false
+        );
+
         MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(
                 DomainEvents.DOMAIN_EFFECT_ID
         );

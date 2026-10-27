@@ -279,7 +279,17 @@ public class DomainEvents {
         entity.getPersistentData().putBoolean("abyss_domain_pending", false);
         DomainLifecycle.end(entity);
     }
+    @SubscribeEvent
+    public static void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
 
+        ServerLevel domainLevel =
+                event.getServer().getLevel(DomainDimension.ID);
+
+        if (domainLevel == null) return;
+
+        DomainClashController.tick(domainLevel);
+    }
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
