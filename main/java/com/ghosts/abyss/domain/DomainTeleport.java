@@ -297,16 +297,6 @@ public class DomainTeleport {
             return;
         }
 
-        if (jcDomain != null && !entity.hasEffect(jcDomain)) {
-            entity.addEffect(new MobEffectInstance(
-                    jcDomain,
-                    remainingTime,
-                    amplifier,
-                    false,
-                    false,
-                    true
-            ));
-        }
 
         MobEffect abyssDomain = ModEffects.DOMAIN_EXPANSION.get();
 

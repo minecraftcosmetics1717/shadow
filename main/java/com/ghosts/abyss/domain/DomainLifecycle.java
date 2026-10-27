@@ -1,5 +1,6 @@
 package com.ghosts.abyss.domain;
 
+import com.ghosts.abyss.effect.ModEffects;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -197,6 +198,16 @@ public class DomainLifecycle {
         ownerInDim.getPersistentData().putDouble("skill_domain", inst.skillDomain);
         ownerInDim.getPersistentData().putBoolean("abyss_domain_handled", true);
         ownerInDim.getPersistentData().putBoolean("abyss_domain_transferring", false);
+        if (!ownerInDim.hasEffect(ModEffects.DOMAIN_EXPANSION.get())) {
+            ownerInDim.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                    ModEffects.DOMAIN_EXPANSION.get(),
+                    DomainEvents.DOMAIN_DURATION_TICKS,
+                    0,
+                    false,
+                    false,
+                    true
+            ));
+        }
 
         if (ownerInDim instanceof Mob mob) {
             mob.setTarget(null);
