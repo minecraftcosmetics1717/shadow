@@ -1,13 +1,14 @@
+
 package com.ghosts.abyss.domain;
 
+import com.ghosts.abyss.effect.ModEffects;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketSyncDomainHud;
+
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,11 +19,13 @@ public final class DomainHudSync {
 
     public static void tick(ServerPlayer player) {
         boolean inDim = player.level().dimension().equals(DomainDimension.ID);
+
         DomainInstance inst = null;
 
         if (inDim) {
             inst = DomainClash.findInstanceContaining(player.position());
         }
+
         if (inst == null) {
             inst = DomainInstanceManager.getByOwner(player.getUUID());
         }
@@ -30,21 +33,44 @@ public final class DomainHudSync {
         if (inst == null) {
             ModNetwork.CHANNEL.send(
                     PacketDistributor.PLAYER.with(() -> player),
-                    new PacketSyncDomainHud(false, false, false, "", List.of())
+                    new PacketSyncDomainHud(
+                            false, false, false, "", List.of()
+                    )
             );
             return;
         }
 
-        MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(DomainEvents.DOMAIN_EFFECT_ID);
-        boolean yourDomain = domainEffect != null && player.hasEffect(domainEffect);
+        boolean yourDomain =
+                inst.ownerId.equals(player.getUUID())
+                        || (player.getPersistentData().getBoolean("abyss_domain_clashing")
+                        && player.hasEffect(
+                        net.minecraftforge.registries.ForgeRegistries.MOB_EFFECTS.getValue(
+                                DomainEvents.DOMAIN_EFFECT_ID
+                        )
+                ));
 
         String ownerName = "?";
-        if (player.level() instanceof ServerLevel sl) {
-            LivingEntity owner = DomainArenaService.findLivingIn(sl, inst.ownerId);
+
+        ServerLevel domainLevel =
+                player.server.getLevel(DomainDimension.ID);
+
+        if (domainLevel != null) {
+            LivingEntity owner =
+                    DomainArenaService.findLivingIn(
+                            domainLevel, inst.ownerId
+                    );
+
             if (owner == null) {
-                ServerLevel over = sl.getServer().getLevel(inst.returnDim);
-                if (over != null) owner = DomainArenaService.findLivingIn(over, inst.ownerId);
+                ServerLevel over =
+                        player.server.getLevel(inst.returnDim);
+
+                if (over != null) {
+                    owner = DomainArenaService.findLivingIn(
+                            over, inst.ownerId
+                    );
+                }
             }
+
             if (owner != null) {
                 ownerName = owner.getName().getString();
             }
@@ -52,35 +78,44 @@ public final class DomainHudSync {
 
         List<String> clashers = new ArrayList<>();
         boolean clashing = false;
-        if (player.level() instanceof ServerLevel sl && domainEffect != null) {
+
+        if (domainLevel != null) {
             int r = DomainDimension.OUTER_RADIUS + 4;
             var c = inst.arenaCenter;
-            var box = new net.minecraft.world.phys.AABB(
-                    c.getX() - r, c.getY() - r, c.getZ() - r,
-                    c.getX() + r, c.getY() + r, c.getZ() + r
-            );
-            for (LivingEntity e : sl.getEntitiesOfClass(
-                    LivingEntity.class, box, ent -> true)) {
 
-                // Never count the current domain owner as an opponent.
+            var box = new net.minecraft.world.phys.AABB(
+                    c.getX() - r,
+                    c.getY() - r,
+                    c.getZ() - r,
+                    c.getX() + r,
+                    c.getY() + r,
+                    c.getZ() + r
+            );
+
+            for (LivingEntity e : domainLevel.getEntitiesOfClass(
+                    LivingEntity.class,
+                    box,
+                    ent -> true
+            )) {
                 if (e.getUUID().equals(inst.ownerId)) {
                     continue;
                 }
 
                 var data = e.getPersistentData();
 
-                // Ignore entities that have already been marked as defeated.
                 if (data.getBoolean("DomainDefeated")) {
                     continue;
                 }
 
-                // Only count entities that Abyss has marked as clash participants.
                 if (!data.getBoolean("abyss_domain_clashing")) {
                     continue;
                 }
 
-                // The entity must still have JC's domain effect.
-                if (!e.hasEffect(domainEffect)) {
+                var jcDomain = net.minecraftforge.registries.ForgeRegistries.MOB_EFFECTS.getValue(
+                        DomainEvents.DOMAIN_EFFECT_ID
+                );
+
+                if (jcDomain == null || !e.hasEffect(jcDomain)) {
                     continue;
                 }
 
@@ -91,7 +126,13 @@ public final class DomainHudSync {
 
         ModNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new PacketSyncDomainHud(true, yourDomain, clashing, ownerName, clashers)
+                new PacketSyncDomainHud(
+                        true,
+                        yourDomain,
+                        clashing,
+                        ownerName,
+                        clashers
+                )
         );
     }
 }

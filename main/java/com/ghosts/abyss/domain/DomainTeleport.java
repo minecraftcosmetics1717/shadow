@@ -64,9 +64,6 @@ public class DomainTeleport {
                 pos.z
         );
 
-        if (returned != null) {
-            returned.removeEffect(ModEffects.DOMAIN_EXPANSION.get());
-        }
 
         if (returned instanceof ServerPlayer player) {
             XaeroMinimapBridge.applyTo(player);
@@ -286,27 +283,20 @@ public class DomainTeleport {
             int remainingTime,
             int amplifier
     ) {
-        if (!enteringDomain) {
-            entity.removeEffect(ModEffects.DOMAIN_EXPANSION.get());
+        // Only preserve an existing JC domain effect for an actual caster.
+        // Do not give the effect to ordinary participants.
+        if (!enteringDomain || !wasDomainCaster || jcDomain == null) {
             return;
         }
 
-        if (!wasDomainCaster) {
-            // An ordinary participant is not a domain caster.
-            // Do not grant either effect just for entering.
-            return;
+        if (!entity.hasEffect(jcDomain)) {
+            entity.addEffect(new MobEffectInstance(
+                    jcDomain,
+                    Math.max(remainingTime, 1),
+                    amplifier,
+                    false,
+                    false,
+                    true
+            ));
         }
-
-
-        MobEffect abyssDomain = ModEffects.DOMAIN_EXPANSION.get();
-
-        entity.addEffect(new MobEffectInstance(
-                abyssDomain,
-                remainingTime,
-                0,
-                false,
-                false,
-                true
-        ));
-    }
-}
+    }}

@@ -85,9 +85,17 @@ public final class DomainArenaService {
 
         MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(DomainEvents.DOMAIN_EFFECT_ID);
         if (domainEffect != null && living.hasEffect(domainEffect)) {
-            living.getPersistentData().putBoolean("abyss_domain_transferring", true);
-            living.removeEffect(domainEffect);
-            living.getPersistentData().putBoolean("abyss_domain_transferring", false);
+            var data = living.getPersistentData();
+
+            data.putBoolean("abyss_domain_transferring", true);
+            data.putBoolean("abyss_domain_suppress_jc_expire", true);
+
+            try {
+                living.removeEffect(domainEffect);
+            } finally {
+                data.putBoolean("abyss_domain_suppress_jc_expire", false);
+                data.putBoolean("abyss_domain_transferring", false);
+            }
         }
 
         var data = living.getPersistentData();

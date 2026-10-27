@@ -156,19 +156,38 @@ public final class DomainClash {
             mob.getNavigation().stop(); // path only; AI can retarget next tick
         }
 
-        MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(DomainEvents.DOMAIN_EFFECT_ID);
-        if (domainEffect != null) {
-            MobEffectInstance cur = challenger.getEffect(domainEffect);
-            int amp = cur != null ? Math.max(cur.getAmplifier(), 1) : 1;
-            challenger.addEffect(new MobEffectInstance(
-                    domainEffect, DomainEvents.DOMAIN_DURATION_TICKS,
-                    amp, false, false, true));
-        }
 
         double floorY = inst.arenaCenter.getY() + 1.1;
         data.putBoolean("abyss_domain_transferring", true);
-        DomainTeleport.teleport(challenger, domainLevel, cx, floorY, cz);
-        data.putBoolean("abyss_domain_transferring", false);
+
+        LivingEntity arrived = DomainTeleport.teleport(
+                challenger, domainLevel, cx, floorY, cz
+        );
+
+        if (arrived == null || arrived.level() != domainLevel) {
+            data.putBoolean("abyss_domain_transferring", false);
+            abortFailedDomainStart(challenger);
+            return;
+        }
+
+        arrived.getPersistentData().putBoolean(
+                "abyss_domain_transferring", false
+        );
+
+        MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(
+                DomainEvents.DOMAIN_EFFECT_ID
+        );
+
+        if (domainEffect != null && !arrived.hasEffect(domainEffect)) {
+            arrived.addEffect(new MobEffectInstance(
+                    domainEffect,
+                    DomainEvents.DOMAIN_DURATION_TICKS,
+                    1,
+                    false,
+                    false,
+                    true
+            ));
+        }
 
         LivingEntity owner = DomainArenaService.findLivingIn(domainLevel, inst.ownerId);
         if (owner != null && domainEffect != null) {

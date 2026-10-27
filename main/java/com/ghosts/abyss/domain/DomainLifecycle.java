@@ -198,15 +198,21 @@ public class DomainLifecycle {
         ownerInDim.getPersistentData().putDouble("skill_domain", inst.skillDomain);
         ownerInDim.getPersistentData().putBoolean("abyss_domain_handled", true);
         ownerInDim.getPersistentData().putBoolean("abyss_domain_transferring", false);
-        if (!ownerInDim.hasEffect(ModEffects.DOMAIN_EXPANSION.get())) {
-            ownerInDim.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                    ModEffects.DOMAIN_EXPANSION.get(),
-                    DomainEvents.DOMAIN_DURATION_TICKS,
-                    0,
-                    false,
-                    false,
-                    true
-            ));
+        var jcDomain = ForgeRegistries.MOB_EFFECTS.getValue(
+                DomainEvents.DOMAIN_EFFECT_ID
+        );
+
+        if (jcDomain != null && !ownerInDim.hasEffect(jcDomain)) {
+            ownerInDim.addEffect(
+                    new net.minecraft.world.effect.MobEffectInstance(
+                            jcDomain,
+                            DomainEvents.DOMAIN_DURATION_TICKS,
+                            0,
+                            false,
+                            false,
+                            true
+                    )
+            );
         }
 
         if (ownerInDim instanceof Mob mob) {
@@ -400,8 +406,14 @@ public class DomainLifecycle {
                 new ResourceLocation("jujutsucraft", "domain_expansion"));
         if (domain != null && entity.hasEffect(domain)) {
             data.putBoolean("abyss_domain_transferring", true);
-            entity.removeEffect(domain);
-            data.putBoolean("abyss_domain_transferring", false);
+            data.putBoolean("abyss_domain_suppress_jc_expire", true);
+
+            try {
+                entity.removeEffect(domain);
+            } finally {
+                data.putBoolean("abyss_domain_suppress_jc_expire", false);
+                data.putBoolean("abyss_domain_transferring", false);
+            }
         }
     }
 

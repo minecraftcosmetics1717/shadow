@@ -16,10 +16,6 @@ public class ModEffects {
     public static final RegistryObject<MobEffect> FLIGHT = MOB_EFFECTS.register("flight",
             () -> new FlightEffect(MobEffectCategory.BENEFICIAL, 0x66CCFF));
 
-    public static final RegistryObject<MobEffect> DOMAIN_EXPANSION =
-            MOB_EFFECTS.register("domain_expansion",
-                    DomainExpansionEffect::new);
-
     public static void register(IEventBus eventBus) {
         MOB_EFFECTS.register(eventBus);
     }}

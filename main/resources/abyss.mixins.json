@@ -72,7 +72,10 @@
     "JcDomainCeDrainMixin",
     "DagonDomainDisplayMixin",
     "DagonDomainExecuteMixin",
-    "CancelDomainKeyMixin"
+    "CancelDomainKeyMixin",
+    "JujutsuDomainExpirationMixin",
+    "AbyssJcDomainExpireMixin",
+    "AbyssJcDomainTickMixin"
   ],
   "client": [],
   "injectors": {
