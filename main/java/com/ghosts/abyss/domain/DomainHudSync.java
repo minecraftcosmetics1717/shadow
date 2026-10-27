@@ -59,14 +59,32 @@ public final class DomainHudSync {
                     c.getX() - r, c.getY() - r, c.getZ() - r,
                     c.getX() + r, c.getY() + r, c.getZ() + r
             );
-            for (LivingEntity e : sl.getEntitiesOfClass(LivingEntity.class, box, ent -> true)) {
-                if (e.getUUID().equals(inst.ownerId)) continue;
-                if (!e.hasEffect(domainEffect)) continue;
+            for (LivingEntity e : sl.getEntitiesOfClass(
+                    LivingEntity.class, box, ent -> true)) {
+
+                // Never count the current domain owner as an opponent.
+                if (e.getUUID().equals(inst.ownerId)) {
+                    continue;
+                }
+
+                var data = e.getPersistentData();
+
+                // Ignore entities that have already been marked as defeated.
+                if (data.getBoolean("DomainDefeated")) {
+                    continue;
+                }
+
+                // Only count entities that Abyss has marked as clash participants.
+                if (!data.getBoolean("abyss_domain_clashing")) {
+                    continue;
+                }
+
+                // The entity must still have JC's domain effect.
+                if (!e.hasEffect(domainEffect)) {
+                    continue;
+                }
+
                 clashers.add(e.getName().getString());
-                clashing = true;
-            }
-            // Also count owner domain vs you
-            if (yourDomain && !player.getUUID().equals(inst.ownerId)) {
                 clashing = true;
             }
         }
