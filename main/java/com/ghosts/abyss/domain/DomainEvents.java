@@ -294,27 +294,41 @@ public class DomainEvents {
         entity.getPersistentData().putBoolean("abyss_domain_pending", false);
         DomainLifecycle.end(entity);
     }
+
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         if (event.player.level().isClientSide) return;
 
-        var data = event.player.getPersistentData();
-        boolean cancelMode = data.getBoolean("abyss_cancel_domain_auth")
-                || data.getBoolean("abyss_domain_cancel_charging");
+        var player = event.player;
+        var data = player.getPersistentData();
+
+        boolean cancelMode =
+                data.getBoolean("abyss_cancel_domain_auth")
+                        || data.getBoolean("abyss_domain_cancel_charging");
+
         if (!cancelMode) return;
 
-        // Still holding technique key?
+        // Releasing the key interrupts the charge.
+        // The domain remains active because cancellation did not complete.
         if (!data.getBoolean("PRESS_Z")) {
-            // KeyStartTechniqueReleased should set PRESS_Z false — abort charge
-            if (data.getBoolean("abyss_domain_cancel_charging")) {
-                data.putBoolean("abyss_domain_cancel_charging", false);
-                data.putInt("abyss_domain_cancel_charge", 0);
-                data.putBoolean("abyss_cancel_domain_auth", false);
-            }
+            data.putBoolean("abyss_domain_cancel_charging", false);
+            data.putInt("abyss_domain_cancel_charge", 0);
+            data.putBoolean("abyss_cancel_domain_auth", false);
+            data.putDouble("skill", 0.0);
             return;
         }
 
-        AbyssDomainCast.tickCancelDomain(event.player);
+        // Only charge while the player still owns an Abyss domain.
+        if (DomainInstanceManager.getByOwner(player.getUUID()) == null) {
+            data.putBoolean("abyss_domain_cancel_charging", false);
+            data.putInt("abyss_domain_cancel_charge", 0);
+            data.putBoolean("abyss_cancel_domain_auth", false);
+            data.putDouble("skill", 0.0);
+            return;
+        }
+
+        AbyssDomainCast.tickCancelDomain(player);
     }
+
 }

@@ -70,7 +70,6 @@
     "JcCreateBarrierDomainDimMixin",
     "DomainDimSetBlockMixin",
     "JcDomainCeDrainMixin",
-    "CursedTechniqueDagonMixin",
     "DagonDomainDisplayMixin",
     "DagonDomainExecuteMixin",
     "CancelDomainKeyMixin"

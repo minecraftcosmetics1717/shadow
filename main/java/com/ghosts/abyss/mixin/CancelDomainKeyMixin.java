@@ -1,6 +1,8 @@
+
 package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.domain.DomainInstanceManager;
+import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.LevelAccessor;
@@ -21,36 +23,76 @@ import java.lang.reflect.Field;
 public class CancelDomainKeyMixin {
 
     /**
-     * When Cancel Domain is selected, mark cancel mode.
-     * Actual long-press ticks run from LivingTick or StartTechnique repeat — see below.
+     * Redirect Cancel Domain to Abyss when the player owns an active
+     * Abyss domain. Otherwise, leave JujutsuCraft's normal key handling alone.
      */
-    @Inject(method = "execute", at = @At("HEAD"), cancellable = true, remap = false)
-    private static void abyss$cancelDomainKey(
-            LevelAccessor world, double x, double y, double z, Entity entity, CallbackInfo ci) {
-        if (!(entity instanceof LivingEntity living)) return;
+    @Inject(
+            method = "execute",
+            at = @At("HEAD"),
+            cancellable = true,
+            remap = false
+    )
+    private static void abyss$handleCancelDomain(
+            LevelAccessor world,
+            double x,
+            double y,
+            double z,
+            Entity entity,
+            CallbackInfo ci
+    ) {
+        if (!(entity instanceof LivingEntity living)) {
+            return;
+        }
 
-        if (!isCancelSlotSelected(living)) return;
-        if (DomainInstanceManager.getByOwner(living.getUUID()) == null) return;
+        if (!isCancelSlotSelected(living)) {
+            return;
+        }
 
-        living.getPersistentData().putBoolean("abyss_cancel_domain_auth", true);
-        living.getPersistentData().putBoolean("PRESS_Z", true);
-        // Don't let JC run default cancel on press — we long-press instead
+        // Only take over cancellation for a domain owned by this entity.
+        if (DomainInstanceManager.getByOwner(living.getUUID()) == null) {
+            return;
+        }
+
+        var data = living.getPersistentData();
+
+        data.putBoolean("abyss_cancel_domain_auth", true);
+        data.putBoolean("PRESS_Z", true);
+
+        // Prevent JujutsuCraft's default Cancel Domain procedure from running.
         ci.cancel();
     }
 
     private static boolean isCancelSlotSelected(Entity entity) {
         try {
-            Class<?> varsClass = Class.forName("net.mcreator.jujutsucraft.network.JujutsucraftModVariables");
-            Field capField = varsClass.getDeclaredField("PLAYER_VARIABLES_CAPABILITY");
+            Class<?> varsClass = Class.forName(
+                    "net.mcreator.jujutsucraft.network.JujutsucraftModVariables"
+            );
+
+            Field capField = varsClass.getDeclaredField(
+                    "PLAYER_VARIABLES_CAPABILITY"
+            );
             capField.setAccessible(true);
+
             @SuppressWarnings("unchecked")
-            Capability<Object> cap = (Capability<Object>) capField.get(null);
-            Object vars = entity.getCapability(cap, null).orElse(null);
-            if (vars == null) return false;
-            Field selectField = vars.getClass().getDeclaredField("PlayerSelectCurseTechnique");
+            Capability<Object> capability =
+                    (Capability<Object>) capField.get(null);
+
+            Object vars = entity.getCapability(
+                    capability,
+                    (Direction) null
+            ).orElse(null);
+
+            if (vars == null) {
+                return false;
+            }
+
+            Field selectField = vars.getClass().getDeclaredField(
+                    "PlayerSelectCurseTechnique"
+            );
             selectField.setAccessible(true);
-            return ((Double) selectField.get(vars)) == 21.0;
-        } catch (Exception e) {
+
+            return ((Number) selectField.get(vars)).doubleValue() == 21.0;
+        } catch (ReflectiveOperationException | ClassCastException e) {
             return false;
         }
     }

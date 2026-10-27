@@ -162,10 +162,7 @@ public class DomainLifecycle {
         ServerLevel domainLevel = server.getLevel(DomainDimension.ID);
         ServerLevel overworld = server.getLevel(inst.returnDim);
         if (overworld == null) overworld = server.overworld();
-        if (domainLevel == null) {
-            softAbort(inst, null, overworld, ownerId);
-            return;
-        }
+
 
         LivingEntity ownerInDim = DomainArenaService.findLivingIn(domainLevel, ownerId);
 
@@ -212,26 +209,48 @@ public class DomainLifecycle {
     private static void softAbort(DomainInstance inst, ServerLevel domainLevel,
                                   ServerLevel overworld, UUID ownerId) {
         if (domainLevel != null) {
+            // Find the owner if they were successfully transferred into the domain.
             LivingEntity inDim = DomainArenaService.findLivingIn(domainLevel, ownerId);
+
+            // If the owner is stranded in the domain dimension, send them back.
             if (inDim != null && overworld != null) {
-                Vec3 back = inst.returnPositions.getOrDefault(ownerId, inst.overworldCenter);
-                inDim.getPersistentData().putBoolean("abyss_domain_transferring", true);
+                Vec3 back = inst.returnPositions.getOrDefault(
+                        ownerId,
+                        inst.overworldCenter
+                );
+
+                inDim.getPersistentData().putBoolean(
+                        "abyss_domain_transferring", true
+                );
+
                 DomainTeleport.sendBack(inDim, overworld, back);
-                inDim.getPersistentData().putBoolean("abyss_domain_transferring", false);
+
+                inDim.getPersistentData().putBoolean(
+                        "abyss_domain_transferring", false
+                );
             }
+
+            // Clean up the failed arena.
             DomainInstanceManager.clearArena(domainLevel, inst);
             DomainArenaService.unloadArena(domainLevel, inst);
         }
 
+        // Release the owner's reserved domain slot.
         DomainInstanceManager.release(ownerId);
 
+        // Clear the cast state wherever the owner currently exists.
+        LivingEntity owner = null;
+
         if (overworld != null) {
-            LivingEntity owner = DomainArenaService.findLivingIn(overworld, ownerId);
-            if (owner != null) {
-                owner.getPersistentData().putBoolean("abyss_domain_handled", false);
-                owner.getPersistentData().putBoolean("abyss_domain_pending", false);
-                owner.getPersistentData().putBoolean("abyss_domain_transferring", false);
-            }
+            owner = DomainArenaService.findLivingIn(overworld, ownerId);
+        }
+
+        if (owner == null && domainLevel != null) {
+            owner = DomainArenaService.findLivingIn(domainLevel, ownerId);
+        }
+
+        if (owner != null) {
+            clearCastState(owner);
         }
     }
 
@@ -307,7 +326,8 @@ public class DomainLifecycle {
 
         final ServerLevel over = returnLevel;
         final Vec3 overCenter = inst.overworldCenter;
-        DomainOverworldShell.clear(returnLevel, inst.overworldCenter, AbyssDomainCast.OVERWORLD_RADIUS);
+
+        DomainOverworldShell.clear(returnLevel, overCenter, AbyssDomainCast.OVERWORLD_RADIUS);
         over.getChunkAt(BlockPos.containing(overCenter));
 
         if (domainLevel != null) {
@@ -325,8 +345,19 @@ public class DomainLifecycle {
                 () -> DomainOverworldCleanup.triggerJcDomainBreak(over, overCenter)));
 
         DomainInstanceManager.release(ownerId);
+
+        // Unlock techniques after death-end
+        LivingEntity owner = DomainArenaService.findLivingIn(over, ownerId);
+        if (owner == null && domainLevel != null) {
+            owner = DomainArenaService.findLivingIn(domainLevel, ownerId);
+        }
+        if (owner != null) {
+            clearCastState(owner);
+        }
     }
+
     public static void clearCastState(LivingEntity entity) {
+        if (entity == null) return;
         var data = entity.getPersistentData();
         data.putBoolean("abyss_domain_active", false);
         data.putBoolean("abyss_domain_committed", false);
@@ -335,16 +366,20 @@ public class DomainLifecycle {
         data.putBoolean("abyss_domain_clashing", false);
         data.putBoolean("abyss_domain_transferring", false);
         data.putBoolean("abyss_dagon_domain_auth", false);
+        data.putBoolean("abyss_cancel_domain_auth", false);
+        data.putBoolean("abyss_domain_cancel_charging", false);
+        data.putInt("abyss_domain_cancel_charge", 0);
+        data.putLong("abyss_domain_end_tick", 0L);
+
         data.putDouble("cnt1", 0);
         data.putDouble("cnt2", 0);
         data.putDouble("cnt3", 0);
         data.putDouble("skill", 0);
         data.putDouble("select", 0);
+
         data.putBoolean("Failed", false);
         data.putBoolean("Cover", false);
         data.putBoolean("DomainDefeated", false);
-        data.putBoolean(NBT_CANCEL_CHARGING, false);
-        data.putInt(NBT_CANCEL_CHARGE, 0);
 
         var ct = ForgeRegistries.MOB_EFFECTS.getValue(
                 new ResourceLocation("jujutsucraft", "cursed_technique"));
@@ -358,15 +393,15 @@ public class DomainLifecycle {
             data.putBoolean("abyss_domain_transferring", false);
         }
     }
+
     public static void end(LivingEntity entity) {
         if (entity.level().isClientSide) return;
         if (entity.getPersistentData().getBoolean("abyss_domain_transferring")) return;
 
         DomainInstance asOwner = DomainInstanceManager.getByOwner(entity.getUUID());
         if (asOwner == null) {
-            entity.getPersistentData().putBoolean("abyss_domain_handled", false);
-            entity.getPersistentData().putBoolean("abyss_domain_pending", false);
-            entity.getPersistentData().putBoolean("abyss_domain_clashing", false);
+            // Still unlock even if instance already gone (JC cancel race)
+            clearCastState(entity);
             return;
         }
 
@@ -377,9 +412,13 @@ public class DomainLifecycle {
         ServerLevel returnLevel = server.getLevel(asOwner.returnDim);
         if (returnLevel == null) returnLevel = server.overworld();
 
-        LivingEntity winner = DomainClash.findActiveDomainInArena(domainLevel, asOwner, entity.getUUID());
+        LivingEntity winner = null;
+        if (domainLevel != null) {
+            winner = DomainClash.findActiveDomainInArena(domainLevel, asOwner, entity.getUUID());
+        }
         if (winner != null) {
             DomainClash.transferOwnership(asOwner, entity, winner, domainLevel);
+            clearCastState(entity); // loser must not stay soft-locked
             return;
         }
 
@@ -388,6 +427,7 @@ public class DomainLifecycle {
         entity.getPersistentData().putDouble("z_pos_doma", asOwner.overworldCenter.z);
 
         returnLevel.getChunkAt(BlockPos.containing(asOwner.overworldCenter));
+        DomainOverworldShell.clear(returnLevel, asOwner.overworldCenter, AbyssDomainCast.OVERWORLD_RADIUS);
 
         if (domainLevel != null) {
             DomainArenaService.evacuateArena(domainLevel, returnLevel, asOwner);
@@ -407,10 +447,5 @@ public class DomainLifecycle {
                 () -> DomainOverworldCleanup.triggerJcDomainBreak(over, overCenter)));
 
         DomainInstanceManager.release(entity.getUUID());
-
-        entity.getPersistentData().putBoolean("abyss_domain_handled", false);
-        entity.getPersistentData().putBoolean("abyss_domain_pending", false);
-        entity.getPersistentData().putBoolean("abyss_domain_transferring", false);
-        entity.getPersistentData().putBoolean("abyss_domain_clashing", false);
-    }
-}
+        clearCastState(entity);
+    }}

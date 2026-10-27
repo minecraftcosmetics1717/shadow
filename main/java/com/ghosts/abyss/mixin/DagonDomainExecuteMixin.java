@@ -1,3 +1,4 @@
+
 package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.domain.AbyssDomainCast;
@@ -17,28 +18,41 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 )
 public class DagonDomainExecuteMixin {
 
-    @Inject(method = "execute", at = @At("HEAD"), cancellable = true, remap = false)
-    private static void abyss$dagonDomainExecute(
-            LevelAccessor world, double x, double y, double z, Entity entity, CallbackInfo ci) {
-        if (!(entity instanceof LivingEntity living)) return;
-
-        double skill = living.getPersistentData().getDouble("skill");
-        if (skill != 820.0) return; // only domain skill
-
-        // First tick from key: require auth (same idea as Uro). Later ticks while held: PRESS_Z
-        boolean auth = living.getPersistentData().getBoolean("abyss_dagon_domain_auth");
-        boolean holding = living.getPersistentData().getBoolean("PRESS_Z");
-        boolean alreadyCasting = living.getPersistentData().getBoolean("abyss_domain_active")
-                || living.getPersistentData().getBoolean("abyss_domain_committed")
-                || living.getPersistentData().getDouble("cnt3") > 0;
-
-        if (!auth && !holding && !alreadyCasting) {
-            return; // let other Dagon skills alone if something odd sets 820
+    /**
+     * Completely replaces Dagon's JC domain skill (820).
+     * Other Dagon skills continue through JujutsuCraft normally.
+     */
+    @Inject(
+            method = "execute",
+            at = @At("HEAD"),
+            cancellable = true,
+            remap = false
+    )
+    private static void abyss$replaceDagonDomain(
+            LevelAccessor world,
+            double x,
+            double y,
+            double z,
+            Entity entity,
+            CallbackInfo ci
+    ) {
+        if (entity == null) {
+            return;
         }
 
-        living.getPersistentData().putBoolean("abyss_dagon_domain_auth", false);
+        double skill = entity.getPersistentData().getDouble("skill");
 
-        AbyssDomainCast.tickDagonDomain(world, living);
-        ci.cancel(); // never JC Horizon / CreateBarrier
+        // Only replace Dagon's domain skill.
+        if (skill != 820.0) {
+            return;
+        }
+
+        // Never allow JC's original Dagon domain procedure to execute.
+        ci.cancel();
+
+        // Run our custom domain logic on the server-side living entity.
+        if (entity instanceof LivingEntity living) {
+            AbyssDomainCast.tickDagonDomain(world, living);
+        }
     }
 }
