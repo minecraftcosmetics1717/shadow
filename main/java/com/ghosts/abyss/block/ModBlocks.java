@@ -53,6 +53,19 @@ public class ModBlocks {
     public static final RegistryObject<Block> DOMAIN_BLUE_SKY =
             register("domain_blue_sky", () -> new DomainBlock(MapColor.COLOR_LIGHT_BLUE, SoundType.GLASS,true));
 
+
+    public static final RegistryObject<Block> DOMAIN_SKY_BLUE =
+            BLOCKS.register("domain_sky_blue",
+                    () -> new AbyssSkyBlock("blue"));
+
+    public static final RegistryObject<Block> DOMAIN_SKY_GOJO =
+            BLOCKS.register("domain_sky_gojo",
+                    () -> new AbyssSkyBlock("gojo"));
+
+    public static final RegistryObject<Block> DOMAIN_SKY_MAHITO =
+            BLOCKS.register("domain_sky_mahito",
+                    () -> new AbyssSkyBlock("mahito"));
+
     private static RegistryObject<Block> register(String name, Supplier<Block> block) {
         RegistryObject<Block> reg = BLOCKS.register(name, block);
         ITEMS.register(name, () -> new BlockItem(reg.get(), new Item.Properties()));

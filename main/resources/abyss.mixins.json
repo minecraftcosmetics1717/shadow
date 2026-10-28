@@ -75,7 +75,8 @@
     "CancelDomainKeyMixin",
     "JujutsuDomainExpirationMixin",
     "AbyssJcDomainExpireMixin",
-    "AbyssJcDomainTickMixin"
+    "AbyssJcDomainTickMixin",
+    "DagonFishRadiusMixin"
   ],
   "client": [],
   "injectors": {
