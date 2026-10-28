@@ -24,7 +24,7 @@ public class ModBlocks {
             register("domain_barrier", () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.GLASS,false));
 
     public static final RegistryObject<Block> DOMAIN_SAND =
-            register("domain_sand", () -> new DomainBlock(MapColor.SAND, SoundType.SAND,false));
+            register("domain_sand", () -> new DomainBlock(MapColor.SAND, SoundType.SAND,true));
 
     public static final RegistryObject<Block> DOMAIN_GRAVEL =
             register("domain_gravel", () -> new DomainBlock(MapColor.STONE, SoundType.GRAVEL,false));

@@ -3,7 +3,6 @@ package com.ghosts.abyss.client.sky;
 
 import com.ghosts.abyss.block.DomainSkyBlock;
 import com.ghosts.abyss.block.DomainSkyBlock.SkyType;
-import com.ghosts.abyss.domain.DomainDimension;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
@@ -11,15 +10,17 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
-import java.util.EnumMap;
+import java.util.*;
 
 @Mod.EventBusSubscriber(
         modid = "abyss",
@@ -28,218 +29,309 @@ import java.util.EnumMap;
 )
 public final class DomainSkyMaskRenderer {
 
-    // Small test radius for now. This is NOT the
-    // final domain-wide cache.
-    private static final int TEST_RADIUS = 16;
+    // Number of chunk sections to search around the player.
+    private static final int HORIZONTAL_RANGE = 7;
+    private static final int VERTICAL_RANGE = 4;
 
-    private static final EnumMap<SkyType, VertexBuffer> MASKS =
-            new EnumMap<>(SkyType.class);
+    // Maximum section checks per client tick.
+    private static final int CHECKS_PER_TICK = 12;
+
+    private record SectionKey(int x, int y, int z) {}
+
+    private static class CachedSection {
+        long signature;
+        EnumMap<SkyType, VertexBuffer> masks =
+                new EnumMap<>(SkyType.class);
+
+        CachedSection(long signature) {
+            this.signature = signature;
+        }
+
+        void close() {
+            for (VertexBuffer buffer : masks.values()) {
+                buffer.close();
+            }
+            masks.clear();
+        }
+    }
+
+    private static final Map<SectionKey, CachedSection> CACHE =
+            new HashMap<>();
 
     private static final EnumMap<SkyType, VertexBuffer> SKIES =
             new EnumMap<>(SkyType.class);
 
-    private static long lastScanTick = -1;
-    private static BlockPos lastScanCenter;
+    private static final ArrayDeque<SectionKey> QUEUE =
+            new ArrayDeque<>();
+
     private static ClientLevel lastLevel;
+    private static SectionKey lastCenter;
 
     private DomainSkyMaskRenderer() {}
 
     @SubscribeEvent
-    public static void render(RenderLevelStageEvent event) {
-        if (event.getStage() !=
-                RenderLevelStageEvent.Stage.AFTER_SKY) return;
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
 
         Minecraft mc = Minecraft.getInstance();
 
-        if (mc.level == null || mc.player == null) return;
-        if (!mc.level.dimension().equals(DomainDimension.ID)) return;
+        if (mc.level == null || mc.player == null) {
+            if (lastLevel != null) clearAll();
+            return;
+        }
 
         ClientLevel level = mc.level;
-        BlockPos center = mc.player.blockPosition();
 
-        if (level != lastLevel) {
-            clearBuffers();
+        if (lastLevel != level) {
+            clearAll();
             lastLevel = level;
-            lastScanTick = -1;
         }
 
-        if (lastScanCenter == null
-                || lastScanTick < 0
-                || level.getGameTime() - lastScanTick >= 10
-                || center.distSqr(lastScanCenter) > 16) {
+        BlockPos playerPos = mc.player.blockPosition();
 
-            rebuildMasks(level, center);
-            lastScanCenter = center.immutable();
-            lastScanTick = level.getGameTime();
-        }
-
-        if (MASKS.isEmpty()) return;
-
-        mc.getMainRenderTarget().enableStencil();
-
-        Vec3 camera = event.getCamera().getPosition();
-
-        Matrix4f worldMatrix =
-                new Matrix4f(event.getPoseStack().last().pose());
-
-        worldMatrix.translate(
-                (float) -camera.x,
-                (float) -camera.y,
-                (float) -camera.z
+        SectionKey center = new SectionKey(
+                playerPos.getX() >> 4,
+                playerPos.getY() >> 4,
+                playerPos.getZ() >> 4
         );
 
-        Matrix4f skyMatrix =
-                new Matrix4f(event.getPoseStack().last().pose());
+        if (!center.equals(lastCenter)) {
+            lastCenter = center;
+            rebuildQueue(center);
+            removeDistantSections(center);
+        }
 
-        Matrix4f projection = event.getProjectionMatrix();
+        // Continue checking sections in the background
+        // of normal client ticks, not all at once.
+        if (QUEUE.isEmpty()) {
+            rebuildQueue(center);
+        }
 
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.disableCull();
-        RenderSystem.disableDepthTest();
-        RenderSystem.depthMask(false);
+        for (int i = 0; i < CHECKS_PER_TICK; i++) {
+            SectionKey key = QUEUE.poll();
 
-        GL11.glEnable(GL11.GL_STENCIL_TEST);
-        GL11.glStencilMask(0xFF);
+            if (key == null) break;
 
-        try {
-            for (SkyType type : SkyType.values()) {
-                VertexBuffer mask = MASKS.get(type);
-                if (mask == null) continue;
-
-                GL11.glClearStencil(0);
-                GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT);
-
-                // Write sky-block faces into stencil.
-                GL11.glStencilFunc(GL11.GL_ALWAYS, 1, 0xFF);
-                GL11.glStencilOp(
-                        GL11.GL_KEEP,
-                        GL11.GL_KEEP,
-                        GL11.GL_REPLACE
-                );
-
-                RenderSystem.colorMask(false, false, false, false);
-
-                mask.bind();
-                mask.drawWithShader(
-                        worldMatrix,
-                        projection,
-                        GameRenderer.getPositionColorShader()
-                );
-                VertexBuffer.unbind();
-
-                // Draw sky only where mask equals 1.
-                RenderSystem.colorMask(true, true, true, true);
-
-                GL11.glStencilMask(0x00);
-                GL11.glStencilFunc(GL11.GL_EQUAL, 1, 0xFF);
-                GL11.glStencilOp(
-                        GL11.GL_KEEP,
-                        GL11.GL_KEEP,
-                        GL11.GL_KEEP
-                );
-
-                VertexBuffer sky = SKIES.get(type);
-                if (sky == null) {
-                    sky = createSky(type);
-                    SKIES.put(type, sky);
-                }
-
-                sky.bind();
-                sky.drawWithShader(
-                        skyMatrix,
-                        projection,
-                        GameRenderer.getPositionColorShader()
-                );
-                VertexBuffer.unbind();
-            }
-        } finally {
-            RenderSystem.colorMask(true, true, true, true);
-            GL11.glStencilMask(0xFF);
-            GL11.glDisable(GL11.GL_STENCIL_TEST);
-            RenderSystem.depthMask(true);
-            RenderSystem.enableDepthTest();
-            RenderSystem.enableCull();
+            checkSection(level, key);
         }
     }
 
-    private static void rebuildMasks(
-            ClientLevel level,
-            BlockPos center
-    ) {
-        for (VertexBuffer buffer : MASKS.values()) {
-            buffer.close();
+    private static void rebuildQueue(SectionKey center) {
+        QUEUE.clear();
+
+        List<SectionKey> keys = new ArrayList<>();
+
+        for (int x = -HORIZONTAL_RANGE;
+             x <= HORIZONTAL_RANGE; x++) {
+
+            for (int y = -VERTICAL_RANGE;
+                 y <= VERTICAL_RANGE; y++) {
+
+                for (int z = -HORIZONTAL_RANGE;
+                     z <= HORIZONTAL_RANGE; z++) {
+
+                    keys.add(new SectionKey(
+                            center.x() + x,
+                            center.y() + y,
+                            center.z() + z
+                    ));
+                }
+            }
         }
-        MASKS.clear();
+
+        // Check nearby sections first.
+        keys.sort(Comparator.comparingInt(key -> {
+            int dx = key.x() - center.x();
+            int dy = key.y() - center.y();
+            int dz = key.z() - center.z();
+
+            return dx * dx + dy * dy + dz * dz;
+        }));
+
+        QUEUE.addAll(keys);
+    }
+
+    private static void removeDistantSections(SectionKey center) {
+        Iterator<Map.Entry<SectionKey, CachedSection>> it =
+                CACHE.entrySet().iterator();
+
+        while (it.hasNext()) {
+            Map.Entry<SectionKey, CachedSection> entry =
+                    it.next();
+
+            SectionKey key = entry.getKey();
+
+            if (Math.abs(key.x() - center.x()) > HORIZONTAL_RANGE
+                    || Math.abs(key.y() - center.y()) > VERTICAL_RANGE
+                    || Math.abs(key.z() - center.z()) > HORIZONTAL_RANGE) {
+
+                entry.getValue().close();
+                it.remove();
+            }
+        }
+    }
+
+    private static void checkSection(
+            ClientLevel level,
+            SectionKey key
+    ) {
+        if (!level.hasChunk(key.x(), key.z())) {
+            CachedSection old = CACHE.remove(key);
+
+            if (old != null) old.close();
+
+            return;
+        }
+
+        long signature = calculateSignature(level, key);
+
+        CachedSection existing = CACHE.get(key);
+
+        if (existing != null
+                && existing.signature == signature) {
+            return;
+        }
+
+        if (existing != null) existing.close();
+
+        CachedSection replacement =
+                new CachedSection(signature);
 
         for (SkyType type : SkyType.values()) {
-            BufferBuilder builder =
-                    Tesselator.getInstance().getBuilder();
+            VertexBuffer buffer =
+                    buildSectionMask(level, key, type);
 
-            builder.begin(
-                    VertexFormat.Mode.QUADS,
-                    DefaultVertexFormat.POSITION_COLOR
-            );
+            if (buffer != null) {
+                replacement.masks.put(type, buffer);
+            }
+        }
 
-            int faces = 0;
-            BlockPos.MutableBlockPos pos =
-                    new BlockPos.MutableBlockPos();
+        CACHE.put(key, replacement);
+    }
 
-            for (int x = -TEST_RADIUS; x <= TEST_RADIUS; x++) {
-                for (int y = -TEST_RADIUS; y <= TEST_RADIUS; y++) {
-                    for (int z = -TEST_RADIUS; z <= TEST_RADIUS; z++) {
-                        pos.set(
-                                center.getX() + x,
-                                center.getY() + y,
-                                center.getZ() + z
-                        );
+    private static long calculateSignature(
+            ClientLevel level,
+            SectionKey key
+    ) {
+        long hash = 1469598103934665603L;
 
-                        if (!(level.getBlockState(pos).getBlock()
-                                instanceof DomainSkyBlock skyBlock)) {
+        BlockPos.MutableBlockPos pos =
+                new BlockPos.MutableBlockPos();
+
+        int baseX = key.x() << 4;
+        int baseY = key.y() << 4;
+        int baseZ = key.z() << 4;
+
+        for (int x = 0; x < 16; x++) {
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    pos.set(baseX + x, baseY + y, baseZ + z);
+
+                    BlockState state = level.getBlockState(pos);
+
+                    if (!(state.getBlock()
+                            instanceof DomainSkyBlock sky)) {
+                        continue;
+                    }
+
+                    long value =
+                            ((long) sky.getSkyType().ordinal() + 1L);
+
+                    value = value * 4099L
+                            + (x << 8) + (y << 4) + z;
+
+                    for (Direction direction : Direction.values()) {
+                        if (level.getBlockState(
+                                pos.relative(direction)).isAir()) {
+                            value = value * 31L
+                                    + direction.ordinal() + 1;
+                        }
+                    }
+
+                    hash ^= value;
+                    hash *= 1099511628211L;
+                }
+            }
+        }
+
+        return hash;
+    }
+
+    private static VertexBuffer buildSectionMask(
+            ClientLevel level,
+            SectionKey key,
+            SkyType type
+    ) {
+        BufferBuilder builder =
+                Tesselator.getInstance().getBuilder();
+
+        builder.begin(
+                VertexFormat.Mode.QUADS,
+                DefaultVertexFormat.POSITION_COLOR
+        );
+
+        int faces = 0;
+
+        int baseX = key.x() << 4;
+        int baseY = key.y() << 4;
+        int baseZ = key.z() << 4;
+
+        BlockPos.MutableBlockPos pos =
+                new BlockPos.MutableBlockPos();
+
+        for (int x = 0; x < 16; x++) {
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    pos.set(
+                            baseX + x,
+                            baseY + y,
+                            baseZ + z
+                    );
+
+                    BlockState state = level.getBlockState(pos);
+
+                    if (!(state.getBlock()
+                            instanceof DomainSkyBlock sky)) {
+                        continue;
+                    }
+
+                    if (sky.getSkyType() != type) continue;
+
+                    for (Direction direction : Direction.values()) {
+                        if (!level.getBlockState(
+                                pos.relative(direction)).isAir()) {
                             continue;
                         }
 
-                        if (skyBlock.getSkyType() != type) continue;
-
-                        for (Direction face : Direction.values()) {
-                            BlockPos neighbor = pos.relative(face);
-
-                            // Only expose sky toward air.
-                            if (!level.getBlockState(neighbor).isAir()) {
-                                continue;
-                            }
-
-                            addFace(builder, pos, face);
-                            faces++;
-                        }
+                        addFace(builder, pos, direction);
+                        faces++;
                     }
                 }
             }
-
-            var built = builder.end();
-
-            if (faces == 0) {
-                continue;
-            }
-
-            VertexBuffer buffer =
-                    new VertexBuffer(VertexBuffer.Usage.STATIC);
-
-            buffer.bind();
-            buffer.upload(built);
-            VertexBuffer.unbind();
-
-            MASKS.put(type, buffer);
         }
+
+        var built = builder.end();
+
+        if (faces == 0) return null;
+
+        VertexBuffer buffer =
+                new VertexBuffer(VertexBuffer.Usage.STATIC);
+
+        buffer.bind();
+        buffer.upload(built);
+        VertexBuffer.unbind();
+
+        return buffer;
     }
 
     private static void addFace(
-            BufferBuilder b,
-            BlockPos p,
+            BufferBuilder builder,
+            BlockPos pos,
             Direction direction
     ) {
-        float x = p.getX();
-        float y = p.getY();
-        float z = p.getZ();
+        float x = pos.getX();
+        float y = pos.getY();
+        float z = pos.getZ();
 
         float[][] vertices = switch (direction) {
             case UP -> new float[][]{
@@ -263,16 +355,151 @@ public final class DomainSkyMaskRenderer {
         };
 
         for (float[] v : vertices) {
-            b.vertex(x + v[0], y + v[1], z + v[2])
-                    .color(255, 255, 255, 255)
-                    .endVertex();
+            builder.vertex(
+                    x + v[0],
+                    y + v[1],
+                    z + v[2]
+            ).color(255, 255, 255, 255).endVertex();
+        }
+    }
+
+    @SubscribeEvent
+    public static void render(RenderLevelStageEvent event) {
+        if (event.getStage() !=
+                RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+
+        if (mc.level == null || CACHE.isEmpty()) return;
+
+        mc.getMainRenderTarget().enableStencil();
+
+        Vec3 camera = event.getCamera().getPosition();
+
+        Matrix4f worldMatrix =
+                new Matrix4f(event.getPoseStack().last().pose());
+
+        worldMatrix.translate(
+                (float) -camera.x,
+                (float) -camera.y,
+                (float) -camera.z
+        );
+
+        Matrix4f skyMatrix =
+                new Matrix4f(event.getPoseStack().last().pose());
+
+        Matrix4f projection = event.getProjectionMatrix();
+
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.disableCull();
+
+// Respect the depth buffer so foreground entities
+// and blocks can occlude the sky.
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
+
+        GL11.glEnable(GL11.GL_STENCIL_TEST);
+        GL11.glStencilMask(0xFF);
+
+        try {
+            for (SkyType type : SkyType.values()) {
+                GL11.glClearStencil(0);
+                GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT);
+
+// Only mark sky faces that are not hidden
+// behind existing world or entity geometry.
+                RenderSystem.enableDepthTest();
+
+                GL11.glStencilFunc(GL11.GL_ALWAYS, 1, 0xFF);
+                GL11.glStencilOp(
+                        GL11.GL_KEEP,
+                        GL11.GL_KEEP,
+                        GL11.GL_REPLACE
+                );
+
+                RenderSystem.colorMask(
+                        false, false, false, false
+                );
+
+                boolean hasMasks = false;
+
+                for (CachedSection section : CACHE.values()) {
+                    VertexBuffer mask = section.masks.get(type);
+
+                    if (mask == null) continue;
+
+                    hasMasks = true;
+
+                    mask.bind();
+                    mask.drawWithShader(
+                            worldMatrix,
+                            projection,
+                            GameRenderer.getPositionColorShader()
+                    );
+                }
+
+                VertexBuffer.unbind();
+
+                RenderSystem.colorMask(
+                        true, true, true, true
+                );
+
+                if (!hasMasks) continue;
+
+// The mask has already been checked against
+// the world's depth buffer.
+//
+// Draw the sky only inside that visible mask.
+// Do not depth-test the sky sphere itself.
+                RenderSystem.disableDepthTest();
+
+                GL11.glStencilMask(0x00);
+                GL11.glStencilFunc(GL11.GL_EQUAL, 1, 0xFF);
+                GL11.glStencilOp(
+                        GL11.GL_KEEP,
+                        GL11.GL_KEEP,
+                        GL11.GL_KEEP
+                );
+
+                VertexBuffer sky = SKIES.get(type);
+
+                if (sky == null) {
+                    sky = createSky(type);
+                    SKIES.put(type, sky);
+                }
+
+                sky.bind();
+                sky.drawWithShader(
+                        skyMatrix,
+                        projection,
+                        GameRenderer.getPositionColorShader()
+                );
+
+                VertexBuffer.unbind();
+
+                GL11.glStencilMask(0xFF);
+
+// Restore depth testing for the next sky type.
+                RenderSystem.enableDepthTest();
+
+            }
+        } finally {
+            RenderSystem.colorMask(true, true, true, true);
+            GL11.glStencilMask(0xFF);
+            GL11.glDisable(GL11.GL_STENCIL_TEST);
+            RenderSystem.depthMask(true);
+            RenderSystem.enableDepthTest();
+            RenderSystem.enableCull();
         }
     }
 
     private static VertexBuffer createSky(SkyType type) {
-        BufferBuilder b = Tesselator.getInstance().getBuilder();
+        BufferBuilder builder =
+                Tesselator.getInstance().getBuilder();
 
-        b.begin(
+        builder.begin(
                 VertexFormat.Mode.QUADS,
                 DefaultVertexFormat.POSITION_COLOR
         );
@@ -289,10 +516,10 @@ public final class DomainSkyMaskRenderer {
                 double p0 = Math.PI * 2 * ix / horizontal;
                 double p1 = Math.PI * 2 * (ix + 1) / horizontal;
 
-                skyVertex(b, type, radius, t0, p0);
-                skyVertex(b, type, radius, t1, p0);
-                skyVertex(b, type, radius, t1, p1);
-                skyVertex(b, type, radius, t0, p1);
+                skyVertex(builder, type, radius, t0, p0);
+                skyVertex(builder, type, radius, t1, p0);
+                skyVertex(builder, type, radius, t1, p1);
+                skyVertex(builder, type, radius, t0, p1);
             }
         }
 
@@ -300,14 +527,14 @@ public final class DomainSkyMaskRenderer {
                 new VertexBuffer(VertexBuffer.Usage.STATIC);
 
         buffer.bind();
-        buffer.upload(b.end());
+        buffer.upload(builder.end());
         VertexBuffer.unbind();
 
         return buffer;
     }
 
     private static void skyVertex(
-            BufferBuilder b,
+            BufferBuilder builder,
             SkyType type,
             float radius,
             double theta,
@@ -337,21 +564,25 @@ public final class DomainSkyMaskRenderer {
             blue = (int) (75 + 55 * blend);
         }
 
-        b.vertex(x, y, z)
+        builder.vertex(x, y, z)
                 .color(red, green, blue, 255)
                 .endVertex();
     }
 
-    private static void clearBuffers() {
-        for (VertexBuffer buffer : MASKS.values()) {
-            buffer.close();
-        }
-        for (VertexBuffer buffer : SKIES.values()) {
-            buffer.close();
+    private static void clearAll() {
+        for (CachedSection section : CACHE.values()) {
+            section.close();
         }
 
-        MASKS.clear();
+        for (VertexBuffer sky : SKIES.values()) {
+            sky.close();
+        }
+
+        CACHE.clear();
         SKIES.clear();
-        lastScanCenter = null;
+        QUEUE.clear();
+
+        lastLevel = null;
+        lastCenter = null;
     }
 }

@@ -109,7 +109,7 @@ public class DomainArenaBuilder {
             case 2 -> abyssBlack();        // Gojo
             case 5 -> abyssBlack();        // Yuta
             case 6 -> abyssBlack();        // Megumi
-            case 8 -> abyssBlueSky();          // Dagon (no blue_sky block yet)
+            case 8 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Dagon (no blue_sky block yet)
             case 9 -> abyssBlack();        // Yuki
             case 14 -> abyssBlueSky();       // Hanami (or sand/sky later)
             case 15 -> abyssBone();         // Mahito
