@@ -327,7 +327,7 @@ public final class DomainClash {
         winner.getPersistentData().putBoolean("abyss_domain_clashing", false);
         winner.getPersistentData().putBoolean("abyss_domain_handled", true);
         winner.getPersistentData().putDouble("x_pos_doma", inst.arenaCenter.getX() + 0.5);
-        winner.getPersistentData().putDouble("y_pos_doma", inst.arenaCenter.getY());
+        winner.getPersistentData().putDouble("y_pos_doma", inst.arenaCenter.getY() + 2);
         winner.getPersistentData().putDouble("z_pos_doma", inst.arenaCenter.getZ() + 0.5);
         winner.getPersistentData().putBoolean("Failed", false);
         winner.getPersistentData().putBoolean("Cover", false);

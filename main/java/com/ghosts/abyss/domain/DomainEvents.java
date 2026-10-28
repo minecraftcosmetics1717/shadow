@@ -147,23 +147,38 @@ public class DomainEvents {
                 double distSq = dx * dx + dz * dz;
                 double maxR = DomainDimension.INNER_RADIUS;
 
+
                 if (distSq <= maxR * maxR) {
                     var data = entity.getPersistentData();
-                    data.putDouble("x_pos_doma", inst.arenaCenter.getX() + 0.5);
-                    data.putDouble("y_pos_doma", inst.arenaCenter.getY());
-                    data.putDouble("z_pos_doma", inst.arenaCenter.getZ() + 0.5);
-                    {
-                    }
-                } else {
-                    entity.getPersistentData().putDouble("x_pos_doma", inst.overworldCenter.x);
-                    entity.getPersistentData().putDouble("y_pos_doma", inst.overworldCenter.y);
-                    entity.getPersistentData().putDouble("z_pos_doma", inst.overworldCenter.z);
 
-                    MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(DOMAIN_EFFECT_ID);
+                    data.putDouble("x_pos_doma",
+                            inst.arenaCenter.getX() + 0.5);
+                    data.putDouble("y_pos_doma",
+                            inst.arenaCenter.getY() + 1.5);
+                    data.putDouble("z_pos_doma",
+                            inst.arenaCenter.getZ() + 0.5);
+
+                } else {
+                    // Keep domain coordinates in the Abyss dimension.
+                    // Do not substitute overworld coordinates.
+                    var data = entity.getPersistentData();
+
+                    data.putDouble("x_pos_doma",
+                            inst.arenaCenter.getX() + 0.5);
+                    data.putDouble("y_pos_doma",
+                            inst.arenaCenter.getY() + 1.5);
+                    data.putDouble("z_pos_doma",
+                            inst.arenaCenter.getZ() + 0.5);
+
+                    MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(
+                            DOMAIN_EFFECT_ID
+                    );
+
                     if (effect != null) {
                         entity.removeEffect(effect);
                     }
                 }
+
             }
             if (entity instanceof ServerPlayer sp && entity.tickCount % 20 == 0) {
                 DomainHudSync.tick(sp);

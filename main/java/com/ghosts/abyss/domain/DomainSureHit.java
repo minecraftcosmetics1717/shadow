@@ -58,7 +58,7 @@ public final class DomainSureHit {
 
             data.putDouble("skill_domain", skill);
             data.putDouble("x_pos_doma", inst.arenaCenter.getX() + 0.5);
-            data.putDouble("y_pos_doma", inst.arenaCenter.getY()+1.5);
+            data.putDouble("y_pos_doma", inst.arenaCenter.getY() + 2);
             data.putDouble("z_pos_doma", inst.arenaCenter.getZ() + 0.5);
 
             // Run JC's original domain-specific attack logic.
