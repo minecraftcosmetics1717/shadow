@@ -83,13 +83,52 @@ public final class DomainSureHit {
             }
             // Run JC's original domain-specific attack logic.
             // Do not run its full domain lifecycle procedure.
-            DomainActiveProcedure.execute(
-                    domainLevel,
-                    owner.getX(),
-                    owner.getY(),
-                    owner.getZ(),
-                    owner
-            );
+
+// Run JC's domain attack logic with a controlled radius for Dagon.
+            if (skill == 8.0) {
+                var mapVars =
+                        net.mcreator.jujutsucraft.network.JujutsucraftModVariables
+                                .MapVariables.get(domainLevel);
+
+                double originalRadius = mapVars.DomainExpansionRadius;
+                double dagonRadius = 22.0;
+
+                try {
+                    mapVars.DomainExpansionRadius = dagonRadius;
+
+                    // Log whenever the original radius differs.
+                    if (originalRadius != dagonRadius) {
+                        com.ghosts.abyss.Abyss.LOGGER.info(
+                                "[Abyss DagonRadius] Correcting radius {} -> {} " +
+                                        "for owner={} slot={}",
+                                originalRadius,
+                                dagonRadius,
+                                owner.getName().getString(),
+                                inst.slot
+                        );
+                    }
+
+                    DomainActiveProcedure.execute(
+                            domainLevel,
+                            owner.getX(),
+                            owner.getY(),
+                            owner.getZ(),
+                            owner
+                    );
+                } finally {
+                    // Restore JC's original value immediately afterward.
+                    mapVars.DomainExpansionRadius = originalRadius;
+                }
+            } else {
+                DomainActiveProcedure.execute(
+                        domainLevel,
+                        owner.getX(),
+                        owner.getY(),
+                        owner.getZ(),
+                        owner
+                );
+            }
+
         }
     }
 }
