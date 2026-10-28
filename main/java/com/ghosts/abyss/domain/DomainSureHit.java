@@ -60,7 +60,27 @@ public final class DomainSureHit {
             data.putDouble("x_pos_doma", inst.arenaCenter.getX() + 0.5);
             data.putDouble("y_pos_doma", inst.arenaCenter.getY() + 2);
             data.putDouble("z_pos_doma", inst.arenaCenter.getZ() + 0.5);
+            if (skill == 8.0 && owner.tickCount % 100 == 0) {
+                double jcRadius =
+                        net.mcreator.jujutsucraft.network.JujutsucraftModVariables
+                                .MapVariables.get(domainLevel)
+                                .DomainExpansionRadius;
 
+                com.ghosts.abyss.Abyss.LOGGER.info(
+                        "[Abyss Dagon] owner={}, slot={}, ownerPos={}, " +
+                                "arenaCenter={}, jcRadius={}, abyssRadius={}, " +
+                                "domainX={}, domainY={}, domainZ={}",
+                        owner.getName().getString(),
+                        inst.slot,
+                        owner.position(),
+                        inst.arenaCenter,
+                        jcRadius,
+                        DomainDimension.INNER_RADIUS,
+                        data.getDouble("x_pos_doma"),
+                        data.getDouble("y_pos_doma"),
+                        data.getDouble("z_pos_doma")
+                );
+            }
             // Run JC's original domain-specific attack logic.
             // Do not run its full domain lifecycle procedure.
             DomainActiveProcedure.execute(
