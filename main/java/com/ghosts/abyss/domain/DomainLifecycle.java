@@ -80,6 +80,7 @@ public class DomainLifecycle {
 
         DomainArenaService.forceLoadArena(domainLevel, inst);
         DomainArenaBuilder.build(domainLevel, inst.arenaCenter, skillDomain);
+        DomainDecorations.spawn(domainLevel, inst);
 
         if (owner instanceof Mob mob) {
             mob.setTarget(null);

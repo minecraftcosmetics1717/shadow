@@ -152,7 +152,10 @@ public final class DomainArenaService {
 
         for (Entity e : domainLevel.getEntities((Entity) null, box, ent -> true)) {
             if (e instanceof Player) continue;
-
+            if (e.getPersistentData().getBoolean("abyss_domain_decoration")) {
+                e.discard();
+                continue;
+            }
             ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(e.getType());
             if (id == null || !"jujutsucraft".equals(id.getNamespace())) continue;
 
