@@ -479,11 +479,18 @@ public final class DomainSkyMaskRenderer {
 
                 VertexBuffer.unbind();
 
+                // Mahito's hands are world-anchored and share this sky's stencil.
+                if (type == SkyType.MAHITO) {
+                    // Domain slots are spaced 1000 blocks along X.
+                    int arenaX = mc.level.dimension().equals(
+                            com.ghosts.abyss.domain.DomainDimension.ID)
+                            ? Math.round((float)camera.x / 1000f) * 1000 : 0;
+                    MahitoHandSkyRenderer.render(camera,
+                            event.getPoseStack().last().pose(), projection, arenaX);
+                }
+
                 GL11.glStencilMask(0xFF);
-
-// Restore depth testing for the next sky type.
                 RenderSystem.enableDepthTest();
-
             }
         } finally {
             RenderSystem.colorMask(true, true, true, true);
@@ -559,9 +566,9 @@ public final class DomainSkyMaskRenderer {
             green = (int) (125 + 95 * blend);
             blue = 255;
         } else {
-            red = (int) (55 + 65 * blend);
-            green = (int) (20 + 25 * blend);
-            blue = (int) (75 + 55 * blend);
+            red = (int) (76 * (1F - blend));
+            green = (int) (35 * (1F - blend));
+            blue = (int) (105 * (1F - blend));
         }
 
         builder.vertex(x, y, z)
