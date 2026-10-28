@@ -243,8 +243,10 @@ public class DomainTeleport {
             result.getPersistentData()
                     .putBoolean("abyss_domain_transferring", true);
 
-            result.getPersistentData()
-                    .putBoolean("abyss_domain_handled", true);
+            result.getPersistentData().putBoolean(
+                    "abyss_domain_handled",
+                    persistCopy.getBoolean("abyss_domain_handled")
+            );
 
             result.getPersistentData()
                     .putBoolean("Failed", false);

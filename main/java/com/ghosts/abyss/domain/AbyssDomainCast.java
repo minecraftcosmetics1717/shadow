@@ -22,7 +22,7 @@ public final class AbyssDomainCast {
 
     public static final int OVERWORLD_RADIUS = 22;
     public static final int DURATION_TICKS = 20 * 160;
-    public static final double BASE_CE_PER_SECOND = 5.0;
+    public static final double BASE_CE_PER_SECOND = 15.0;
 
     private static final String NBT_ACTIVE = "abyss_domain_active";
     private static final String NBT_END_TICK = "abyss_domain_end_tick";
@@ -132,7 +132,10 @@ public final class AbyssDomainCast {
             data.putDouble("cnt3", 0.0);
 
             // Allow another attempt if this clash ends or fails.
-            data.putBoolean(NBT_COMMITTED, false);
+            data.putBoolean(
+                    NBT_COMMITTED,
+                    data.getBoolean("abyss_domain_clashing")
+            );
 
             return;
         }

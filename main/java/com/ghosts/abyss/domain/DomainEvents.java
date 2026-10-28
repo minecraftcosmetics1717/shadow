@@ -140,36 +140,36 @@ public class DomainEvents {
 
         if (entity.level().dimension().equals(DomainDimension.ID)) {
             DomainInstance inst = DomainInstanceManager.getByOwner(entity.getUUID());
-            if (inst == null) return;
+            if (inst != null) {
 
-            double dx = entity.getX() - (inst.arenaCenter.getX() + 0.5);
-            double dz = entity.getZ() - (inst.arenaCenter.getZ() + 0.5);
-            double distSq = dx * dx + dz * dz;
-            double maxR = DomainDimension.INNER_RADIUS;
+                double dx = entity.getX() - (inst.arenaCenter.getX() + 0.5);
+                double dz = entity.getZ() - (inst.arenaCenter.getZ() + 0.5);
+                double distSq = dx * dx + dz * dz;
+                double maxR = DomainDimension.INNER_RADIUS;
 
-            if (distSq <= maxR * maxR) {
-                var data = entity.getPersistentData();
-                data.putDouble("x_pos_doma", inst.arenaCenter.getX() + 0.5);
-                data.putDouble("y_pos_doma", inst.arenaCenter.getY());
-                data.putDouble("z_pos_doma", inst.arenaCenter.getZ() + 0.5);
-                {
-                }
-            } else {
-                entity.getPersistentData().putDouble("x_pos_doma", inst.overworldCenter.x);
-                entity.getPersistentData().putDouble("y_pos_doma", inst.overworldCenter.y);
-                entity.getPersistentData().putDouble("z_pos_doma", inst.overworldCenter.z);
+                if (distSq <= maxR * maxR) {
+                    var data = entity.getPersistentData();
+                    data.putDouble("x_pos_doma", inst.arenaCenter.getX() + 0.5);
+                    data.putDouble("y_pos_doma", inst.arenaCenter.getY());
+                    data.putDouble("z_pos_doma", inst.arenaCenter.getZ() + 0.5);
+                    {
+                    }
+                } else {
+                    entity.getPersistentData().putDouble("x_pos_doma", inst.overworldCenter.x);
+                    entity.getPersistentData().putDouble("y_pos_doma", inst.overworldCenter.y);
+                    entity.getPersistentData().putDouble("z_pos_doma", inst.overworldCenter.z);
 
-                MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(DOMAIN_EFFECT_ID);
-                if (effect != null) {
-                    entity.removeEffect(effect);
+                    MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(DOMAIN_EFFECT_ID);
+                    if (effect != null) {
+                        entity.removeEffect(effect);
+                    }
                 }
             }
-        }
-        if (entity instanceof ServerPlayer sp && entity.tickCount % 20 == 0) {
-            DomainHudSync.tick(sp);
+            if (entity instanceof ServerPlayer sp && entity.tickCount % 20 == 0) {
+                DomainHudSync.tick(sp);
+            }
         }
     }
-
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onDeath(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide) return;
@@ -279,6 +279,7 @@ public class DomainEvents {
         entity.getPersistentData().putBoolean("abyss_domain_pending", false);
         DomainLifecycle.end(entity);
     }
+
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
@@ -288,8 +289,14 @@ public class DomainEvents {
 
         if (domainLevel == null) return;
 
+        // Update active domain clashes and territory visuals.
         DomainClashController.tick(domainLevel);
+
+        // Run the active owner's JC domain combat effect
+        // when no other domain is challenging it.
+        DomainSureHit.tick(domainLevel);
     }
+
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;

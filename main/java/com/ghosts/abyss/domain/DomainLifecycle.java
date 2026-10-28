@@ -215,11 +215,6 @@ public class DomainLifecycle {
             );
         }
 
-        if (ownerInDim instanceof Mob mob) {
-            mob.setTarget(null);
-            mob.getNavigation().stop();
-        }
-
         pullOthers(overworld, domainLevel, inst, overCenter, catchRadius, ownerInDim);
     }
 
@@ -303,8 +298,9 @@ public class DomainLifecycle {
         );
 
         List<LivingEntity> list = overworld.getEntitiesOfClass(
-                LivingEntity.class, box,
-                e -> e.distanceToSqr(center) <= radius * radius
+                LivingEntity.class,
+                box,
+                e -> e.isAlive()
                         && !e.getUUID().equals(ownerInDim.getUUID())
         );
 
@@ -313,7 +309,13 @@ public class DomainLifecycle {
         double floorY = inst.arenaCenter.getY() + 1.1;
         double cx = inst.arenaCenter.getX() + 0.5;
         double cz = inst.arenaCenter.getZ() + 0.5;
-
+        com.ghosts.abyss.Abyss.LOGGER.info(
+                "[Abyss Domain] Owner: {}, capture center: {}, radius: {}, participants found: {}",
+                ownerInDim.getName().getString(),
+                center,
+                radius,
+                list.size()
+        );
         for (LivingEntity e : list) {
             UUID id = e.getUUID();
             inst.returnPositions.putIfAbsent(id, e.position());
@@ -326,7 +328,20 @@ public class DomainLifecycle {
                 ox *= scale;
                 oz *= scale;
             }
-            DomainTeleport.teleport(e, domainLevel, cx + ox, floorY, cz + oz);
+            LivingEntity arrived = DomainTeleport.teleport(
+                    e,
+                    domainLevel,
+                    cx + ox,
+                    floorY,
+                    cz + oz
+            );
+
+            com.ghosts.abyss.Abyss.LOGGER.info(
+                    "[Abyss Domain] Participant: {}, teleport result: {}, destination: {}",
+                    e.getName().getString(),
+                    arrived == null ? "FAILED" : "SUCCESS",
+                    arrived == null ? "none" : arrived.level().dimension().location()
+            );
         }
     }
 
