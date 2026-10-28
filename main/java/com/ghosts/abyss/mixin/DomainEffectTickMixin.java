@@ -33,7 +33,13 @@ public class DomainEffectTickMixin {
            remap = false
    )
    private static void onHead(LevelAccessor world, double x, double y, double z, Entity entity, CallbackInfo ci) {
-      if (entity != null && entity.getPersistentData().getBoolean("open_domain")) {
+
+      if (entity != null
+              && entity.getPersistentData().getBoolean("open_domain")
+              && !(entity.level().dimension().equals(
+              com.ghosts.abyss.domain.DomainDimension.ID)
+              && entity.getPersistentData().getBoolean("abyss_domain_handled"))) {
+
          try {
             Class<?> cls = Class.forName("net.mcreator.jujutsucraft.network.JujutsucraftModVariables$MapVariables");
             Object mapVars = cls.getMethod("get", LevelAccessor.class).invoke(null, world);
