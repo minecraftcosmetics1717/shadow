@@ -66,8 +66,7 @@ public final class SixEyesThermalRenderer {
             }
 
             // Enable the loaded post-processing effect.
-            mc.gameRenderer.togglePostEffect();
-
+// loadEffect() already activates the post effect.
             ourShaderLoaded = true;
 
             System.out.println(
