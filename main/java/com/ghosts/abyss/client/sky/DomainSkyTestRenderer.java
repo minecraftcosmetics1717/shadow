@@ -13,11 +13,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 
-@Mod.EventBusSubscriber(
-        modid = "abyss",
-        bus = Mod.EventBusSubscriber.Bus.FORGE,
-        value = Dist.CLIENT
-)
 public final class DomainSkyTestRenderer {
 
     private static final int HORIZONTAL_SEGMENTS = 32;

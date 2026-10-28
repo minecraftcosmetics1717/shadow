@@ -53,6 +53,14 @@ public class ModBlocks {
     public static final RegistryObject<Block> DOMAIN_BLUE_SKY =
             register("domain_blue_sky", () -> new DomainBlock(MapColor.COLOR_LIGHT_BLUE, SoundType.GLASS,true));
 
+    public static final RegistryObject<Block> DOMAIN_SKY_DAY =
+            register("domain_sky_day",
+                    () -> new DomainSkyBlock(DomainSkyBlock.SkyType.DAY));
+
+    public static final RegistryObject<Block> DOMAIN_SKY_MAHITO =
+            register("domain_sky_mahito",
+                    () -> new DomainSkyBlock(DomainSkyBlock.SkyType.MAHITO));
+
 
     private static RegistryObject<Block> register(String name, Supplier<Block> block) {
         RegistryObject<Block> reg = BLOCKS.register(name, block);
