@@ -30,7 +30,13 @@ public final class DomainSureHit {
                     DomainEvents.DOMAIN_EFFECT_ID
             );
 
-            if (domainEffect == null || !owner.hasEffect(domainEffect)) {
+// Abyss fast-cast domains don't necessarily receive JC's
+// original domain_expansion effect.
+            boolean abyssFastCast = inst.skillDomain == 8.0
+                    || inst.skillDomain == 15.0;
+
+            if (!abyssFastCast
+                    && (domainEffect == null || !owner.hasEffect(domainEffect))) {
                 continue;
             }
 

@@ -66,7 +66,12 @@ public class CentralKeyHookMixin {
                   entity.getPersistentData().putBoolean("abyss_dagon_domain_auth", true);
                }
                break;
-
+            case 15: // Mahito
+               if (selected == 20.0) {
+                  entity.getPersistentData().putBoolean(
+                          "abyss_mahito_domain_auth", true);
+               }
+               break;
             case 38: // Takako Uro
                if (selected == 9.0) { // Infinite Sky
                   entity.getPersistentData().putBoolean("jreborn_infsky_auth", true);

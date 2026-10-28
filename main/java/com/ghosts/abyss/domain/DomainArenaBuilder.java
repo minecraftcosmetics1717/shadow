@@ -92,7 +92,7 @@ public class DomainArenaBuilder {
             case 8 -> abyssSand();          // Dagon
             case 9 -> abyssSand();          // Yuki
             case 14 -> abyssFlower();       // Hanami
-            case 15 -> abyssBone();         // Mahito
+            case 15 -> ModBlocks.DOMAIN_SKY_MAHITO.get().defaultBlockState(); // Mahito
             case 19 -> abyssBlack();       // Naoya
             case 27 -> abyssBirch();        // Higuruma (base; rim handled in placeFloor)
             case 29 -> abyssWhite();        // Hakari
@@ -112,7 +112,7 @@ public class DomainArenaBuilder {
             case 8 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Dagon (no blue_sky block yet)
             case 9 -> abyssBlack();        // Yuki
             case 14 -> abyssBlueSky();       // Hanami (or sand/sky later)
-            case 15 -> abyssBone();         // Mahito
+            case 15 -> ModBlocks.DOMAIN_SKY_MAHITO.get().defaultBlockState(); // Mahito
             case 19 -> abyssBlack();       // Naoya
             case 27 -> abyssBlack();       // Higuruma
             case 29 -> abyssWhite();        // Hakari

@@ -16,6 +16,7 @@ import static com.ghosts.abyss.domain.DomainLifecycle.clearCastState;
 public final class AbyssDomainCast {
 
     public static final double DAGON_SKILL_DOMAIN = 8.0;
+    public static final double MAHITO_SKILL_DOMAIN = 15.0;
 
     /** Same as CreateBarrier: long-press finishes when cnt3 reaches 20. */
     public static final int LONG_PRESS_MAX = 20;
@@ -41,6 +42,18 @@ public final class AbyssDomainCast {
     }
 
     public static void tickDagonDomain(LevelAccessor world, LivingEntity entity) {
+        tickCustomDomain(world, entity, DAGON_SKILL_DOMAIN);
+    }
+
+    public static void tickMahitoDomain(LevelAccessor world, LivingEntity entity) {
+        tickCustomDomain(world, entity, MAHITO_SKILL_DOMAIN);
+    }
+
+    private static void tickCustomDomain(
+            LevelAccessor world,
+            LivingEntity entity,
+            double domainId
+    ) {
         if (entity.level().isClientSide) return;
         if (!(entity.level() instanceof ServerLevel level)) return;
 
@@ -118,8 +131,8 @@ public final class AbyssDomainCast {
         // ----- Long press complete: activate the Abyss domain -----
         data.putBoolean(NBT_COMMITTED, true);
 
-        data.putDouble("select", DAGON_SKILL_DOMAIN);
-        data.putDouble("skill_domain", DAGON_SKILL_DOMAIN);
+        data.putDouble("select", domainId);
+        data.putDouble("skill_domain", domainId);
 
 // If we're already inside a domain, challenge its owner.
 // Do not create another arena or overworld barrier.
@@ -156,7 +169,7 @@ public final class AbyssDomainCast {
 
         DomainLifecycle.startAbyssDomain(
                 entity,
-                DAGON_SKILL_DOMAIN,
+                domainId,
                 center,
                 OVERWORLD_RADIUS
         );

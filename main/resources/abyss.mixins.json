@@ -76,7 +76,9 @@
     "JujutsuDomainExpirationMixin",
     "AbyssJcDomainExpireMixin",
     "AbyssJcDomainTickMixin",
-    "DagonFishRadiusMixin"
+    "DagonFishRadiusMixin",
+    "MahitoDomainExecuteMixin",
+    "MahitoDomainDisplayMixin"
   ],
   "client": [],
   "injectors": {
