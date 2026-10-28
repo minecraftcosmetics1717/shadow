@@ -339,10 +339,20 @@ public final class DomainClash {
         loser.getPersistentData().putBoolean("abyss_domain_handled", false);
         loser.getPersistentData().putBoolean("abyss_domain_pending", false);
         loser.getPersistentData().putBoolean("abyss_domain_clashing", false);
+        loser.getPersistentData().putBoolean("abyss_domain_clash_active", false);
+        winner.getPersistentData().putBoolean("abyss_domain_clash_active", false);
+
+        loser.getPersistentData().putBoolean("DomainDefeated", true);
+// The old clash must stop controlling the arena's visuals.
+        DomainClashController.reset(inst.slot);
 
         if (domainLevel != null) {
-            DomainArenaBuilder.placeFloor(domainLevel, inst.arenaCenter, inst.skillDomain);
-            DomainArenaBuilder.repairFloorCenter(domainLevel, inst.arenaCenter, inst.skillDomain, 12);
+            // Rebuild the arena using the winning domain's blocks.
+            DomainArenaBuilder.build(
+                    domainLevel,
+                    inst.arenaCenter,
+                    inst.skillDomain
+            );
+        }
         }
     }
-}

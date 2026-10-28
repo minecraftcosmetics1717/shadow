@@ -50,8 +50,9 @@ public final class DomainSureHit {
 
             double skill = inst.skillDomain;
 
-            // First implementation: only enable Dagon's domain.
-            if (skill != 8.0) continue;
+// Allow JC's domain dispatcher to select the
+// active owner's domain-specific effect.
+            if (skill <= 0.0) continue;
 
             var data = owner.getPersistentData();
 

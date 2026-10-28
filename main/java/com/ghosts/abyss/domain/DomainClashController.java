@@ -18,7 +18,10 @@ public final class DomainClashController {
     private DomainClashController() {}
 
     private static final Map<Integer, ClashState> STATES = new HashMap<>();
-
+    public static void reset(int slot) {
+        STATES.remove(slot);
+        DomainClashVisuals.reset(slot);
+    }
     private static final class ClashState {
         double challengerSkill;
         double territory = 0.0;

@@ -14,7 +14,9 @@ public final class DomainClashVisuals {
 
     private static final int UPDATES_PER_TICK = 256;
     private static final Map<Integer, Integer> CURSORS = new HashMap<>();
-
+    public static void reset(int slot) {
+        CURSORS.remove(slot);
+    }
     public static void update(
             ServerLevel level,
             DomainInstance inst,
