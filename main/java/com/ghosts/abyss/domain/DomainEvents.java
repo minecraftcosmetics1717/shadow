@@ -310,6 +310,7 @@ public class DomainEvents {
         // Run the active owner's JC domain combat effect
         // when no other domain is challenging it.
         DomainSureHit.tick(domainLevel);
+        DomainFishDebug.tick(domainLevel);
     }
 
     @SubscribeEvent
