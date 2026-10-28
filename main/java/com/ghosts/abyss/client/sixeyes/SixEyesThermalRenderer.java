@@ -17,7 +17,7 @@ public final class SixEyesThermalRenderer {
     private static final ResourceLocation SHADER =
             new ResourceLocation("abyss", "shaders/post/six_eyes.json");
 
-    private static boolean ourShaderActive = false;
+    private static boolean ourShaderLoaded = false;
     private static boolean loadFailed = false;
 
     private SixEyesThermalRenderer() {}
@@ -34,32 +34,46 @@ public final class SixEyesThermalRenderer {
                         && SixEyesVisionHandler.shouldRender(mc.player);
 
         if (!shouldEnable) {
-            if (ourShaderActive) {
+            if (ourShaderLoaded) {
                 mc.gameRenderer.shutdownEffect();
-                ourShaderActive = false;
+                ourShaderLoaded = false;
             }
+
             loadFailed = false;
             return;
         }
 
-        if (ourShaderActive) {
-            // A resource reload or another renderer might remove our effect.
-            if (mc.gameRenderer.currentEffect() == null) {
-                ourShaderActive = false;
-            } else {
+        if (ourShaderLoaded) {
+            if (mc.gameRenderer.currentEffect() != null) {
                 return;
             }
+            ourShaderLoaded = false;
         }
 
         if (loadFailed) return;
 
-        // Do not replace an existing post-processing effect.
         if (mc.gameRenderer.currentEffect() != null) return;
 
         try {
             mc.gameRenderer.loadEffect(SHADER);
-            ourShaderActive = mc.gameRenderer.currentEffect() != null;
-            loadFailed = !ourShaderActive;
+
+            if (mc.gameRenderer.currentEffect() == null) {
+                loadFailed = true;
+                System.err.println(
+                        "[Abyss] Six Eyes post-processing effect failed to load."
+                );
+                return;
+            }
+
+            // Enable the loaded post-processing effect.
+            mc.gameRenderer.togglePostEffect();
+
+            ourShaderLoaded = true;
+
+            System.out.println(
+                    "[Abyss] Six Eyes post-processing effect loaded."
+            );
+
         } catch (Exception ex) {
             loadFailed = true;
             System.err.println("[Abyss] Failed to load Six Eyes shader:");

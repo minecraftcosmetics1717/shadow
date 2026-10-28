@@ -1,6 +1,6 @@
 {
-  "vertex": "six_eyes",
-  "fragment": "six_eyes",
+  "vertex": "abyss:six_eyes",
+  "fragment": "abyss:six_eyes",
   "attributes": [
     "Position",
     "UV0"
