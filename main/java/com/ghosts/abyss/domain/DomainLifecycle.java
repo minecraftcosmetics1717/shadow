@@ -133,6 +133,7 @@ public class DomainLifecycle {
 
         DomainArenaService.forceLoadArena(domainLevel, inst);
         DomainArenaBuilder.build(domainLevel, inst.arenaCenter, skillDomain);
+        DomainDecorations.spawn(domainLevel, inst);
 
         inst.returnPositions.put(owner.getUUID(), owner.position());
 
@@ -364,9 +365,9 @@ public class DomainLifecycle {
         over.getChunkAt(BlockPos.containing(overCenter));
 
         if (domainLevel != null) {
-            DomainArenaService.evacuateArena(domainLevel, over, inst);
-            DomainArenaService.sweepArenaItems(domainLevel, over, inst);
             DomainArenaService.cleanupDomainMobs(domainLevel, inst);
+            DomainArenaService.evacuateArena(domainLevel, returnLevel, inst);
+            DomainArenaService.sweepArenaItems(domainLevel, returnLevel, inst);
             DomainInstanceManager.clearArena(domainLevel, inst);
             DomainArenaService.unloadArena(domainLevel, inst);
         }

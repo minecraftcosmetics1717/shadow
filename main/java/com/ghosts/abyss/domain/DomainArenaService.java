@@ -63,7 +63,12 @@ public final class DomainArenaService {
         );
 
         List<LivingEntity> toSend = new ArrayList<>(
-                domainLevel.getEntitiesOfClass(LivingEntity.class, box, e -> true)
+                domainLevel.getEntitiesOfClass(
+                        LivingEntity.class,
+                        box,
+                        e -> !e.getPersistentData()
+                                .getBoolean("abyss_domain_decoration")
+                )
         );
 
         for (LivingEntity living : toSend) {

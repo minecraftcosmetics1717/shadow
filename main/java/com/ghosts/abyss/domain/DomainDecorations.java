@@ -41,7 +41,7 @@ public final class DomainDecorations {
                 "jujutsucraft:entity_hands",
                 0.0,
                 1.0,
-                48.0,
+                57.0,
                 180.0F
         );
     }

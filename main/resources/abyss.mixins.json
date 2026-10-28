@@ -78,7 +78,8 @@
     "AbyssJcDomainTickMixin",
     "DagonFishRadiusMixin",
     "MahitoDomainExecuteMixin",
-    "MahitoDomainDisplayMixin"
+    "MahitoDomainDisplayMixin",
+    "AIGravestoneMixin"
   ],
   "client": [],
   "injectors": {
