@@ -28,6 +28,10 @@ public final class SixEyesMaskCapture {
     }
 
     public static void capture(Entity entity) {
+        if (SixEyesSilhouettePass.isRendering()) {
+            return;
+        }
+
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.player == null || mc.level == null

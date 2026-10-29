@@ -2,12 +2,14 @@
 package com.ghosts.abyss.client.sixeyes;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 public final class SixEyesSilhouettePass {
 
@@ -25,16 +27,19 @@ public final class SixEyesSilhouettePass {
     ) {
         Minecraft mc = Minecraft.getInstance();
 
-        if (mc.player == null || mc.level == null) {
+        if (mc.player == null || mc.level == null || rendering) {
             return;
         }
 
         RenderTarget mask =
                 SixEyesThermalTargets.getEntityMask();
 
-        if (mask == null || rendering) {
+        if (mask == null) {
             return;
         }
+
+        Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 cameraPos = camera.getPosition();
 
         rendering = true;
 
@@ -43,7 +48,7 @@ public final class SixEyesSilhouettePass {
 
             MultiBufferSource.BufferSource buffers =
                     MultiBufferSource.immediate(
-                            new com.mojang.blaze3d.vertex.BufferBuilder(256)
+                            new BufferBuilder(256)
                     );
 
             for (SixEyesMaskCapture.CapturedEntity captured
@@ -55,9 +60,39 @@ public final class SixEyesSilhouettePass {
                     continue;
                 }
 
-                // Geometry rendering will be connected here.
-                // We must supply correct camera-relative transforms
-                // and isolate the models' RenderTypes before drawing.
+                double x = Mth.lerp(
+                        partialTick, entity.xOld, entity.getX()
+                ) - cameraPos.x;
+
+                double y = Mth.lerp(
+                        partialTick, entity.yOld, entity.getY()
+                ) - cameraPos.y;
+
+                double z = Mth.lerp(
+                        partialTick, entity.zOld, entity.getZ()
+                ) - cameraPos.z;
+
+                poseStack.pushPose();
+
+                try {
+                    mc.getEntityRenderDispatcher().render(
+                            entity,
+                            x,
+                            y,
+                            z,
+                            Mth.lerp(
+                                    partialTick,
+                                    entity.yRotO,
+                                    entity.getYRot()
+                            ),
+                            partialTick,
+                            poseStack,
+                            buffers,
+                            15728880
+                    );
+                } finally {
+                    poseStack.popPose();
+                }
             }
 
             buffers.endBatch();

@@ -1,4 +1,3 @@
-
 package com.ghosts.abyss.client.sixeyes;
 
 import net.minecraft.client.Minecraft;
@@ -17,11 +16,26 @@ public final class SixEyesMaskFrameHandler {
     private SixEyesMaskFrameHandler() {}
 
     @SubscribeEvent
-    public static void onRenderLevel(
-            RenderLevelStageEvent event
-    ) {
-        if (event.getStage()
-                != RenderLevelStageEvent.Stage.AFTER_SKY) {
+    public static void onRenderLevel(RenderLevelStageEvent event) {
+
+        // After entities are drawn → silhouette / mask pass
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+            Minecraft mc = Minecraft.getInstance();
+
+            if (mc.player != null
+                    && mc.level != null
+                    && SixEyesVisionHandler.shouldRender(mc.player)) {
+
+                SixEyesSilhouettePass.render(
+                        event.getPoseStack(),
+                        event.getPartialTick()
+                );
+            }
+            return;
+        }
+
+        // Start of frame (after sky) → clear mask targets
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) {
             return;
         }
 
