@@ -79,7 +79,8 @@
     "DagonFishRadiusMixin",
     "MahitoDomainExecuteMixin",
     "MahitoDomainDisplayMixin",
-    "AIGravestoneMixin"
+    "AIGravestoneMixin",
+    "client.SixEyesEntityDispatcherMixin"
   ],
   "client": [],
   "injectors": {
