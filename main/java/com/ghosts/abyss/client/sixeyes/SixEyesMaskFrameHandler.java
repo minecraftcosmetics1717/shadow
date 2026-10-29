@@ -17,23 +17,29 @@ public final class SixEyesMaskFrameHandler {
     private SixEyesMaskFrameHandler() {}
 
     @SubscribeEvent
-    public static void onRenderLevel(RenderLevelStageEvent event) {
-
-        if (event.getStage() !=
-                RenderLevelStageEvent.Stage.AFTER_SKY) {
+    public static void onRenderLevel(
+            RenderLevelStageEvent event
+    ) {
+        if (event.getStage()
+                != RenderLevelStageEvent.Stage.AFTER_SKY) {
             return;
         }
 
         Minecraft mc = Minecraft.getInstance();
 
-        if (mc.player == null || mc.level == null
+        if (mc.player == null
+                || mc.level == null
                 || !SixEyesVisionHandler.shouldRender(mc.player)) {
             return;
         }
 
         SixEyesMaskCapture.beginFrame();
 
-        SixEyesThermalTargets.ensureCreated();
-        SixEyesThermalTargets.clear();
+        try {
+            SixEyesThermalTargets.ensureCreated();
+            SixEyesThermalTargets.clear();
+        } finally {
+            mc.getMainRenderTarget().bindWrite(false);
+        }
     }
 }
