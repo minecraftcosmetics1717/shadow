@@ -80,7 +80,9 @@
     "MahitoDomainExecuteMixin",
     "MahitoDomainDisplayMixin",
     "AIGravestoneMixin",
-    "client.SixEyesEntityDispatcherMixin"
+    "client.SixEyesClientGlowMixin",
+    "client.SixEyesGlowColorMixin",
+    "client.SixEyesNightVisionMixin"
   ],
   "client": [],
   "injectors": {
