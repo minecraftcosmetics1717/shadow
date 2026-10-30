@@ -42,6 +42,13 @@ public final class SixEyesGlowRules {
             return false;
         }
 
+// Entities with zero cursed energy are invisible
+// to Six Eyes' cursed-energy highlighting.
+        if (SixEyesEntityColors.getType(living)
+                == SixEyesEntityColors.ThermalType.NO_CURSED_ENERGY) {
+            return false;
+        }
+
         return true;
     }
 
@@ -74,11 +81,6 @@ public final class SixEyesGlowRules {
             }
         }
 
-        // Toji, awakened Maki, etc.: black
-        if (SixEyesEntityColors.getType(entity)
-                == SixEyesEntityColors.ThermalType.NO_CURSED_ENERGY) {
-            return 0x08080C;
-        }
 
         // Everyone else: orange
         return 0xFFB82E;

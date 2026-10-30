@@ -6,12 +6,6 @@ uniform sampler2D DiffuseSampler;
 in vec2 texCoord;
 out vec4 fragColor;
 
-float noise(vec2 co) {
-    return fract(
-        sin(dot(co, vec2(12.9898, 78.233)))
-        * 43758.5453
-    );
-}
 
 bool nearColor(vec3 actual, vec3 expected, float tolerance) {
     return distance(actual, expected) < tolerance;
@@ -58,12 +52,6 @@ void main() {
         vec3(0.025, 0.075, 0.12)
     );
 
-    // Subtle noise, no scanlines or vignette.
-    float grain =
-        (noise(texCoord * 1024.0) - 0.5)
-        * 0.025;
-
-    thermalColor += vec3(grain);
 
     fragColor = vec4(
         clamp(thermalColor, 0.0, 1.0),
