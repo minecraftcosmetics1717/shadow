@@ -61,6 +61,24 @@ public class ModBlocks {
             register("domain_sky_mahito",
                     () -> new DomainSkyBlock(DomainSkyBlock.SkyType.MAHITO));
 
+    public static final RegistryObject<Block> DOMAIN_SKY_BLACK =
+            register("domain_sky_black",
+                    () -> new DomainSkyBlock(
+                            DomainSkyBlock.SkyType.BLACK
+                    ));
+
+    public static final RegistryObject<Block> DOMAIN_SKY_WHITE =
+            register("domain_sky_white",
+                    () -> new DomainSkyBlock(
+                            DomainSkyBlock.SkyType.WHITE
+                    ));
+
+    public static final RegistryObject<Block> DOMAIN_SKY_INFINITE_VOID =
+            register("domain_sky_infinite_void",
+                    () -> new DomainSkyBlock(
+                            DomainSkyBlock.SkyType.INFINITE_VOID
+                    ));
+
 
     private static RegistryObject<Block> register(String name, Supplier<Block> block) {
         RegistryObject<Block> reg = BLOCKS.register(name, block);

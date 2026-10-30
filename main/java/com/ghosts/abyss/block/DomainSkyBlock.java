@@ -12,7 +12,10 @@ public class DomainSkyBlock extends Block {
 
     public enum SkyType {
         DAY,
-        MAHITO
+        MAHITO,
+        BLACK,
+        WHITE,
+        INFINITE_VOID
     }
 
     private final SkyType skyType;

@@ -10,6 +10,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -63,7 +64,13 @@ public final class DomainSkyMaskRenderer {
 
     private static final ArrayDeque<SectionKey> QUEUE =
             new ArrayDeque<>();
+    private static final ResourceLocation INFINITE_VOID_TEXTURE =
+            new ResourceLocation(
+                    "abyss",
+                    "textures/sky/infinite_void.png"
+            );
 
+    private static VertexBuffer infiniteVoidSky;
     private static ClientLevel lastLevel;
     private static SectionKey lastCenter;
 
@@ -537,7 +544,8 @@ public final class DomainSkyMaskRenderer {
             float radius,
             double theta,
             double phi
-    ) {
+    )
+    {
         float x = (float) (
                 Math.sin(theta) * Math.cos(phi) * radius
         );
@@ -552,15 +560,51 @@ public final class DomainSkyMaskRenderer {
         int green;
         int blue;
 
-        if (type == SkyType.DAY) {
-            red = (int) (55 + 145 * blend);
-            green = (int) (125 + 95 * blend);
-            blue = 255;
-        } else {
-            red = (int) (76 * (1F - blend));
-            green = (int) (35 * (1F - blend));
-            blue = (int) (105 * (1F - blend));
+
+        switch (type) {
+            case DAY -> {
+                // Existing daytime sky.
+                red = (int) (55 + 145 * blend);
+                green = (int) (125 + 95 * blend);
+                blue = 255;
+            }
+
+            case MAHITO -> {
+                // Preserve the existing Mahito sky colors.
+                red = (int) (76 * (1F - blend));
+                green = (int) (35 * (1F - blend));
+                blue = (int) (105 * (1F - blend));
+            }
+
+            case BLACK -> {
+                // Completely black sky.
+                red = 0;
+                green = 0;
+                blue = 0;
+            }
+
+            case WHITE -> {
+                // Completely white sky.
+                red = 255;
+                green = 255;
+                blue = 255;
+            }
+
+            case INFINITE_VOID -> {
+                // Temporary dark space background.
+                // Will be replaced by a textured sky.
+                red = 2;
+                green = 4;
+                blue = 12;
+            }
+
+            default -> {
+                red = 0;
+                green = 0;
+                blue = 0;
+            }
         }
+
 
         builder.vertex(x, y, z)
                 .color(red, green, blue, 255)
