@@ -1,5 +1,11 @@
+
 {
-  "vertex": "abyss:six_eyes",
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "blit",
   "fragment": "abyss:six_eyes",
   "attributes": [
     "Position"
