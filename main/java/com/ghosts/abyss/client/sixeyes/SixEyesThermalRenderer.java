@@ -24,6 +24,16 @@ public final class SixEyesThermalRenderer {
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (true) {
+            Minecraft mc = Minecraft.getInstance();
+
+            if (ourShaderLoaded) {
+                mc.gameRenderer.shutdownEffect();
+                ourShaderLoaded = false;
+            }
+
+            return;
+        }
         if (event.phase != TickEvent.Phase.END) return;
 
         Minecraft mc = Minecraft.getInstance();

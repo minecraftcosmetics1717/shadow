@@ -3,7 +3,6 @@ package com.ghosts.abyss.client.sixeyes;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -26,8 +25,6 @@ public class SixEyesThermalLayer<
 
     private static final int FULL_BRIGHT = 15728880;
 
-    // Slightly larger than the original model,
-    // following Vision Goggles' technique.
     private static final float MODEL_SCALE = 1.03F;
 
     public SixEyesThermalLayer(
@@ -49,21 +46,9 @@ public class SixEyesThermalLayer<
             float netHeadYaw,
             float headPitch
     ) {
-        Minecraft mc = Minecraft.getInstance();
-
-        if (mc.player == null || mc.level == null) {
-            return;
-        }
-
         if (!SixEyesGlowRules.shouldGlow(entity)) {
             return;
         }
-
-        int color = SixEyesGlowRules.getGlowColor(entity);
-
-        float red = ((color >> 16) & 255) / 255.0F;
-        float green = ((color >> 8) & 255) / 255.0F;
-        float blue = (color & 255) / 255.0F;
 
         poseStack.pushPose();
 
@@ -97,14 +82,15 @@ public class SixEyesThermalLayer<
                         RenderType.eyes(WHITE_TEXTURE)
                 );
 
+        // Diagnostic cyan, matching Vision Goggles.
         model.renderToBuffer(
                 poseStack,
                 consumer,
                 FULL_BRIGHT,
                 OverlayTexture.NO_OVERLAY,
-                red,
-                green,
-                blue,
+                0.0F,
+                1.0F,
+                1.0F,
                 1.0F
         );
 
