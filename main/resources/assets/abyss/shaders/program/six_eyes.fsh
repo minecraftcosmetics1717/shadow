@@ -13,35 +13,52 @@ float noise(vec2 co) {
     );
 }
 
-void main() {
-    vec4 original = texture(
-        DiffuseSampler,
-        texCoord
-    );
+bool nearColor(vec3 actual, vec3 expected, float tolerance) {
+    return distance(actual, expected) < tolerance;
+}
 
+void main() {
+    vec4 original = texture(DiffuseSampler, texCoord);
+    vec3 color = original.rgb;
+
+    // Cursed-energy outline colors.
+    vec3 orange = vec3(1.0, 184.0 / 255.0, 46.0 / 255.0);
+    vec3 red = vec3(1.0, 37.0 / 255.0, 58.0 / 255.0);
+    vec3 pink = vec3(1.0, 103.0 / 255.0, 188.0 / 255.0);
+
+    // Preserve colors close to our outline palette.
+    // A small tolerance reduces accidental matches.
+    bool preserveOutline =
+        nearColor(color, orange, 0.045) ||
+        nearColor(color, red, 0.045) ||
+        nearColor(color, pink, 0.045);
+
+    if (preserveOutline) {
+        fragColor = original;
+        return;
+    }
+
+    // Six Eyes thermal environment.
     float lum = dot(
-        original.rgb,
+        color,
         vec3(0.30, 0.59, 0.11)
     );
 
-    // Vision Goggles-style cold background.
-// Slightly brighter cyan-blue thermal background.
-// Inspired by #8AFFFF, but much darker.
-vec3 coldBackground = vec3(
-    lum * 0.12,
-    lum * 0.35,
-    lum * 0.48
-);
+    // Cyan-blue appearance.
+    vec3 coldBackground = vec3(
+        lum * 0.12,
+        lum * 0.35,
+        lum * 0.48
+    );
 
-vec3 thermalColor = coldBackground * 1.6;
+    vec3 thermalColor = coldBackground * 1.6;
 
-// Minimum blue/cyan brightness.
-thermalColor = max(
-    thermalColor,
-    vec3(0.025, 0.075, 0.12)
-);
+    thermalColor = max(
+        thermalColor,
+        vec3(0.025, 0.075, 0.12)
+    );
 
-    // Subtle thermal grain.
+    // Subtle noise, no scanlines or vignette.
     float grain =
         (noise(texCoord * 1024.0) - 0.5)
         * 0.025;
