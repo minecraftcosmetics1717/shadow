@@ -458,7 +458,8 @@ public class DomainLifecycle {
         }
         if (winner != null) {
             DomainClash.transferOwnership(asOwner, entity, winner, domainLevel);
-            clearCastState(entity); // loser must not stay soft-locked
+            clearCastState(entity);
+            DomainCooldown.apply(entity);
             return;
         }
 
@@ -488,4 +489,5 @@ public class DomainLifecycle {
 
         DomainInstanceManager.release(entity.getUUID());
         clearCastState(entity);
+        DomainCooldown.apply(entity);
     }}

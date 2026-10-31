@@ -74,7 +74,17 @@ public final class AbyssDomainCast {
         if (data.getBoolean(NBT_COMMITTED)) {
             return;
         }
+// Brain Damage and Unstable prevent new domain expansions.
+        if (DomainCooldown.cannotExpand(entity)) {
 
+            // Stop the attempted cast.
+            data.putDouble("cnt3", 0.0);
+            data.putDouble("skill", 0.0);
+
+            data.putBoolean(NBT_COMMITTED, false);
+
+            return;
+        }
         // ----- Long-press charging -----
         double cnt3 = data.getDouble("cnt3");
         boolean pressZ = data.getBoolean("PRESS_Z");

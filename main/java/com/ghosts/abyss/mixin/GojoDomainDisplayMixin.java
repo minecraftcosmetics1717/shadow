@@ -24,7 +24,7 @@ public class GojoDomainDisplayMixin {
     private static final double GOJO_CT = 2.0;
     private static final double DOMAIN_SLOT = 20.0;
     private static final double DOMAIN_COST = 1250.0;
-    private static final String DOMAIN_NAME = "Unlimited Void";
+    private static final String DOMAIN_NAME = "Infinite Void";
 
     @Inject(method = "execute", at = @At("RETURN"), remap = false)
     private static void abyss$gojoDomainName(

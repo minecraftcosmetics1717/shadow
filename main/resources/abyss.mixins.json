@@ -83,7 +83,8 @@
     "client.SixEyesClientGlowMixin",
     "client.SixEyesGlowColorMixin",
     "GojoDomainDisplayMixin",
-    "GojoDomainExecuteMixin"
+    "GojoDomainExecuteMixin",
+    "GojoEndRodMixin"
   ],
   "client": [],
   "injectors": {

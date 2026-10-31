@@ -101,8 +101,55 @@ public final class DomainDecorations {
         double cy = inst.arenaCenter.getY() + 1.5;
         double cz = inst.arenaCenter.getZ() + 0.5;
 
-        // Leave a small margin before the domain boundary.
-        final double MAX_RADIUS = 58.0;
+        // ==========================================
+        // GOJO - END ROD PARTICLES
+        // ==========================================
+
+        // Most particles appear near the outer edge
+        // of the domain, like an expanded Unlimited Void.
+        for (int i = 0; i < 12; i++) {
+
+            double angle = random.nextDouble() * Math.PI * 2.0;
+
+            // Outer ring, close to the 63-block boundary.
+            double radius = 52.0 + random.nextDouble() * 8.0;
+
+            double x = cx + Math.cos(angle) * radius;
+            double z = cz + Math.sin(angle) * radius;
+
+            // Slight height variation near the ground.
+            double y = cy + 0.5 + random.nextDouble() * 4.0;
+
+            level.sendParticles(
+                    ParticleTypes.END_ROD,
+                    x, y, z,
+                    1,
+                    0.0, 0.0, 0.0,
+                    0.0
+            );
+        }
+
+        // A smaller number of End Rod particles
+        // floating throughout the air.
+        for (int i = 0; i < 3; i++) {
+
+            double angle = random.nextDouble() * Math.PI * 2.0;
+            double radius = Math.sqrt(random.nextDouble()) * 45.0;
+
+            double x = cx + Math.cos(angle) * radius;
+            double z = cz + Math.sin(angle) * radius;
+
+            // Particles at different heights above the floor.
+            double y = cy + 5.0 + random.nextDouble() * 30.0;
+
+            level.sendParticles(
+                    ParticleTypes.END_ROD,
+                    x, y, z,
+                    1,
+                    0.0, 0.0, 0.0,
+                    0.0
+            );
+        }
 
 
         // Larger Unlimited Void splashes.

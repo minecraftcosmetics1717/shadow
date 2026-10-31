@@ -83,6 +83,17 @@ public class DomainEvents {
         if (!isDomainEffect(event.getEffectInstance().getEffect())) return;
 
         LivingEntity entity = event.getEntity();
+
+// Do not begin a new Abyss domain while restricted.
+        if (DomainCooldown.cannotExpand(entity)
+                && DomainInstanceManager.getByOwner(entity.getUUID()) == null) {
+
+            entity.getPersistentData().putBoolean(
+                    "abyss_domain_pending", false
+            );
+            return;
+        }
+
         if (entity.getPersistentData().getBoolean("abyss_domain_handled")) return;
         if (entity.getPersistentData().getBoolean("abyss_domain_transferring")) return;
 
@@ -263,9 +274,17 @@ public class DomainEvents {
             return;
         }
 
+        boolean hadAbyssDomain =
+                DomainInstanceManager.getByOwner(entity.getUUID()) != null;
+
         entity.getPersistentData().putBoolean("abyss_domain_handled", false);
         entity.getPersistentData().putBoolean("abyss_domain_pending", false);
+
         DomainLifecycle.end(entity);
+
+        if (hadAbyssDomain) {
+            DomainCooldown.apply(entity);
+        }
     }
 
     @SubscribeEvent
@@ -290,9 +309,17 @@ public class DomainEvents {
             return;
         }
 
+        boolean hadAbyssDomain =
+                DomainInstanceManager.getByOwner(entity.getUUID()) != null;
+
         entity.getPersistentData().putBoolean("abyss_domain_handled", false);
         entity.getPersistentData().putBoolean("abyss_domain_pending", false);
+
         DomainLifecycle.end(entity);
+
+        if (hadAbyssDomain) {
+            DomainCooldown.apply(entity);
+        }
     }
 
     @SubscribeEvent
