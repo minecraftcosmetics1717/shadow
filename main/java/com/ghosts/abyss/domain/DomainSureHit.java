@@ -87,6 +87,9 @@ public final class DomainSureHit {
                         data.getDouble("z_pos_doma")
                 );
             }
+            // Sure-hit is active, so keep neutralization
+// applied to living entities inside this domain.
+            DomainNeutralization.refresh(domainLevel, inst);
             // Run JC's original domain-specific attack logic.
             // Do not run its full domain lifecycle procedure.
 

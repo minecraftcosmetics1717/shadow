@@ -123,6 +123,61 @@ public class DomainArenaBuilder {
         };
     }
 
+    public static void rebuildAfterClash(
+            ServerLevel level,
+            BlockPos center,
+            double winningSkill
+    ) {
+        if (level == null || center == null) return;
+
+        int radius = DomainDimension.INNER_RADIUS;
+
+        DomainDimBlockGuard.open();
+
+        try {
+            BlockPos.MutableBlockPos pos =
+                    new BlockPos.MutableBlockPos();
+
+            int cx = center.getX();
+            int cy = center.getY();
+            int cz = center.getZ();
+
+            // Clear the old interior, including previous
+            // floor blocks and clash-converted wall blocks.
+            for (int x = -radius; x <= radius; x++) {
+                for (int y = -radius; y <= radius; y++) {
+                    for (int z = -radius; z <= radius; z++) {
+
+                        double distSq =
+                                (double) x * x
+                                        + (double) y * y
+                                        + (double) z * z;
+
+                        // Leave the outer barrier untouched.
+                        if (distSq > radius * radius) {
+                            continue;
+                        }
+
+                        pos.set(cx + x, cy + y, cz + z);
+
+                        level.setBlock(
+                                pos,
+                                Blocks.AIR.defaultBlockState(),
+                                2
+                        );
+                    }
+                }
+            }
+
+            // Rebuild the winning domain's complete
+            // sphere and floor.
+            build(level, center, winningSkill);
+
+        } finally {
+            DomainDimBlockGuard.close();
+        }
+    }
+
     public static void build(ServerLevel level, BlockPos center, double skillDomain) {
         DomainDimBlockGuard.open();
         try {

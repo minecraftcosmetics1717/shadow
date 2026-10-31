@@ -205,6 +205,41 @@ public final class DomainDecorations {
             );
         }
     }
+
+    /**
+     * Removes decorations belonging to this arena,
+     * without affecting players, mobs, or other arenas.
+     */
+    public static void clear(
+            ServerLevel level,
+            DomainInstance inst
+    ) {
+        if (level == null || inst == null) return;
+
+        int r = DomainDimension.OUTER_RADIUS + 4;
+
+        net.minecraft.core.BlockPos c = inst.arenaCenter;
+
+        net.minecraft.world.phys.AABB box =
+                new net.minecraft.world.phys.AABB(
+                        c.getX() - r,
+                        c.getY() - r,
+                        c.getZ() - r,
+                        c.getX() + r,
+                        c.getY() + r,
+                        c.getZ() + r
+                );
+
+        for (Entity entity : level.getEntities(
+                (Entity) null,
+                box,
+                e -> e.getPersistentData()
+                        .getBoolean("abyss_domain_decoration")
+        )) {
+            entity.discard();
+        }
+    }
+
     private static void spawnDecoration(
             ServerLevel level,
             DomainInstance inst,

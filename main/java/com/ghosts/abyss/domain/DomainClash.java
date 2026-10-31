@@ -343,16 +343,32 @@ public final class DomainClash {
         winner.getPersistentData().putBoolean("abyss_domain_clash_active", false);
 
         loser.getPersistentData().putBoolean("DomainDefeated", true);
-// The old clash must stop controlling the arena's visuals.
+
+        // Stop the old clash from changing blocks.
         DomainClashController.reset(inst.slot);
 
         if (domainLevel != null) {
-            // Rebuild the arena using the winning domain's blocks.
-            DomainArenaBuilder.build(
+
+            // 1. Remove old decorative entities.
+            DomainDecorations.clear(
+                    domainLevel,
+                    inst
+            );
+
+            // 2. Completely rebuild the arena
+            // using the winning domain's blocks.
+            DomainArenaBuilder.rebuildAfterClash(
                     domainLevel,
                     inst.arenaCenter,
                     inst.skillDomain
             );
+
+            // 3. Spawn the winning domain's decorations.
+            DomainDecorations.spawn(
+                    domainLevel,
+                    inst
+            );
         }
+
         }
     }
