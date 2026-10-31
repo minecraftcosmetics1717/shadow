@@ -88,14 +88,15 @@ public class DomainArenaBuilder {
             case 1 -> abyssRed();           // Sukuna
             case 2 -> ModBlocks.DOMAIN_SKY_INFINITE_VOID.get().defaultBlockState(); // Gojo
             case 5 -> abyssGravel();        // Yuta
-            case 6 -> abyssBlack();        // Megumi
+            case 6 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Megumi
             case 8 -> abyssSand();          // Dagon
             case 9 -> abyssSand();          // Yuki
             case 14 -> abyssFlower();       // Hanami
             case 15 -> ModBlocks.DOMAIN_SKY_MAHITO.get().defaultBlockState(); // Mahito
-            case 19 -> abyssBlack();       // Naoya
+            case 19 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();       // Naoya
             case 27 -> abyssBirch();        // Higuruma (base; rim handled in placeFloor)
-            case 29 -> abyssWhite();        // Hakari
+            case 29 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState();        // Hakari
+            case 39 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState();        // Yorozu
             case 613 -> abyssRock();        // Whack-a-Mole
             default -> domainDefault();
         };
@@ -105,17 +106,18 @@ public class DomainArenaBuilder {
     public static BlockState interiorState(double skillDomain) {
         int id = (int) Math.round(skillDomain);
         return switch (id) {
-            case 1 -> abyssBlack();        // Sukuna
+            case 1 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Sukuna
             case 2 -> ModBlocks.DOMAIN_SKY_INFINITE_VOID.get().defaultBlockState(); // Gojo
-            case 5 -> abyssBlack();        // Yuta
-            case 6 -> abyssBlack();        // Megumi
+            case 5 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Yuta
+            case 6 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Megumi
             case 8 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Dagon (no blue_sky block yet)
-            case 9 -> abyssBlack();        // Yuki
-            case 14 -> abyssBlueSky();       // Hanami (or sand/sky later)
+            case 9 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Yuki
+            case 14 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Hanami (or sand/sky later)
             case 15 -> ModBlocks.DOMAIN_SKY_MAHITO.get().defaultBlockState(); // Mahito
-            case 19 -> abyssBlack();       // Naoya
-            case 27 -> abyssBlack();       // Higuruma
-            case 29 -> abyssWhite();        // Hakari
+            case 19 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();       // Naoya
+            case 27 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();       // Higuruma
+            case 29 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState();        // Hakari
+            case 39 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState();        // Yorozu
             case 613 -> abyssRock();        // Whack-a-Mole
             default -> domainDefault();
         };
