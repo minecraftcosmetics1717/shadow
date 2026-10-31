@@ -64,13 +64,13 @@ public final class DomainSkyMaskRenderer {
 
     private static final ArrayDeque<SectionKey> QUEUE =
             new ArrayDeque<>();
-    private static final ResourceLocation INFINITE_VOID_TEXTURE =
+    private static final ResourceLocation INFINITE_VOID_SPLASH_TEXTURE =
             new ResourceLocation(
                     "abyss",
-                    "textures/sky/infinite_void.png"
+                    "textures/sky/infinite_void_splash.png"
             );
 
-    private static VertexBuffer infiniteVoidSky;
+    private static VertexBuffer infiniteVoidSplashes;
     private static ClientLevel lastLevel;
     private static SectionKey lastCenter;
 
@@ -477,14 +477,38 @@ public final class DomainSkyMaskRenderer {
                     SKIES.put(type, sky);
                 }
 
-                sky.bind();
-                sky.drawWithShader(
-                        skyMatrix,
-                        projection,
-                        GameRenderer.getPositionColorShader()
-                );
+                if (type == SkyType.INFINITE_VOID) {
+                    if (infiniteVoidSplashes == null) {
+                        infiniteVoidSplashes = createInfiniteVoidSplashes();
+                    }
 
-                VertexBuffer.unbind();
+                    RenderSystem.setShader(
+                            GameRenderer::getPositionTexShader
+                    );
+
+                    RenderSystem.setShaderTexture(
+                            0,
+                            INFINITE_VOID_SPLASH_TEXTURE
+                    );
+
+                    RenderSystem.enableBlend();
+                    RenderSystem.defaultBlendFunc();
+                    RenderSystem.disableCull();
+
+                    infiniteVoidSplashes.bind();
+                    infiniteVoidSplashes.drawWithShader(
+                            skyMatrix,
+                            projection,
+                            GameRenderer.getPositionTexShader()
+                    );
+                    VertexBuffer.unbind();
+
+                    RenderSystem.disableBlend();
+
+                    RenderSystem.setShader(
+                            GameRenderer::getPositionColorShader
+                    );
+                }
 
 
                 GL11.glStencilMask(0xFF);
@@ -629,7 +653,88 @@ public final class DomainSkyMaskRenderer {
             );
         }
     }
+    private static VertexBuffer createInfiniteVoidSplashes() {
+        BufferBuilder builder = Tesselator.getInstance().getBuilder();
 
+        builder.begin(
+                VertexFormat.Mode.QUADS,
+                DefaultVertexFormat.POSITION_TEX
+        );
+
+        Random random = new Random(2702L);
+
+        final int splashCount = 24;
+        final float radius = 46.5F;
+
+        for (int i = 0; i < splashCount; i++) {
+            double y = random.nextDouble() * 1.8 - 0.9;
+            double angle = random.nextDouble() * Math.PI * 2.0;
+            double horizontal = Math.sqrt(1.0 - y * y);
+
+            float nx = (float) (horizontal * Math.cos(angle));
+            float ny = (float) y;
+            float nz = (float) (horizontal * Math.sin(angle));
+
+            float sideX = -nz;
+            float sideZ = nx;
+            float sideLength = (float) Math.sqrt(sideX * sideX + sideZ * sideZ);
+
+            if (sideLength < 0.0001F) continue;
+
+            sideX /= sideLength;
+            sideZ /= sideLength;
+
+            float upX = ny * sideZ;
+            float upY = nz * sideX - nx * sideZ;
+            float upZ = -ny * sideX;
+
+            float size = 1.5F + random.nextFloat() * 2.5F;
+
+            float cx = nx * radius;
+            float cy = ny * radius;
+            float cz = nz * radius;
+
+            splashVertex(builder, cx, cy, cz,
+                    sideX, 0F, sideZ, upX, upY, upZ,
+                    -size, -size, 0F, 1F);
+
+            splashVertex(builder, cx, cy, cz,
+                    sideX, 0F, sideZ, upX, upY, upZ,
+                    -size, size, 0F, 0F);
+
+            splashVertex(builder, cx, cy, cz,
+                    sideX, 0F, sideZ, upX, upY, upZ,
+                    size, size, 1F, 0F);
+
+            splashVertex(builder, cx, cy, cz,
+                    sideX, 0F, sideZ, upX, upY, upZ,
+                    size, -size, 1F, 1F);
+        }
+
+        VertexBuffer buffer =
+                new VertexBuffer(VertexBuffer.Usage.STATIC);
+
+        buffer.bind();
+        buffer.upload(builder.end());
+        VertexBuffer.unbind();
+
+        return buffer;
+    }
+
+    private static void splashVertex(
+            BufferBuilder builder,
+            float cx, float cy, float cz,
+            float sx, float sy, float sz,
+            float ux, float uy, float uz,
+            float horizontal, float vertical,
+            float u, float v
+    ) {
+        builder.vertex(
+                cx + sx * horizontal + ux * vertical,
+                cy + sy * horizontal + uy * vertical,
+                cz + sz * horizontal + uz * vertical
+        ).uv(u, v).endVertex();
+    }
     private static void starVertex(
             BufferBuilder builder,
             float cx, float cy, float cz,
@@ -743,7 +848,10 @@ public final class DomainSkyMaskRenderer {
         for (VertexBuffer sky : SKIES.values()) {
             sky.close();
         }
-
+        if (infiniteVoidSplashes != null) {
+            infiniteVoidSplashes.close();
+            infiniteVoidSplashes = null;
+        }
         CACHE.clear();
         SKIES.clear();
         QUEUE.clear();

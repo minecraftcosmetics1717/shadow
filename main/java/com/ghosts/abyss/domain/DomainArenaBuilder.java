@@ -86,7 +86,7 @@ public class DomainArenaBuilder {
         int id = (int) Math.round(skillDomain);
         return switch (id) {
             case 1 -> abyssRed();           // Sukuna
-            case 2 -> abyssBlack();        // Gojo
+            case 2 -> ModBlocks.DOMAIN_SKY_INFINITE_VOID.get().defaultBlockState(); // Gojo
             case 5 -> abyssGravel();        // Yuta
             case 6 -> abyssBlack();        // Megumi
             case 8 -> abyssSand();          // Dagon
@@ -106,7 +106,7 @@ public class DomainArenaBuilder {
         int id = (int) Math.round(skillDomain);
         return switch (id) {
             case 1 -> abyssBlack();        // Sukuna
-            case 2 -> abyssBlack();        // Gojo
+            case 2 -> ModBlocks.DOMAIN_SKY_INFINITE_VOID.get().defaultBlockState(); // Gojo
             case 5 -> abyssBlack();        // Yuta
             case 6 -> abyssBlack();        // Megumi
             case 8 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Dagon (no blue_sky block yet)
