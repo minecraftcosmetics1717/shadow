@@ -311,6 +311,7 @@ public class DomainEvents {
         // when no other domain is challenging it.
         DomainSureHit.tick(domainLevel);
         DomainFishDebug.tick(domainLevel);
+        DomainDecorations.tick(domainLevel);
     }
 
     @SubscribeEvent

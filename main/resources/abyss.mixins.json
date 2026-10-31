@@ -81,7 +81,9 @@
     "MahitoDomainDisplayMixin",
     "AIGravestoneMixin",
     "client.SixEyesClientGlowMixin",
-    "client.SixEyesGlowColorMixin"
+    "client.SixEyesGlowColorMixin",
+    "GojoDomainDisplayMixin",
+    "GojoDomainExecuteMixin"
   ],
   "client": [],
   "injectors": {

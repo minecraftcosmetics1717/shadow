@@ -49,6 +49,13 @@ public class CentralKeyHookMixin {
          int techIdInt = (int) techniqueId;
 
          switch (techIdInt) {
+            case 2: // Gojo
+               if (selected == 20.0) {
+                  entity.getPersistentData().putBoolean(
+                          "abyss_gojo_domain_auth", true);
+               }
+               break;
+
             case 20: // AoiTodo
                if (selected == 8.0) { // Rock
                   entity.getPersistentData().putBoolean("jreborn_todorock_auth", true);
