@@ -90,6 +90,7 @@ public final class DomainDecorations {
         }
     }
 
+
     private static void spawnGojoParticles(
             ServerLevel level,
             DomainInstance inst
@@ -100,18 +101,65 @@ public final class DomainDecorations {
         double cy = inst.arenaCenter.getY() + 1.5;
         double cz = inst.arenaCenter.getZ() + 0.5;
 
-        // White end-rod particles scattered throughout the arena.
-        for (int i = 0; i < 6; i++) {
+        // Leave a small margin before the domain boundary.
+        final double MAX_RADIUS = 58.0;
 
+        // Small white Minecraft particles throughout
+        // the spherical domain interior.
+        for (int i = 0; i < 12; i++) {
+
+            // Random direction over the entire sphere.
+            double yDir = random.nextDouble() * 2.0 - 1.0;
             double angle = random.nextDouble() * Math.PI * 2.0;
-            double radius = Math.sqrt(random.nextDouble()) * 48.0;
 
-            double x = cx + Math.cos(angle) * radius;
-            double y = cy + random.nextDouble() * 35.0;
-            double z = cz + Math.sin(angle) * radius;
+            double horizontal = Math.sqrt(1.0 - yDir * yDir);
+
+            // Cube root gives uniform distribution by volume.
+            double radius = Math.cbrt(random.nextDouble())
+                    * MAX_RADIUS;
+
+            double x = cx
+                    + Math.cos(angle) * horizontal * radius;
+
+            double y = cy + yDir * radius;
+
+            double z = cz
+                    + Math.sin(angle) * horizontal * radius;
 
             level.sendParticles(
                     ParticleTypes.END_ROD,
+                    x, y, z,
+                    1,
+                    0.0, 0.0, 0.0,
+                    0.0
+            );
+        }
+
+        // Larger Unlimited Void splashes.
+        // Spread across the outer portion of the sphere,
+        // including above and below the player.
+        for (int i = 0; i < 3; i++) {
+
+            double yDir = random.nextDouble() * 2.0 - 1.0;
+            double angle = random.nextDouble() * Math.PI * 2.0;
+
+            double horizontal = Math.sqrt(1.0 - yDir * yDir);
+
+            // Bias splashes toward the distant environment.
+            double radius = 35.0
+                    + random.nextDouble() * 23.0;
+
+            double x = cx
+                    + Math.cos(angle) * horizontal * radius;
+
+            double y = cy + yDir * radius;
+
+            double z = cz
+                    + Math.sin(angle) * horizontal * radius;
+
+            level.sendParticles(
+                    JujutsucraftModParticleTypes
+                            .PARTICLE_UNLIMITED_VOID.get(),
                     x, y, z,
                     1,
                     0.0, 0.0, 0.0,
