@@ -500,6 +500,7 @@ public final class DomainSkyMaskRenderer {
         }
     }
 
+
     private static VertexBuffer createSky(SkyType type) {
         BufferBuilder builder =
                 Tesselator.getInstance().getBuilder();
@@ -509,8 +510,10 @@ public final class DomainSkyMaskRenderer {
                 DefaultVertexFormat.POSITION_COLOR
         );
 
-        int horizontal = 32;
-        int vertical = 16;
+        // Higher resolution for Infinite Void's gradient.
+        int horizontal = type == SkyType.INFINITE_VOID ? 64 : 32;
+        int vertical = type == SkyType.INFINITE_VOID ? 64 : 16;
+
         float radius = 48F;
 
         for (int iy = 0; iy < vertical; iy++) {
@@ -528,6 +531,11 @@ public final class DomainSkyMaskRenderer {
             }
         }
 
+        // Add stars only to Infinite Void.
+        if (type == SkyType.INFINITE_VOID) {
+            addInfiniteVoidStars(builder);
+        }
+
         VertexBuffer buffer =
                 new VertexBuffer(VertexBuffer.Usage.STATIC);
 
@@ -537,6 +545,111 @@ public final class DomainSkyMaskRenderer {
 
         return buffer;
     }
+
+    private static void addInfiniteVoidStars(BufferBuilder builder) {
+        // Fixed seed keeps the stars in the same positions.
+        Random random = new Random(108L);
+
+        final int starCount = 350;
+        final float radius = 47.5F;
+
+        for (int i = 0; i < starCount; i++) {
+
+            // Random position on the sky sphere.
+            double y = random.nextDouble() * 2.0 - 1.0;
+            double angle = random.nextDouble() * Math.PI * 2.0;
+
+            double horizontal = Math.sqrt(1.0 - y * y);
+
+            float nx = (float) (horizontal * Math.cos(angle));
+            float ny = (float) y;
+            float nz = (float) (horizontal * Math.sin(angle));
+
+            // Tangent direction.
+            float sideX = -nz;
+            float sideZ = nx;
+
+            float sideLength = (float) Math.sqrt(
+                    sideX * sideX + sideZ * sideZ
+            );
+
+            if (sideLength < 0.0001F) {
+                continue;
+            }
+
+            sideX /= sideLength;
+            sideZ /= sideLength;
+
+            // Perpendicular tangent direction.
+            float upX = ny * sideZ;
+            float upY = nz * sideX - nx * sideZ;
+            float upZ = -ny * sideX;
+
+            // Small stars, with occasional larger ones.
+            float size = 0.045F
+                    + random.nextFloat() * 0.075F;
+
+            if (random.nextInt(12) == 0) {
+                size *= 1.5F;
+            }
+
+            // Slight variations in star brightness.
+            int brightness = 165 + random.nextInt(91);
+
+            float cx = nx * radius;
+            float cy = ny * radius;
+            float cz = nz * radius;
+
+            starVertex(
+                    builder, cx, cy, cz,
+                    sideX, 0, sideZ,
+                    upX, upY, upZ,
+                    -size, -size, brightness
+            );
+
+            starVertex(
+                    builder, cx, cy, cz,
+                    sideX, 0, sideZ,
+                    upX, upY, upZ,
+                    -size, size, brightness
+            );
+
+            starVertex(
+                    builder, cx, cy, cz,
+                    sideX, 0, sideZ,
+                    upX, upY, upZ,
+                    size, size, brightness
+            );
+
+            starVertex(
+                    builder, cx, cy, cz,
+                    sideX, 0, sideZ,
+                    upX, upY, upZ,
+                    size, -size, brightness
+            );
+        }
+    }
+
+    private static void starVertex(
+            BufferBuilder builder,
+            float cx, float cy, float cz,
+            float sx, float sy, float sz,
+            float ux, float uy, float uz,
+            float horizontal, float vertical,
+            int brightness
+    ) {
+        builder.vertex(
+                cx + sx * horizontal + ux * vertical,
+                cy + sy * horizontal + uy * vertical,
+                cz + sz * horizontal + uz * vertical
+        ).color(
+                brightness,
+                brightness,
+                brightness,
+                255
+        ).endVertex();
+    }
+
 
     private static void skyVertex(
             BufferBuilder builder,
@@ -590,13 +703,24 @@ public final class DomainSkyMaskRenderer {
                 blue = 255;
             }
 
+
             case INFINITE_VOID -> {
-                // Temporary dark space background.
-                // Will be replaced by a textured sky.
-                red = 2;
-                green = 4;
-                blue = 12;
+                // Black at the top and bottom.
+                // #1A202C at the middle (horizon).
+
+                float middle = (float) Math.pow(
+                        Math.max(
+                                0F,
+                                1F - Math.abs(y / radius)
+                        ),
+                        1.35
+                );
+
+                red = Math.round(26F * middle);
+                green = Math.round(32F * middle);
+                blue = Math.round(44F * middle);
             }
+
 
             default -> {
                 red = 0;
