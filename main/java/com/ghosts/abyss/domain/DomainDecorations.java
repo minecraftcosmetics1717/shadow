@@ -104,36 +104,6 @@ public final class DomainDecorations {
         // Leave a small margin before the domain boundary.
         final double MAX_RADIUS = 58.0;
 
-        // Small white Minecraft particles throughout
-        // the spherical domain interior.
-        for (int i = 0; i < 12; i++) {
-
-            // Random direction over the entire sphere.
-            double yDir = random.nextDouble() * 2.0 - 1.0;
-            double angle = random.nextDouble() * Math.PI * 2.0;
-
-            double horizontal = Math.sqrt(1.0 - yDir * yDir);
-
-            // Cube root gives uniform distribution by volume.
-            double radius = Math.cbrt(random.nextDouble())
-                    * MAX_RADIUS;
-
-            double x = cx
-                    + Math.cos(angle) * horizontal * radius;
-
-            double y = cy + yDir * radius;
-
-            double z = cz
-                    + Math.sin(angle) * horizontal * radius;
-
-            level.sendParticles(
-                    ParticleTypes.END_ROD,
-                    x, y, z,
-                    1,
-                    0.0, 0.0, 0.0,
-                    0.0
-            );
-        }
 
         // Larger Unlimited Void splashes.
         // Spread across the outer portion of the sphere,

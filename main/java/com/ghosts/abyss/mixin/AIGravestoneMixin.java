@@ -74,15 +74,6 @@ public class AIGravestoneMixin {
                             0.0, 0.0, 0.0,
                             0.0
                     );
-
-                    // White particles around the centerpiece.
-                    level.sendParticles(
-                            ParticleTypes.END_ROD,
-                            px, py, pz,
-                            10,
-                            2.0, 2.0, 2.0,
-                            0.0
-                    );
                 }
             }
         }
