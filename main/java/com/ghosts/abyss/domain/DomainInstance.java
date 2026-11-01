@@ -17,15 +17,28 @@ public class DomainInstance {
     public final ResourceKey<Level> returnDim;  // usually overworld
     public final Vec3 overworldCenter;          // JC sphere center
     public final Map<UUID, Vec3> returnPositions = new HashMap<>();
+    public final DomainClashParticipants participants;
 
-    public DomainInstance(int slot, UUID ownerId, double skillDomain,
-                          BlockPos arenaCenter, ResourceKey<Level> returnDim,
-                          Vec3 overworldCenter) {
+    public DomainInstance(
+            int slot,
+            UUID ownerId,
+            double skillDomain,
+            BlockPos arenaCenter,
+            ResourceKey<Level> returnDim,
+            Vec3 overworldCenter
+    ) {
         this.slot = slot;
         this.ownerId = ownerId;
         this.skillDomain = skillDomain;
         this.arenaCenter = arenaCenter;
         this.returnDim = returnDim;
         this.overworldCenter = overworldCenter;
+
+        // The original caster always starts north.
+        this.participants = new DomainClashParticipants(
+                ownerId,
+                skillDomain
+        );
     }
+
 }

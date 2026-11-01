@@ -5,143 +5,223 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public final class DomainClashVisuals {
 
     private DomainClashVisuals() {}
 
-    private static final int UPDATES_PER_TICK = 256;
-    private static final Map<Integer, Integer> CURSORS = new HashMap<>();
+    // Number of positions inspected per tick, per arena.
+    private static final int UPDATES_PER_TICK = 768;
+
+    private record Surface(BlockPos offset, boolean floor) {}
+
+    private static final List<Surface> SURFACES =
+            createSurfaces();
+
+    private static final Map<Integer, Integer> CURSORS =
+            new HashMap<>();
+
     public static void reset(int slot) {
         CURSORS.remove(slot);
     }
+
     public static void update(
             ServerLevel level,
             DomainInstance inst,
-            double ownerSkill,
-            double challengerSkill,
-            double territory
+            List<DomainClashParticipants.Participant> active,
+            Map<UUID, Double> influence
     ) {
-        int radius = DomainDimension.INNER_RADIUS;
-        int diameter = radius * 2 + 1;
-
-        int floorCount = diameter * diameter;
-        int shellCount = diameter * diameter;
-        int total = floorCount + shellCount;
+        if (level == null || inst == null
+                || active.size() < 2) return;
 
         int cursor = CURSORS.getOrDefault(inst.slot, 0);
-
-        BlockState ownerFloor = DomainArenaBuilder.floorState(ownerSkill);
-        BlockState challengerFloor = DomainArenaBuilder.floorState(challengerSkill);
-
-        BlockState ownerWall = DomainArenaBuilder.interiorState(ownerSkill);
-        BlockState challengerWall = DomainArenaBuilder.interiorState(challengerSkill);
-
-        BlockPos center = inst.arenaCenter;
 
         DomainDimBlockGuard.open();
 
         try {
             for (int i = 0; i < UPDATES_PER_TICK; i++) {
-                int index = (cursor + i) % total;
 
-                if (index < floorCount) {
-                    int x = index % diameter - radius;
-                    int z = index / diameter - radius;
+                int index = (cursor + i) % SURFACES.size();
 
-                    if (x * x + z * z > radius * radius) continue;
+                Surface surface = SURFACES.get(index);
+                BlockPos offset = surface.offset();
 
-                    BlockPos pos = center.offset(x, 0, z);
+                DomainClashParticipants.Participant winner =
+                        chooseTerritory(
+                                active,
+                                influence,
+                                offset.getX(),
+                                offset.getZ()
+                        );
 
-                    boolean challengerOwns = isChallengerTerritory(
-                            x, z, radius, territory
+                if (winner == null) continue;
+
+                BlockState desired = surface.floor()
+                        ? DomainArenaBuilder.floorState(
+                        winner.skillDomain
+                )
+                        : DomainArenaBuilder.interiorState(
+                        winner.skillDomain
+                );
+
+                BlockPos worldPos =
+                        inst.arenaCenter.offset(offset);
+
+                BlockState current =
+                        level.getBlockState(worldPos);
+
+                if (current.equals(desired)) continue;
+
+                // Only replace blocks belonging to the
+                // registered domains, not arbitrary blocks.
+                boolean paletteBlock = false;
+
+                for (DomainClashParticipants.Participant p
+                        : inst.participants.all()) {
+
+                    BlockState palette = surface.floor()
+                            ? DomainArenaBuilder.floorState(
+                            p.skillDomain
+                    )
+                            : DomainArenaBuilder.interiorState(
+                            p.skillDomain
                     );
 
-                    BlockState desired = challengerOwns
-                            ? challengerFloor : ownerFloor;
-
-                    replacePaletteBlock(
-                            level, pos, ownerFloor, challengerFloor, desired
-                    );
-
-                } else {
-                    int shellIndex = index - floorCount;
-
-                    int latitudeIndex = shellIndex / diameter;
-                    int longitudeIndex = shellIndex % diameter;
-
-                    double latitude = -Math.PI / 2.0
-                            + Math.PI * latitudeIndex / (diameter - 1);
-
-                    double longitude = 2.0 * Math.PI
-                            * longitudeIndex / (diameter - 1);
-
-                    int x = (int) Math.round(
-                            radius * Math.cos(latitude) * Math.cos(longitude)
-                    );
-                    int y = (int) Math.round(
-                            radius * Math.sin(latitude)
-                    );
-                    int z = (int) Math.round(
-                            radius * Math.cos(latitude) * Math.sin(longitude)
-                    );
-
-                    BlockPos pos = center.offset(x, y, z);
-
-                    boolean challengerOwns = isChallengerTerritory(
-                            x, z, radius, territory
-                    );
-
-                    BlockState desired = challengerOwns
-                            ? challengerWall : ownerWall;
-
-                    replacePaletteBlock(
-                            level, pos, ownerWall, challengerWall, desired
-                    );
+                    if (current.equals(palette)) {
+                        paletteBlock = true;
+                        break;
+                    }
                 }
+
+                if (!paletteBlock) continue;
+
+                level.setBlock(worldPos, desired, 2);
             }
+
         } finally {
             DomainDimBlockGuard.close();
         }
 
-        CURSORS.put(inst.slot, (cursor + UPDATES_PER_TICK) % total);
+        CURSORS.put(
+                inst.slot,
+                (cursor + UPDATES_PER_TICK) % SURFACES.size()
+        );
     }
 
-    private static boolean isChallengerTerritory(
+    private static DomainClashParticipants.Participant
+    chooseTerritory(
+            List<DomainClashParticipants.Participant> active,
+            Map<UUID, Double> influence,
             int x,
-            int z,
-            int radius,
-            double territory
+            int z
     ) {
-        // Slightly irregular boundary so it does not look
-        // like an unnaturally straight dividing line.
-        double distortion = Math.sin(z * 0.18) * 3.0
-                + Math.sin(z * 0.41) * 1.5;
+        DomainClashParticipants.Participant best = null;
+        double bestScore = Double.NEGATIVE_INFINITY;
 
-        double boundary = radius * (1.0 - 2.0 * territory)
-                + distortion;
+        for (DomainClashParticipants.Participant p : active) {
 
-        return x > boundary;
-    }
+            double direction = switch (p.side) {
+                case NORTH -> -z;
+                case SOUTH -> z;
+                case WEST -> -x;
+                case EAST -> x;
+            };
 
-    private static void replacePaletteBlock(
-            ServerLevel level,
-            BlockPos pos,
-            BlockState ownerState,
-            BlockState challengerState,
-            BlockState desired
-    ) {
-        BlockState current = level.getBlockState(pos);
+            double strength = influence.getOrDefault(
+                    p.entityId, 0.0
+            );
 
-        if (current.equals(desired)) return;
+            // A stronger domain pushes the boundary,
+            // but only gradually and by a limited amount.
+            double score = direction
+                    + strength * DomainDimension.INNER_RADIUS;
 
-        if (!current.equals(ownerState)
-                && !current.equals(challengerState)) {
-            return;
+            // A slight irregularity around the boundary.
+            double distortion =
+                    Math.sin(x * 0.21 + z * 0.13
+                            + p.side.ordinal() * 1.7) * 1.5
+                            + Math.sin(x * 0.08 - z * 0.17
+                            + p.side.ordinal()) * 0.8;
+
+            score += distortion;
+
+            if (score > bestScore) {
+                bestScore = score;
+                best = p;
+            }
         }
 
-        level.setBlock(pos, desired, 2);
+        return best;
+    }
+
+    private static List<Surface> createSurfaces() {
+        int r = DomainDimension.INNER_RADIUS;
+
+        List<Surface> result = new ArrayList<>();
+        Set<Long> shellPositions = new HashSet<>();
+
+        // Complete circular floor.
+        for (int x = -r; x <= r; x++) {
+            for (int z = -r; z <= r; z++) {
+                if (x * x + z * z > r * r) continue;
+
+                result.add(new Surface(
+                        new BlockPos(x, 0, z),
+                        true
+                ));
+            }
+        }
+
+        // Generate the spherical shell using the
+        // same distance band as DomainArenaBuilder.
+        double minSq = (r - 0.5) * (r - 0.5);
+        double maxSq = (r + 0.5) * (r + 0.5);
+
+        for (int x = -r - 1; x <= r + 1; x++) {
+            for (int y = -r - 1; y <= r + 1; y++) {
+
+                double remaining = maxSq
+                        - (double) x * x
+                        - (double) y * y;
+
+                if (remaining < 0) continue;
+
+                int zMax = (int) Math.sqrt(remaining);
+
+                for (int z = -zMax; z <= zMax; z++) {
+                    double distSq =
+                            (double) x * x
+                                    + (double) y * y
+                                    + (double) z * z;
+
+                    if (distSq < minSq || distSq > maxSq) {
+                        continue;
+                    }
+
+                    // Floor takes priority at y=0.
+                    if (y == 0 && x * x + z * z <= r * r) {
+                        continue;
+                    }
+
+                    long key = BlockPos.asLong(x, y, z);
+
+                    if (shellPositions.add(key)) {
+                        result.add(new Surface(
+                                new BlockPos(x, y, z),
+                                false
+                        ));
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 }

@@ -55,6 +55,23 @@ public final class DomainClash {
             return;
         }
 
+// Register the challenger on an available side.
+        DomainClashParticipants.Participant participant =
+                inst.participants.add(
+                        challenger.getUUID(),
+                        skillDomain
+                );
+
+        if (participant == null) {
+            // Four domains are already registered.
+            abortFailedDomainStart(challenger);
+            return;
+        }
+        DomainDecorations.spawnParticipant(
+                domainLevel,
+                inst,
+                participant
+        );
         double cx = inst.arenaCenter.getX() + 0.5;
         double cy = inst.arenaCenter.getY();
         double cz = inst.arenaCenter.getZ() + 0.5;
@@ -139,6 +156,24 @@ public final class DomainClash {
             }
         }
 
+        // Register the challenger before teleporting.
+        if (skillDomain == 0) {
+            abortFailedDomainStart(challenger);
+            return;
+        }
+
+        DomainClashParticipants.Participant participant =
+                inst.participants.add(
+                        challenger.getUUID(),
+                        skillDomain
+                );
+
+        if (participant == null) {
+            // All four domain positions are occupied.
+            abortFailedDomainStart(challenger);
+            return;
+        }
+
         double cx = inst.arenaCenter.getX() + 0.5;
         double cy = inst.arenaCenter.getY();
         double cz = inst.arenaCenter.getZ() + 0.5;
@@ -165,11 +200,16 @@ public final class DomainClash {
         );
 
         if (arrived == null || arrived.level() != domainLevel) {
+            inst.participants.remove(challenger.getUUID());
             data.putBoolean("abyss_domain_transferring", false);
             abortFailedDomainStart(challenger);
             return;
         }
-
+        DomainDecorations.spawnParticipant(
+                domainLevel,
+                inst,
+                participant
+        );
         arrived.getPersistentData().putBoolean(
                 "abyss_domain_transferring", false
         );
@@ -266,7 +306,10 @@ public final class DomainClash {
             if (candidate.getUUID().equals(excluding)) {
                 continue;
             }
-
+// Only registered domain casters can inherit ownership.
+            if (!inst.participants.contains(candidate.getUUID())) {
+                continue;
+            }
             if (candidate.isDeadOrDying()) {
                 continue;
             }
@@ -343,9 +386,34 @@ public final class DomainClash {
         winner.getPersistentData().putBoolean("abyss_domain_clash_active", false);
 
         loser.getPersistentData().putBoolean("DomainDefeated", true);
+// The defeated owner is no longer participating.
+        inst.participants.remove(loser.getUUID());
 
-        // Stop the old clash from changing blocks.
-        DomainClashController.reset(inst.slot);
+        if (domainLevel != null) {
+
+            DomainDecorations.sync(domainLevel, inst);
+
+            // Only finalize the arena when no other
+            // challengers remain.
+            if (inst.participants.size() == 1) {
+
+                DomainClashController.reset(inst.slot);
+
+                DomainDecorations.clear(domainLevel, inst);
+
+                DomainArenaBuilder.rebuildAfterClash(
+                        domainLevel,
+                        inst.arenaCenter,
+                        inst.skillDomain
+                );
+
+                DomainDecorations.spawn(
+                        domainLevel,
+                        inst
+                );
+            }
+        }
+
 
         if (domainLevel != null) {
 

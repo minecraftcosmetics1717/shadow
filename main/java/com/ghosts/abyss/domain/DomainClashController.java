@@ -5,140 +5,188 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public final class DomainClashController {
 
     private DomainClashController() {}
 
-    private static final Map<Integer, ClashState> STATES = new HashMap<>();
+    // Maximum influence advantage from domain strength.
+    // Small enough that equally matched domains fight
+    // near the center instead of overwhelming each other.
+    private static final double MAX_ADVANTAGE = 0.18;
+
+    // How quickly power advantages change.
+    private static final double SMOOTHING = 0.008;
+
+    private static final Map<Integer, ClashState> STATES =
+            new HashMap<>();
+
+    private static final class ClashState {
+        final Map<UUID, Double> influence = new HashMap<>();
+    }
+
     public static void reset(int slot) {
         STATES.remove(slot);
         DomainClashVisuals.reset(slot);
     }
-    private static final class ClashState {
-        double challengerSkill;
-        double territory = 0.0;
-        boolean active = false;
-    }
 
     public static void tick(ServerLevel level) {
+        if (level == null) return;
+
         Set<Integer> present = new HashSet<>();
 
         for (int slot = 0; slot < DomainDimension.MAX_SLOTS; slot++) {
-            DomainInstance inst = DomainInstanceManager.getBySlot(slot);
+            DomainInstance inst =
+                    DomainInstanceManager.getBySlot(slot);
+
             if (inst == null) continue;
 
             present.add(slot);
 
-            LivingEntity owner = DomainArenaService.findLivingIn(
-                    level, inst.ownerId
-            );
+            List<DomainClashParticipants.Participant> active =
+                    new ArrayList<>();
 
-            LivingEntity challenger = DomainClash.findActiveDomainInArena(
-                    level, inst, inst.ownerId
-            );
+            Map<UUID, LivingEntity> casters = new HashMap<>();
 
-            ClashState state = STATES.get(slot);
-
-            if (owner == null || challenger == null) {
-                if (state != null) {
-                    state.active = false;
-                    state.territory = Math.max(
-                            0.0, state.territory - 0.025
+            MobEffect domainEffect =
+                    ForgeRegistries.MOB_EFFECTS.getValue(
+                            DomainEvents.DOMAIN_EFFECT_ID
                     );
 
-                    DomainClashVisuals.update(
-                            level,
-                            inst,
-                            inst.skillDomain,
-                            state.challengerSkill,
-                            state.territory
-                    );
+            for (DomainClashParticipants.Participant p
+                    : inst.participants.all()) {
 
-                    if (state.territory <= 0.0) {
-                        STATES.remove(slot);
-                    }
+                LivingEntity entity =
+                        DomainArenaService.findLivingIn(
+                                level, p.entityId
+                        );
+
+                if (entity == null || !entity.isAlive()) continue;
+
+                boolean owner =
+                        p.entityId.equals(inst.ownerId);
+
+                if (!owner && (
+                        !entity.getPersistentData().getBoolean(
+                                "abyss_domain_clashing"
+                        )
+                                || entity.getPersistentData().getBoolean(
+                                "DomainDefeated"
+                        )
+                                || domainEffect == null
+                                || !entity.hasEffect(domainEffect)
+                )) {
+                    continue;
                 }
+
+                active.add(p);
+                casters.put(p.entityId, entity);
+            }
+
+            if (active.size() < 2) {
+                STATES.remove(slot);
                 continue;
             }
 
-            double challengerSkill = challenger.getPersistentData()
-                    .getDouble("skill_domain");
-
-            if (challengerSkill == 0.0) {
-                challengerSkill = challenger.getPersistentData()
-                        .getDouble("select");
-            }
-
-            if (challengerSkill == 0.0) continue;
-
-            if (state == null) {
-                state = new ClashState();
-                STATES.put(slot, state);
-            }
-
-            state.active = true;
-            state.challengerSkill = challengerSkill;
-
-            double ownerPower = calculatePower(owner);
-            double challengerPower = calculatePower(challenger);
-
-            // A balanced clash gradually approaches 50/50.
-            // A stronger domain gains more territory.
-            double difference = challengerPower - ownerPower;
-
-            double target = Math.max(
-                    0.05,
-                    Math.min(0.95, 0.5 + difference / 40.0)
+            ClashState state = STATES.computeIfAbsent(
+                    slot, key -> new ClashState()
             );
 
-            state.territory += (target - state.territory) * 0.025;
+            Set<UUID> activeIds = new HashSet<>();
+            double totalPower = 0.0;
+
+            Map<UUID, Double> powers = new HashMap<>();
+
+            for (DomainClashParticipants.Participant p : active) {
+                activeIds.add(p.entityId);
+
+                LivingEntity entity = casters.get(p.entityId);
+
+                double power = Math.max(
+                        0.0, calculatePower(entity)
+                );
+
+                powers.put(p.entityId, power);
+                totalPower += power;
+
+                entity.getPersistentData().putBoolean(
+                        "abyss_domain_clash_active", true
+                );
+            }
+
+            state.influence.keySet().removeIf(
+                    id -> !activeIds.contains(id)
+            );
+
+            double averagePower =
+                    totalPower / active.size();
+
+            for (DomainClashParticipants.Participant p : active) {
+                double power = powers.get(p.entityId);
+
+                double advantage =
+                        (power - averagePower)
+                                / Math.max(10.0, averagePower);
+
+                double target = Math.max(
+                        -MAX_ADVANTAGE,
+                        Math.min(MAX_ADVANTAGE, advantage * 0.25)
+                );
+
+                double current = state.influence.getOrDefault(
+                        p.entityId, 0.0
+                );
+
+                double next = current
+                        + (target - current) * SMOOTHING;
+
+                state.influence.put(p.entityId, next);
+            }
 
             DomainClashVisuals.update(
                     level,
                     inst,
-                    inst.skillDomain,
-                    challengerSkill,
-                    state.territory
-            );
-
-            // Keep both casters marked as participating in a clash.
-            // Automatic defeat is deliberately not enabled yet.
-            owner.getPersistentData().putBoolean(
-                    "abyss_domain_clash_active", true
-            );
-            challenger.getPersistentData().putBoolean(
-                    "abyss_domain_clash_active", true
+                    active,
+                    state.influence
             );
         }
 
-        STATES.keySet().removeIf(slot -> !present.contains(slot));
+        STATES.keySet().removeIf(
+                slot -> !present.contains(slot)
+        );
     }
 
     public static double calculatePower(LivingEntity entity) {
-        MobEffect domainEffect = ForgeRegistries.MOB_EFFECTS.getValue(
-                DomainEvents.DOMAIN_EFFECT_ID
-        );
+        if (entity == null) return 0.0;
+
+        MobEffect domainEffect =
+                ForgeRegistries.MOB_EFFECTS.getValue(
+                        DomainEvents.DOMAIN_EFFECT_ID
+                );
 
         if (domainEffect == null) return 0.0;
 
-        MobEffectInstance domain = entity.getEffect(domainEffect);
+        MobEffectInstance domain =
+                entity.getEffect(domainEffect);
+
         if (domain == null) return 0.0;
 
-        // JC's base strength uses the Strength effect amplifier.
         int strengthAmplifier = 0;
 
-        MobEffect strength = net.minecraft.world.effect.MobEffects.DAMAGE_BOOST;
-
-        if (entity.hasEffect(strength)) {
-            strengthAmplifier = entity.getEffect(strength).getAmplifier();
+        if (entity.hasEffect(MobEffects.DAMAGE_BOOST)) {
+            strengthAmplifier = entity.getEffect(
+                    MobEffects.DAMAGE_BOOST
+            ).getAmplifier();
         }
 
         double power = strengthAmplifier + 10.0;
@@ -151,7 +199,8 @@ public final class DomainClashController {
                 .getDouble("skill_domain");
 
         if (skill == 0.0) {
-            skill = entity.getPersistentData().getDouble("select");
+            skill = entity.getPersistentData()
+                    .getDouble("select");
         }
 
         if (skill == 27.0) {
@@ -161,13 +210,13 @@ public final class DomainClashController {
         }
 
         double maxHealth = Math.max(
-                1.0,
-                entity.getMaxHealth()
+                1.0, entity.getMaxHealth()
         );
 
         double totalDamage = Math.max(
                 0.0,
-                entity.getPersistentData().getDouble("totalDamage")
+                entity.getPersistentData()
+                        .getDouble("totalDamage")
         );
 
         double healthFactor = Math.max(
@@ -176,8 +225,7 @@ public final class DomainClashController {
         ) / maxHealth;
 
         double duration = Math.min(
-                domain.getDuration(),
-                1200
+                domain.getDuration(), 1200
         );
 
         double timeFactor = Math.min(

@@ -439,6 +439,54 @@ public class DomainLifecycle {
         if (entity.getPersistentData().getBoolean("abyss_domain_transferring")) return;
 
         DomainInstance asOwner = DomainInstanceManager.getByOwner(entity.getUUID());
+
+        // A challenger can close their domain without
+        // being the owner of the arena.
+        if (asOwner == null
+                && entity.level() instanceof ServerLevel level
+                && level.dimension().equals(DomainDimension.ID)) {
+
+            DomainInstance arena =
+                    DomainClash.findInstanceContaining(
+                            entity.position()
+                    );
+
+            if (arena != null
+                    && arena.participants.contains(
+                    entity.getUUID()
+            )) {
+
+                arena.participants.remove(entity.getUUID());
+
+                entity.getPersistentData().putBoolean(
+                        "abyss_domain_clashing", false
+                );
+
+                entity.getPersistentData().putBoolean(
+                        "abyss_domain_clash_active", false
+                );
+
+                DomainDecorations.sync(level, arena);
+
+                // Restore the owner's complete domain
+                // once every challenger has left.
+                if (arena.participants.size() == 1) {
+
+                    DomainClashController.reset(arena.slot);
+
+                    DomainDecorations.clear(level, arena);
+
+                    DomainArenaBuilder.rebuildAfterClash(
+                            level,
+                            arena.arenaCenter,
+                            arena.skillDomain
+                    );
+
+                    DomainDecorations.spawn(level, arena);
+                }
+            }
+        }
+
         if (asOwner == null) {
             // Still unlock even if instance already gone (JC cancel race)
             clearCastState(entity);

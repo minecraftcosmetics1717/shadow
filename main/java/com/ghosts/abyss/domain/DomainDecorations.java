@@ -3,6 +3,9 @@ package com.ghosts.abyss.domain;
 
 import net.mcreator.jujutsucraft.init.JujutsucraftModParticleTypes;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -16,60 +19,69 @@ public final class DomainDecorations {
 
     private DomainDecorations() {}
 
-    public static void spawn(
-            ServerLevel level,
-            DomainInstance inst
-    ) {
+    public static void spawn(ServerLevel level, DomainInstance inst) {
         if (level == null || inst == null) return;
-
-        int domainId = (int) inst.skillDomain;
-
-        switch (domainId) {
-            case 2 -> spawnGojo(level, inst);
-            case 15 -> spawnMahito(level, inst);
-            case 8 -> spawnDagon(level, inst);
-            default -> {
-                // No decorations configured.
-            }
+        for (DomainClashParticipants.Participant p : inst.participants.all()) {
+            spawnParticipant(level, inst, p);
         }
     }
-    private static void spawnGojo(
-            ServerLevel level,
-            DomainInstance inst
-    ) {
-        // Unlimited Void centerpiece near positive-Z wall.
-        spawnDecoration(
-                level,
-                inst,
-                "jujutsucraft:entity_unlimited_void",
-                0.0,
-                2.0,
-                56.0,
-                180.0F
-        );
-    }
-    private static void spawnMahito(
-            ServerLevel level,
-            DomainInstance inst
-    ) {
-        // Giant hands near the positive-Z wall.
-        spawnDecoration(
-                level,
-                inst,
-                "jujutsucraft:entity_hands",
-                0.0,
-                1.0,
-                57.0,
-                180.0F
-        );
+
+    public static void spawnParticipant(ServerLevel level, DomainInstance inst,
+                                        DomainClashParticipants.Participant participant) {
+        if (level == null || inst == null || participant == null) return;
+        if (hasDecoration(level, inst, participant.entityId)) return;
+
+        String entityId = switch ((int) participant.skillDomain) {
+            case 2 -> "jujutsucraft:entity_unlimited_void";
+            case 15 -> "jujutsucraft:entity_hands";
+            default -> null;
+        };
+        if (entityId == null) return;
+
+        double distance = (int) participant.skillDomain == 2 ? 56.0 : 57.0;
+        double offsetX = 0.0;
+        double offsetZ = 0.0;
+        float yaw = 0.0F;
+        switch (participant.side) {
+            case NORTH -> { offsetZ = -distance; yaw = 0.0F; }
+            case SOUTH -> { offsetZ = distance; yaw = 180.0F; }
+            case WEST -> { offsetX = -distance; yaw = 90.0F; }
+            case EAST -> { offsetX = distance; yaw = 270.0F; }
+        }
+
+        double offsetY = (int) participant.skillDomain == 2 ? 2.0 : 1.0;
+        spawnDecoration(level, inst, entityId, offsetX, offsetY,
+                offsetZ, yaw, participant.entityId);
     }
 
-    private static void spawnDagon(
-            ServerLevel level,
-            DomainInstance inst
-    ) {
-        // We'll add Dagon's trees here later.
+    private static AABB arenaBox(DomainInstance inst) {
+        BlockPos c = inst.arenaCenter;
+        int r = DomainDimension.OUTER_RADIUS + 4;
+        return new AABB(c.getX() - r, c.getY() - r, c.getZ() - r,
+                c.getX() + r + 1, c.getY() + r + 1, c.getZ() + r + 1);
     }
+
+    private static boolean hasDecoration(ServerLevel level, DomainInstance inst, UUID casterId) {
+        return !level.getEntities((Entity) null, arenaBox(inst), entity ->
+                entity.getPersistentData().getBoolean("abyss_domain_decoration")
+                        && entity.getPersistentData().hasUUID("abyss_decoration_owner")
+                        && casterId.equals(entity.getPersistentData().getUUID("abyss_decoration_owner"))
+        ).isEmpty();
+    }
+
+    public static void sync(ServerLevel level, DomainInstance inst) {
+        if (level == null || inst == null) return;
+        for (Entity entity : level.getEntities((Entity) null, arenaBox(inst), e ->
+                e.getPersistentData().getBoolean("abyss_domain_decoration"))) {
+            if (!entity.getPersistentData().hasUUID("abyss_decoration_owner")
+                    || !inst.participants.contains(entity.getPersistentData()
+                    .getUUID("abyss_decoration_owner"))) {
+                entity.discard();
+            }
+        }
+        spawn(level, inst);
+    }
+
     public static void tick(
             ServerLevel level
     ) {
@@ -81,6 +93,7 @@ public final class DomainDecorations {
         for (int slot = 0; slot < DomainDimension.MAX_SLOTS; slot++) {
 
             DomainInstance inst = DomainInstanceManager.getBySlot(slot);
+            if (inst != null) sync(level, inst);
 
             if (inst == null || (int) inst.skillDomain != 2) {
                 continue;
@@ -210,32 +223,10 @@ public final class DomainDecorations {
      * Removes decorations belonging to this arena,
      * without affecting players, mobs, or other arenas.
      */
-    public static void clear(
-            ServerLevel level,
-            DomainInstance inst
-    ) {
+    public static void clear(ServerLevel level, DomainInstance inst) {
         if (level == null || inst == null) return;
-
-        int r = DomainDimension.OUTER_RADIUS + 4;
-
-        net.minecraft.core.BlockPos c = inst.arenaCenter;
-
-        net.minecraft.world.phys.AABB box =
-                new net.minecraft.world.phys.AABB(
-                        c.getX() - r,
-                        c.getY() - r,
-                        c.getZ() - r,
-                        c.getX() + r,
-                        c.getY() + r,
-                        c.getZ() + r
-                );
-
-        for (Entity entity : level.getEntities(
-                (Entity) null,
-                box,
-                e -> e.getPersistentData()
-                        .getBoolean("abyss_domain_decoration")
-        )) {
+        for (Entity entity : level.getEntities((Entity) null, arenaBox(inst), e ->
+                e.getPersistentData().getBoolean("abyss_domain_decoration"))) {
             entity.discard();
         }
     }
@@ -247,7 +238,8 @@ public final class DomainDecorations {
             double offsetX,
             double offsetY,
             double offsetZ,
-            float yaw
+            float yaw,
+            UUID casterId
     ) {
         EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(
                 new ResourceLocation(entityId)
@@ -278,6 +270,7 @@ public final class DomainDecorations {
                 "abyss_domain_decoration", true
         );
 
+        entity.getPersistentData().putUUID("abyss_decoration_owner", casterId);
         level.addFreshEntity(entity);
     }
 }
