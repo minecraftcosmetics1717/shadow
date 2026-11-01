@@ -84,7 +84,11 @@
     "client.SixEyesGlowColorMixin",
     "GojoDomainDisplayMixin",
     "GojoDomainExecuteMixin",
-    "GojoEndRodMixin"
+    "GojoEndRodMixin",
+    "TimeCellMoonPalaceRendererMixin",
+    "TimeCellMoonPalaceCullingMixin",
+    "NaoyaDomainDisplayMixin",
+    "NaoyaDomainExecuteMixin"
   ],
   "client": [],
   "injectors": {

@@ -535,7 +535,9 @@ public final class DomainSkyMaskRenderer {
         if (type == SkyType.INFINITE_VOID) {
             addInfiniteVoidStars(builder);
         }
-
+        if (type == SkyType.WOMB) {
+            addWombStars(builder);
+        }
         VertexBuffer buffer =
                 new VertexBuffer(VertexBuffer.Usage.STATIC);
 
@@ -544,6 +546,70 @@ public final class DomainSkyMaskRenderer {
         VertexBuffer.unbind();
 
         return buffer;
+    }
+
+    private static void addWombStars(BufferBuilder builder) {
+        // Fixed seed: no flickering or changing positions.
+        Random random = new Random(78341L);
+
+        // Very few stars compared to Infinite Void's 350.
+        final int starCount = 128;
+        final float radius = 47.5F;
+
+        for (int i = 0; i < starCount; i++) {
+            double y = random.nextDouble() * 2.0 - 1.0;
+            double angle = random.nextDouble() * Math.PI * 2.0;
+
+            double horizontal = Math.sqrt(1.0 - y * y);
+
+            float nx = (float) (horizontal * Math.cos(angle));
+            float ny = (float) y;
+            float nz = (float) (horizontal * Math.sin(angle));
+
+            float sideX = -nz;
+            float sideZ = nx;
+
+            float length = (float) Math.sqrt(
+                    sideX * sideX + sideZ * sideZ
+            );
+
+            if (length < 0.0001F) continue;
+
+            sideX /= length;
+            sideZ /= length;
+
+            float upX = ny * sideZ;
+            float upY = nz * sideX - nx * sideZ;
+            float upZ = -ny * sideX;
+
+            // Small, subtle points of red light.
+            float size = 0.025F + random.nextFloat() * 0.045F;
+
+            // Red brightness, without white stars.
+            int red = 90 + random.nextInt(65);
+
+            float cx = nx * radius;
+            float cy = ny * radius;
+            float cz = nz * radius;
+
+            float[][] corners = {
+                    {-size, -size},
+                    {-size, size},
+                    {size, size},
+                    {size, -size}
+            };
+
+            for (float[] corner : corners) {
+                float sx = corner[0];
+                float sy = corner[1];
+
+                builder.vertex(
+                        cx + sideX * sx + upX * sy,
+                        cy + upY * sy,
+                        cz + sideZ * sx + upZ * sy
+                ).color(red, 4, 9, 255).endVertex();
+            }
+        }
     }
 
     private static void addInfiniteVoidStars(BufferBuilder builder) {
@@ -703,7 +769,12 @@ public final class DomainSkyMaskRenderer {
                 blue = 255;
             }
 
-
+            case WOMB -> {
+                // Almost completely black.
+                red = 1;
+                green = 0;
+                blue = 0;
+            }
             case INFINITE_VOID -> {
                 // Black at the top and bottom.
                 // #1A202C at the middle (horizon).

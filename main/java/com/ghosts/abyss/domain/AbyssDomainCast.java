@@ -18,6 +18,7 @@ public final class AbyssDomainCast {
     public static final double GOJO_SKILL_DOMAIN = 2.0;
     public static final double DAGON_SKILL_DOMAIN = 8.0;
     public static final double MAHITO_SKILL_DOMAIN = 15.0;
+    public static final double NAOYA_SKILL_DOMAIN = 19.0;
 
     /** Same as CreateBarrier: long-press finishes when cnt3 reaches 20. */
     public static final int LONG_PRESS_MAX = 20;
@@ -47,9 +48,11 @@ public final class AbyssDomainCast {
     public static void tickDagonDomain(LevelAccessor world, LivingEntity entity) {
         tickCustomDomain(world, entity, DAGON_SKILL_DOMAIN);
     }
-
     public static void tickMahitoDomain(LevelAccessor world, LivingEntity entity) {
         tickCustomDomain(world, entity, MAHITO_SKILL_DOMAIN);
+    }
+    public static void tickNaoyaDomain(LevelAccessor world, LivingEntity entity) {
+        tickCustomDomain(world, entity, NAOYA_SKILL_DOMAIN);
     }
 
     private static void tickCustomDomain(

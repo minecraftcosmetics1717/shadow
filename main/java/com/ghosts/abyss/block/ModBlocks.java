@@ -78,7 +78,11 @@ public class ModBlocks {
                     () -> new DomainSkyBlock(
                             DomainSkyBlock.SkyType.INFINITE_VOID
                     ));
-
+    public static final RegistryObject<Block> DOMAIN_SKY_WOMB =
+            register("domain_sky_womb",
+                    () -> new DomainSkyBlock(
+                            DomainSkyBlock.SkyType.WOMB
+                    ));
 
     private static RegistryObject<Block> register(String name, Supplier<Block> block) {
         RegistryObject<Block> reg = BLOCKS.register(name, block);

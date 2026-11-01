@@ -79,6 +79,12 @@ public class CentralKeyHookMixin {
                           "abyss_mahito_domain_auth", true);
                }
                break;
+            case 19: // Naoya
+               if (selected == 20.0) {
+                  entity.getPersistentData().putBoolean(
+                          "abyss_naoya_domain_auth", true);
+               }
+               break;
             case 38: // Takako Uro
                if (selected == 9.0) { // Infinite Sky
                   entity.getPersistentData().putBoolean("jreborn_infsky_auth", true);

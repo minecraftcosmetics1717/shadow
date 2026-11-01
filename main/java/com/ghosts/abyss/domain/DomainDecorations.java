@@ -34,11 +34,17 @@ public final class DomainDecorations {
         String entityId = switch ((int) participant.skillDomain) {
             case 2 -> "jujutsucraft:entity_unlimited_void";
             case 15 -> "jujutsucraft:entity_hands";
+            case 19 -> "jujutsucraft:entity_time_cell_moon_palace";
             default -> null;
         };
         if (entityId == null) return;
 
-        double distance = (int) participant.skillDomain == 2 ? 56.0 : 57.0;
+        double distance = switch ((int) participant.skillDomain) {
+            case 2 -> 56.0;
+            case 15 -> 57.0;
+            case 19 -> 43.0;
+            default -> 57.0;
+        };
         double offsetX = 0.0;
         double offsetZ = 0.0;
         float yaw = 0.0F;
@@ -49,7 +55,12 @@ public final class DomainDecorations {
             case EAST -> { offsetX = distance; yaw = 270.0F; }
         }
 
-        double offsetY = (int) participant.skillDomain == 2 ? 2.0 : 1.0;
+        double offsetY = switch ((int) participant.skillDomain) {
+            case 2 -> 2.0;  // Gojo (unchanged)
+            case 15 -> 1.0; // Mahito (unchanged)
+            case 19 -> 3.5; // Naoya (raised by 2 blocks)
+            default -> 1.0;
+        };
         spawnDecoration(level, inst, entityId, offsetX, offsetY,
                 offsetZ, yaw, participant.entityId);
     }
