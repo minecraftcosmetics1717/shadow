@@ -88,10 +88,11 @@
     "TimeCellMoonPalaceRendererMixin",
     "TimeCellMoonPalaceCullingMixin",
     "NaoyaDomainDisplayMixin",
-    "NaoyaDomainExecuteMixin",
-    "MahitoHandsScaleMixin"
+    "NaoyaDomainExecuteMixin"
   ],
-  "client": [],
+  "client": [
+    "GojoVoidHoleScaleMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

@@ -18,7 +18,8 @@ import java.util.UUID;
 
 public final class DomainClash {
 
-    private DomainClash() {}
+    private DomainClash() {
+    }
 
     public static void tryStartClashInDimension(LivingEntity challenger) {
         if (!(challenger.level() instanceof ServerLevel domainLevel)) return;
@@ -113,7 +114,9 @@ public final class DomainClash {
         }
     }
 
-    /** Undo a half-started domain so JC abilities work again */
+    /**
+     * Undo a half-started domain so JC abilities work again
+     */
     public static void abortFailedDomainStart(LivingEntity entity) {
         var data = entity.getPersistentData();
         data.putBoolean("abyss_domain_handled", false);
@@ -352,7 +355,6 @@ public final class DomainClash {
     }
 
 
-
     public static void transferOwnership(
             DomainInstance inst,
             LivingEntity loser,
@@ -364,7 +366,6 @@ public final class DomainClash {
 
         DomainInstanceManager.reassignOwner(oldOwner, newOwner);
 
-        inst.participants.remove(oldOwner);
 
 
         double skill = winner.getPersistentData()
@@ -395,16 +396,19 @@ public final class DomainClash {
         loser.getPersistentData().putBoolean("abyss_domain_clash_active", false);
         winner.getPersistentData().putBoolean("abyss_domain_clash_active", false);
 
+
         loser.getPersistentData().putBoolean("DomainDefeated", true);
-// The defeated owner is no longer participating.
+
+// The defeated owner no longer participates.
+// Their old side becomes available.
         inst.participants.remove(loser.getUUID());
 
         if (domainLevel != null) {
 
             DomainDecorations.sync(domainLevel, inst);
 
-            // Only finalize the arena when no other
-            // challengers remain.
+            // Only restore one complete domain when
+            // no other challengers remain.
             if (inst.participants.size() == 1) {
 
                 DomainClashController.reset(inst.slot);
@@ -417,36 +421,8 @@ public final class DomainClash {
                         inst.skillDomain
                 );
 
-                DomainDecorations.spawn(
-                        domainLevel,
-                        inst
-                );
+                DomainDecorations.spawn(domainLevel, inst);
             }
         }
-
-
-        if (domainLevel != null) {
-
-            // 1. Remove old decorative entities.
-            DomainDecorations.clear(
-                    domainLevel,
-                    inst
-            );
-
-            // 2. Completely rebuild the arena
-            // using the winning domain's blocks.
-            DomainArenaBuilder.rebuildAfterClash(
-                    domainLevel,
-                    inst.arenaCenter,
-                    inst.skillDomain
-            );
-
-            // 3. Spawn the winning domain's decorations.
-            DomainDecorations.spawn(
-                    domainLevel,
-                    inst
-            );
-        }
-
         }
     }

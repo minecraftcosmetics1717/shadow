@@ -14,6 +14,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraftforge.registries.ForgeRegistries;
+import virtuoel.pehkui.api.ScaleTypes;
 
 public final class DomainDecorations {
 
@@ -265,9 +266,20 @@ public final class DomainDecorations {
         double y = inst.arenaCenter.getY() + offsetY;
         double z = inst.arenaCenter.getZ() + 0.5 + offsetZ;
 
+
         entity.moveTo(x, y, z, yaw, 0.0F);
         entity.setInvulnerable(true);
         entity.setNoGravity(true);
+
+// Enlarge Mahito's and Gojo's domain decoration
+
+        if ("jujutsucraft:entity_hands".equals(entityId)
+                || "jujutsucraft:entity_unlimited_void".equals(entityId)) {
+
+            ScaleTypes.BASE.getScaleData(entity).setScale(3.0F);
+        }
+
+
 
         if (entity instanceof LivingEntity living) {
             living.setYHeadRot(yaw);

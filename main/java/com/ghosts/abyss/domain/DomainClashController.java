@@ -123,10 +123,31 @@ public final class DomainClashController {
                 DomainDecorations.sync(level, inst);
             }
 
+
             if (active.size() < 2) {
+
+                // A clash has finished. Restore the surviving
+                // domain's appearance once, not every tick.
+                if (STATES.containsKey(slot)
+                        && inst.participants.size() == 1) {
+
+                    DomainClashVisuals.reset(slot);
+
+                    DomainDecorations.clear(level, inst);
+
+                    DomainArenaBuilder.rebuildAfterClash(
+                            level,
+                            inst.arenaCenter,
+                            inst.skillDomain
+                    );
+
+                    DomainDecorations.spawn(level, inst);
+                }
+
                 STATES.remove(slot);
                 continue;
             }
+
 
             ClashState state = STATES.computeIfAbsent(
                     slot, key -> new ClashState()
