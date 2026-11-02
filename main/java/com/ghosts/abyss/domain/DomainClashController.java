@@ -71,18 +71,15 @@ public final class DomainClashController {
                                 level, p.entityId
                         );
 
-                if (entity == null || !entity.isAlive()) continue;
+                if (entity == null || !entity.isAlive()) {
+                    continue;
+                }
 
-                boolean owner =
-                        p.entityId.equals(inst.ownerId);
+                boolean owner = p.entityId.equals(inst.ownerId);
 
                 if (!owner && (
-                        !entity.getPersistentData().getBoolean(
-                                "abyss_domain_clashing"
-                        )
-                                || entity.getPersistentData().getBoolean(
-                                "DomainDefeated"
-                        )
+                        !entity.getPersistentData().getBoolean("abyss_domain_clashing")
+                                || entity.getPersistentData().getBoolean("DomainDefeated")
                                 || domainEffect == null
                                 || !entity.hasEffect(domainEffect)
                 )) {
@@ -91,6 +88,39 @@ public final class DomainClashController {
 
                 active.add(p);
                 casters.put(p.entityId, entity);
+
+            }
+// Remove challengers whose domain is no longer active.
+// This frees their SOUTH/WEST/EAST position for future casters.
+            java.util.List<UUID> inactiveIds = new java.util.ArrayList<>();
+
+            for (DomainClashParticipants.Participant p : inst.participants.all()) {
+                if (p.entityId.equals(inst.ownerId)) continue;
+
+                LivingEntity challenger =
+                        DomainArenaService.findLivingIn(level, p.entityId);
+
+                if (challenger == null) {
+                    // Do not automatically remove unloaded entities.
+                    continue;
+                }
+
+                if (!challenger.isAlive()
+                        || challenger.getPersistentData().getBoolean("DomainDefeated")
+                        || !challenger.getPersistentData().getBoolean("abyss_domain_clashing")
+                        || domainEffect == null
+                        || !challenger.hasEffect(domainEffect)) {
+
+                    inactiveIds.add(p.entityId);
+                }
+            }
+
+            for (UUID id : inactiveIds) {
+                inst.participants.remove(id);
+            }
+
+            if (!inactiveIds.isEmpty()) {
+                DomainDecorations.sync(level, inst);
             }
 
             if (active.size() < 2) {

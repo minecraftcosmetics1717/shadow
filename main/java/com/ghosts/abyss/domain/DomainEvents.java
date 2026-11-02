@@ -196,22 +196,88 @@ public class DomainEvents {
             }
         }
     }
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onDeath(LivingDeathEvent event) {
-        if (event.getEntity().level().isClientSide) return;
+        @SubscribeEvent(priority = EventPriority.HIGHEST)
+        public static void onDeath(LivingDeathEvent event) {
+            if (event.getEntity().level().isClientSide) return;
 
-        LivingEntity entity = event.getEntity();
-        DomainInstance inst = DomainInstanceManager.getByOwner(entity.getUUID());
-        if (inst == null) return;
+            LivingEntity entity = event.getEntity();
+            java.util.UUID deadId = entity.getUUID();
 
-        entity.getPersistentData().putBoolean("abyss_domain_owner_dead", true);
-        entity.getPersistentData().putDouble("abyss_drop_x", inst.overworldCenter.x);
-        entity.getPersistentData().putDouble("abyss_drop_y", inst.overworldCenter.y);
-        entity.getPersistentData().putDouble("abyss_drop_z", inst.overworldCenter.z);
-        entity.getPersistentData().putString("abyss_drop_dim", inst.returnDim.location().toString());
+            // Preserve the existing delayed cleanup for arena owners.
+            DomainInstance owned =
+                    DomainInstanceManager.getByOwner(deadId);
 
-        scheduleEndAfterDeath(entity, inst);
-    }
+            if (owned != null) {
+                entity.getPersistentData().putBoolean(
+                        "abyss_domain_owner_dead", true
+                );
+
+                entity.getPersistentData().putDouble(
+                        "abyss_drop_x", owned.overworldCenter.x
+                );
+                entity.getPersistentData().putDouble(
+                        "abyss_drop_y", owned.overworldCenter.y
+                );
+                entity.getPersistentData().putDouble(
+                        "abyss_drop_z", owned.overworldCenter.z
+                );
+                entity.getPersistentData().putString(
+                        "abyss_drop_dim",
+                        owned.returnDim.location().toString()
+                );
+
+                scheduleEndAfterDeath(entity, owned);
+                return;
+            }
+
+            // A challenger does not own the arena, so find
+            // the arena where their domain is participating.
+            if (!(entity.level() instanceof ServerLevel level)) return;
+            if (!level.dimension().equals(DomainDimension.ID)) return;
+
+            DomainInstance arena =
+                    DomainClash.findInstanceContaining(entity.position());
+
+            if (arena == null) return;
+            if (!arena.participants.contains(deadId)) return;
+
+            // Remove the dead challenger's domain from the clash.
+            arena.participants.remove(deadId);
+
+            entity.getPersistentData().putBoolean(
+                    "abyss_domain_clashing", false
+            );
+            entity.getPersistentData().putBoolean(
+                    "abyss_domain_clash_active", false
+            );
+            entity.getPersistentData().putBoolean(
+                    "abyss_domain_handled", false
+            );
+            entity.getPersistentData().putBoolean(
+                    "abyss_domain_committed", false
+            );
+
+            // Remove decorations belonging to the dead caster.
+            DomainDecorations.sync(level, arena);
+
+            // If only one domain remains, end the clash and
+            // restore the surviving domain's complete appearance.
+            if (arena.participants.size() == 1) {
+
+                DomainClashController.reset(arena.slot);
+
+                DomainDecorations.clear(level, arena);
+
+                DomainArenaBuilder.rebuildAfterClash(
+                        level,
+                        arena.arenaCenter,
+                        arena.skillDomain
+                );
+
+                DomainDecorations.spawn(level, arena);
+            }
+
+        }
 
     @SubscribeEvent
     public static void onDrops(LivingDropsEvent event) {
