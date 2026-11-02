@@ -22,34 +22,32 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> DOMAIN_BARRIER =
             register("domain_barrier", () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.GLASS,false));
-
     public static final RegistryObject<Block> DOMAIN_SAND =
             register("domain_sand", () -> new DomainBlock(MapColor.SAND, SoundType.SAND,true));
-
     public static final RegistryObject<Block> DOMAIN_GRAVEL =
             register("domain_gravel", () -> new DomainBlock(MapColor.STONE, SoundType.GRAVEL,false));
-
     public static final RegistryObject<Block> DOMAIN_RED =
             register("domain_red", () -> new DomainBlock(MapColor.COLOR_RED, SoundType.STONE,false));
-
     public static final RegistryObject<Block> DOMAIN_FLOWER =
             register("domain_flower", () -> new DomainBlock(MapColor.COLOR_PINK, SoundType.GRASS,false));
-
     public static final RegistryObject<Block> DOMAIN_BONE =
             register("domain_bone", () -> new DomainBlock(MapColor.WOOL, SoundType.BONE_BLOCK,false));
-
     public static final RegistryObject<Block> DOMAIN_BIRCH =
             register("domain_birch", () -> new DomainBlock(MapColor.WOOD, SoundType.WOOD,false));
-
     public static final RegistryObject<Block> DOMAIN_WHITE =
             register("domain_white", () -> new DomainBlock(MapColor.SNOW, SoundType.STONE,true));
-
     public static final RegistryObject<Block> DOMAIN_BLACK =
             register("domain_black",
                     () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,true));
-
     public static final RegistryObject<Block> DOMAIN_ROCK =
             register("domain_rock", () -> new DomainBlock(MapColor.STONE, SoundType.STONE,false));
+    public static final RegistryObject<Block> DOMAIN_MOUNTAIN =
+            register("domain_mountain",
+                    () -> new DomainBlock(MapColor.STONE, SoundType.STONE, true));
+    public static final RegistryObject<Block> DOMAIN_MOUNTAIN_MAGMA =
+            register("domain_mountain_magma",
+                    () -> new DomainBlock(MapColor.STONE, SoundType.STONE, true));
+
     public static final RegistryObject<Block> DOMAIN_BLUE_SKY =
             register("domain_blue_sky", () -> new DomainBlock(MapColor.COLOR_LIGHT_BLUE, SoundType.GLASS,true));
 
