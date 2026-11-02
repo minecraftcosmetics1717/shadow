@@ -16,10 +16,9 @@ public final class DomainClashParticipants {
     }
 
     public static final class Participant {
-
         public final UUID entityId;
         public double skillDomain;
-        public final Side side;
+        public Side side;
 
         public Participant(
                 UUID entityId,
@@ -76,9 +75,7 @@ public final class DomainClashParticipants {
 
         Side side = nextAvailableSide();
 
-        if (side == null) {
-            return null;
-        }
+        if (side == null) return null;
 
         Participant participant = new Participant(
                 entityId,
@@ -90,22 +87,44 @@ public final class DomainClashParticipants {
         return participant;
     }
 
+    private boolean isOccupied(Side side) {
+        for (Participant p : participants) {
+            if (p.side == side) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Side opposite(Side side) {
+        return switch (side) {
+            case NORTH -> Side.SOUTH;
+            case SOUTH -> Side.NORTH;
+            case WEST -> Side.EAST;
+            case EAST -> Side.WEST;
+        };
+    }
+
     private Side nextAvailableSide() {
+        // First priority: opposite the only active domain.
+        if (participants.size() == 1) {
+            Side preferred = opposite(participants.get(0).side);
+
+            if (!isOccupied(preferred)) {
+                return preferred;
+            }
+        }
+
+        // Otherwise fill remaining positions.
+        // With NORTH/SOUTH occupied, WEST is next.
+        // With EAST/WEST occupied, NORTH is next.
         for (Side side : new Side[]{
+                Side.NORTH,
                 Side.SOUTH,
                 Side.WEST,
                 Side.EAST
         }) {
-            boolean occupied = false;
-
-            for (Participant participant : participants) {
-                if (participant.side == side) {
-                    occupied = true;
-                    break;
-                }
-            }
-
-            if (!occupied) {
+            if (!isOccupied(side)) {
                 return side;
             }
         }
@@ -115,8 +134,7 @@ public final class DomainClashParticipants {
 
     public void remove(UUID entityId) {
         participants.removeIf(
-                participant ->
-                        participant.entityId.equals(entityId)
+                p -> p.entityId.equals(entityId)
         );
     }
 

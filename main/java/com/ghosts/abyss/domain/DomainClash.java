@@ -352,14 +352,24 @@ public final class DomainClash {
     }
 
 
-    public static void transferOwnership(DomainInstance inst, LivingEntity loser,
-                                         LivingEntity winner, ServerLevel domainLevel) {
+
+    public static void transferOwnership(
+            DomainInstance inst,
+            LivingEntity loser,
+            LivingEntity winner,
+            ServerLevel domainLevel
+    ) {
         UUID oldOwner = inst.ownerId;
         UUID newOwner = winner.getUUID();
 
         DomainInstanceManager.reassignOwner(oldOwner, newOwner);
 
-        double skill = winner.getPersistentData().getDouble("skill_domain");
+        inst.participants.remove(oldOwner);
+
+
+        double skill = winner.getPersistentData()
+                .getDouble("skill_domain");
+
         if (skill == 0) {
             skill = winner.getPersistentData().getDouble("select");
         }
