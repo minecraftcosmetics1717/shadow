@@ -31,8 +31,8 @@ import java.util.*;
 public final class DomainSkyMaskRenderer {
 
     // Number of chunk sections to search around the player.
-    private static final int HORIZONTAL_RANGE = 7;
-    private static final int VERTICAL_RANGE = 4;
+    private static final int HORIZONTAL_RANGE = 8;
+    private static final int VERTICAL_RANGE = 5;
 
     // Maximum section checks per client tick.
     private static final int CHECKS_PER_TICK = 12;
@@ -793,23 +793,22 @@ public final class DomainSkyMaskRenderer {
             }
 
             case MOUNTAIN -> {
-                // Jogo's volcanic domain sky.
-                // Top:    #915144
-                // Middle: #FFB73A
-                // Bottom: #FFB73A
+                // Jogo's volcanic brown sky.
+                // Top:    #58352F
+                // Middle: #875044
+                // Bottom: #A46A4B
 
                 float height = y / radius;
 
-                // Keep the lower half orange.
-                // Transition smoothly toward brown near the top.
-                float t = Math.max(0.0F, Math.min(1.0F, height));
+                float t = Math.max(0.0F,
+                        Math.min(1.0F, (height + 1.0F) * 0.5F));
 
-                // Smoothstep for a softer gradient.
+                // Smooth gradient.
                 t = t * t * (3.0F - 2.0F * t);
 
-                red = Math.round(255.0F * (1.0F - t) + 145.0F * t);
-                green = Math.round(183.0F * (1.0F - t) + 81.0F * t);
-                blue = Math.round(58.0F * (1.0F - t) + 68.0F * t);
+                red = Math.round(164.0F * (1.0F - t) + 88.0F * t);
+                green = Math.round(106.0F * (1.0F - t) + 53.0F * t);
+                blue = Math.round(75.0F * (1.0F - t) + 47.0F * t);
             }
 
 

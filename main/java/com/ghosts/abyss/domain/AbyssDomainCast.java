@@ -16,6 +16,7 @@ import static com.ghosts.abyss.domain.DomainLifecycle.clearCastState;
 public final class AbyssDomainCast {
 
     public static final double GOJO_SKILL_DOMAIN = 2.0;
+    public static final double JOGO_SKILL_DOMAIN = 4.0;
     public static final double DAGON_SKILL_DOMAIN = 8.0;
     public static final double MAHITO_SKILL_DOMAIN = 15.0;
     public static final double NAOYA_SKILL_DOMAIN = 19.0;
@@ -44,6 +45,9 @@ public final class AbyssDomainCast {
     }
     public static void tickGojoDomain(LevelAccessor world, LivingEntity entity) {
         tickCustomDomain(world, entity, GOJO_SKILL_DOMAIN);
+    }
+    public static void tickJogoDomain(LevelAccessor world, LivingEntity entity) {
+        tickCustomDomain(world, entity, JOGO_SKILL_DOMAIN);
     }
     public static void tickDagonDomain(LevelAccessor world, LivingEntity entity) {
         tickCustomDomain(world, entity, DAGON_SKILL_DOMAIN);

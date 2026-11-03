@@ -55,7 +55,12 @@ public class CentralKeyHookMixin {
                           "abyss_gojo_domain_auth", true);
                }
                break;
-
+            case 4: // Jogo
+               if (selected == 20.0) {
+                  entity.getPersistentData().putBoolean(
+                          "abyss_jogo_domain_auth", true);
+               }
+               break;
             case 20: // AoiTodo
                if (selected == 8.0) { // Rock
                   entity.getPersistentData().putBoolean("jreborn_todorock_auth", true);

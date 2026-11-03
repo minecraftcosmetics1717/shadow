@@ -108,7 +108,7 @@ public class DomainArenaBuilder {
         return switch (id) {
             case 1 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Sukuna
             case 2 -> ModBlocks.DOMAIN_SKY_INFINITE_VOID.get().defaultBlockState(); // Gojo
-            case 4 -> abyssMountainDeepslate(); // Jogo
+            case 4 -> ModBlocks.DOMAIN_SKY_MOUNTAIN.get().defaultBlockState(); // Jogo
             case 5 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Yuta
             case 6 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Megumi
             case 8 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Dagon (no blue_sky block yet)
