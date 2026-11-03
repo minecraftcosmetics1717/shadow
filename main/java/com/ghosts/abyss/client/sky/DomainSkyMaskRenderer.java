@@ -792,6 +792,26 @@ public final class DomainSkyMaskRenderer {
                 blue = Math.round(44F * middle);
             }
 
+            case MOUNTAIN -> {
+                // Jogo's volcanic domain sky.
+                // Top:    #915144
+                // Middle: #FFB73A
+                // Bottom: #FFB73A
+
+                float height = y / radius;
+
+                // Keep the lower half orange.
+                // Transition smoothly toward brown near the top.
+                float t = Math.max(0.0F, Math.min(1.0F, height));
+
+                // Smoothstep for a softer gradient.
+                t = t * t * (3.0F - 2.0F * t);
+
+                red = Math.round(255.0F * (1.0F - t) + 145.0F * t);
+                green = Math.round(183.0F * (1.0F - t) + 81.0F * t);
+                blue = Math.round(58.0F * (1.0F - t) + 68.0F * t);
+            }
+
 
             default -> {
                 red = 0;

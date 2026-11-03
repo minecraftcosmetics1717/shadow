@@ -47,6 +47,9 @@ public class ModBlocks {
     public static final RegistryObject<Block> DOMAIN_MOUNTAIN_MAGMA =
             register("domain_mountain_magma",
                     () -> new DomainBlock(MapColor.STONE, SoundType.STONE, true));
+    public static final RegistryObject<Block> DOMAIN_MOUNTAIN_DEEPSLATE =
+            register("domain_mountain_deepslate",
+                    () -> new DomainBlock(MapColor.STONE, SoundType.STONE, true));
 
     public static final RegistryObject<Block> DOMAIN_BLUE_SKY =
             register("domain_blue_sky", () -> new DomainBlock(MapColor.COLOR_LIGHT_BLUE, SoundType.GLASS,true));
@@ -81,6 +84,13 @@ public class ModBlocks {
                     () -> new DomainSkyBlock(
                             DomainSkyBlock.SkyType.WOMB
                     ));
+
+    public static final RegistryObject<Block> DOMAIN_SKY_MOUNTAIN =
+            register("domain_sky_mountain",
+                    () -> new DomainSkyBlock(
+                            DomainSkyBlock.SkyType.MOUNTAIN
+                    ));
+
 
     private static RegistryObject<Block> register(String name, Supplier<Block> block) {
         RegistryObject<Block> reg = BLOCKS.register(name, block);

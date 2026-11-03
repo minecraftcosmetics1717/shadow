@@ -25,45 +25,44 @@ public class DomainArenaBuilder {
     private static BlockState abyssBarrier() {
         return ModBlocks.DOMAIN_BARRIER.get().defaultBlockState();
     }
-
     private static BlockState abyssSand() {
         return ModBlocks.DOMAIN_SAND.get().defaultBlockState();
     }
-
     private static BlockState abyssGravel() {
         return ModBlocks.DOMAIN_GRAVEL.get().defaultBlockState();
     }
-
     private static BlockState abyssRed() {
         return ModBlocks.DOMAIN_RED.get().defaultBlockState();
     }
-
     private static BlockState abyssFlower() {
         return ModBlocks.DOMAIN_FLOWER.get().defaultBlockState();
     }
-
     private static BlockState abyssBone() {
         return ModBlocks.DOMAIN_BONE.get().defaultBlockState();
     }
-
     private static BlockState abyssBirch() {
         return ModBlocks.DOMAIN_BIRCH.get().defaultBlockState();
     }
-
     private static BlockState abyssWhite() {
         return ModBlocks.DOMAIN_WHITE.get().defaultBlockState();
     }
-
     private static BlockState abyssBlueSky() {
         return ModBlocks.DOMAIN_BLUE_SKY.get().defaultBlockState();
     }
-
     private static BlockState abyssBlack() {
         return ModBlocks.DOMAIN_BLACK.get().defaultBlockState();
     }
-
     private static BlockState abyssRock() {
         return ModBlocks.DOMAIN_ROCK.get().defaultBlockState();
+    }
+    private static BlockState abyssMountain() {
+        return ModBlocks.DOMAIN_MOUNTAIN.get().defaultBlockState();
+    }
+    private static BlockState abyssMountainMagma() {
+        return ModBlocks.DOMAIN_MOUNTAIN_MAGMA.get().defaultBlockState();
+    }
+    private static BlockState abyssMountainDeepslate() {
+        return ModBlocks.DOMAIN_MOUNTAIN_DEEPSLATE.get().defaultBlockState();
     }
 
     /** JC barrier — overworld only */
@@ -87,6 +86,7 @@ public class DomainArenaBuilder {
         return switch (id) {
             case 1 -> abyssRed();           // Sukuna
             case 2 -> ModBlocks.DOMAIN_SKY_INFINITE_VOID.get().defaultBlockState(); // Gojo
+            case 4 -> abyssMountainMagma(); // Jogo
             case 5 -> abyssGravel();        // Yuta
             case 6 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Megumi
             case 8 -> abyssSand();          // Dagon
@@ -108,6 +108,7 @@ public class DomainArenaBuilder {
         return switch (id) {
             case 1 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Sukuna
             case 2 -> ModBlocks.DOMAIN_SKY_INFINITE_VOID.get().defaultBlockState(); // Gojo
+            case 4 -> abyssMountainDeepslate(); // Jogo
             case 5 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Yuta
             case 6 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Megumi
             case 8 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Dagon (no blue_sky block yet)
@@ -237,8 +238,10 @@ public class DomainArenaBuilder {
 
                 level.setBlock(new BlockPos(cx + x, cy - 1, cz + z), under, 2);
 
+
                 BlockState top = floor;
                 if (id == 27) {
+
                     int ax = Math.abs(x);
                     int az = Math.abs(z);
                     boolean onRim = ax >= floorR - edgeWidth || az >= floorR - edgeWidth;
@@ -265,6 +268,7 @@ public class DomainArenaBuilder {
                     if (x * x + z * z > r * r) continue;
                     level.setBlock(new BlockPos(cx + x, cy - 1, cz + z), under, 2);
                     level.setBlock(new BlockPos(cx + x, cy, cz + z), floor, 2);
+
                 }
             }
         } finally {

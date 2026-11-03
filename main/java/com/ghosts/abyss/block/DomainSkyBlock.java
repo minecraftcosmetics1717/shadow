@@ -16,7 +16,8 @@ public class DomainSkyBlock extends Block {
         BLACK,
         WHITE,
         INFINITE_VOID,
-        WOMB
+        WOMB,
+        MOUNTAIN
     }
 
     private final SkyType skyType;
