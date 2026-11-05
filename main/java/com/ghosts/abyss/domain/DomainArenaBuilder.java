@@ -43,6 +43,18 @@ public class DomainArenaBuilder {
     private static BlockState abyssBirch() {
         return ModBlocks.DOMAIN_BIRCH.get().defaultBlockState();
     }
+    private static BlockState abyssTiles() {
+        return ModBlocks.DOMAIN_TILES.get().defaultBlockState();
+    }
+    private static BlockState abyssTilesWall() {
+        return ModBlocks.DOMAIN_WALL_TILES.get().defaultBlockState();
+    }
+    private static BlockState abyssTilesRoof() {
+        return ModBlocks.DOMAIN_ROOF_TILES.get().defaultBlockState();
+    }
+    private static BlockState abyssTilesRoofH() {
+        return ModBlocks.DOMAIN_ROOF_TILESH.get().defaultBlockState();
+    }
     private static BlockState abyssWhite() {
         return ModBlocks.DOMAIN_WHITE.get().defaultBlockState();
     }

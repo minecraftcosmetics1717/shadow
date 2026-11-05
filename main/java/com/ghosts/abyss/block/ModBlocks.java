@@ -39,6 +39,18 @@ public class ModBlocks {
     public static final RegistryObject<Block> DOMAIN_BLACK =
             register("domain_black",
                     () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,true));
+    public static final RegistryObject<Block> DOMAIN_TILES =
+            register("domain_tiles",
+                    () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
+    public static final RegistryObject<Block> DOMAIN_WALL_TILES =
+            register("domain_wall_tiles",
+                    () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
+    public static final RegistryObject<Block> DOMAIN_ROOF_TILES =
+            register("domain_roof_tiles",
+                    () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
+    public static final RegistryObject<Block> DOMAIN_ROOF_TILESH =
+            register("domain_roof_tilesh",
+                    () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
     public static final RegistryObject<Block> DOMAIN_ROCK =
             register("domain_rock", () -> new DomainBlock(MapColor.STONE, SoundType.STONE,false));
     public static final RegistryObject<Block> DOMAIN_MOUNTAIN =

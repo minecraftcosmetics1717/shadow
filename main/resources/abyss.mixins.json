@@ -90,7 +90,9 @@
     "NaoyaDomainDisplayMixin",
     "NaoyaDomainExecuteMixin",
     "JogoDomainExecuteMixin",
-    "JogoDomainDisplayMixin"
+    "JogoDomainDisplayMixin",
+    "HakariDomainDisplayMixin",
+    "HakariDomainExecuteMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin"
