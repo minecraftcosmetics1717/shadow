@@ -92,7 +92,11 @@
     "JogoDomainExecuteMixin",
     "JogoDomainDisplayMixin",
     "HakariDomainDisplayMixin",
-    "HakariDomainExecuteMixin"
+    "HakariDomainExecuteMixin",
+    "HakariBallThrowMixin",
+    "HakariDoorsGambleMixin",
+    "HakariOldSlotsMixin",
+    "HakariReserveBallCooldownMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin"

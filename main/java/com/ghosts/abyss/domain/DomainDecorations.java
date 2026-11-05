@@ -32,6 +32,12 @@ public final class DomainDecorations {
         if (level == null || inst == null || participant == null) return;
         if (hasDecoration(level, inst, participant.entityId)) return;
 
+        // Hakari — Idle Death Gamble
+        if ((int) participant.skillDomain == 29) {
+            spawnHakariGates(level, inst, participant);
+            return;
+        }
+
         String entityId = switch ((int) participant.skillDomain) {
             case 2 -> "jujutsucraft:entity_unlimited_void";
             case 15 -> "jujutsucraft:entity_hands";
@@ -271,13 +277,21 @@ public final class DomainDecorations {
         entity.setInvulnerable(true);
         entity.setNoGravity(true);
 
-// Enlarge Mahito's and Gojo's domain decoration
+
+// Enlarge domain decorations with Pehkui.
 
         if ("jujutsucraft:entity_hands".equals(entityId)
                 || "jujutsucraft:entity_unlimited_void".equals(entityId)) {
 
+            // Mahito and Gojo remain 3x.
             ScaleTypes.BASE.getScaleData(entity).setScale(3.0F);
+
+        } else if ("jujutsucraft:ticket_gate".equals(entityId)) {
+
+            // Hakari's ticket gates are 2x.
+            ScaleTypes.BASE.getScaleData(entity).setScale(2.0F);
         }
+
 
 
 
@@ -296,4 +310,56 @@ public final class DomainDecorations {
         entity.getPersistentData().putUUID("abyss_decoration_owner", casterId);
         level.addFreshEntity(entity);
     }
+
+    private static void spawnHakariGates(
+            ServerLevel level,
+            DomainInstance inst,
+            DomainClashParticipants.Participant participant
+    ) {
+        // 6 ticket gates per side, 12 total.
+        final int gatesPerSide = 6;
+        final double rowOffset = 43.0;
+        final double spacing = 14.0;
+
+        // Align the rows with the participant's domain side.
+        // NORTH/SOUTH: rows on east and west.
+        // EAST/WEST: rows on north and south.
+        boolean eastWestRows =
+                participant.side == DomainClashParticipants.Side.NORTH
+                        || participant.side == DomainClashParticipants.Side.SOUTH;
+
+        for (int side = -1; side <= 1; side += 2) {
+            for (int i = 0; i < gatesPerSide; i++) {
+
+                double along = (i - (gatesPerSide - 1) / 2.0)
+                        * spacing;
+
+                double x;
+                double z;
+                float yaw;
+
+                if (eastWestRows) {
+                    x = side * rowOffset;
+                    z = along;
+                    yaw = side < 0 ? 90.0F : 270.0F;
+                } else {
+                    x = along;
+                    z = side * rowOffset;
+                    yaw = side < 0 ? 0.0F : 180.0F;
+                }
+
+                spawnDecoration(
+                        level,
+                        inst,
+                        "jujutsucraft:ticket_gate",
+                        x,
+                        1.0,
+                        z,
+                        yaw,
+                        participant.entityId
+                );
+            }
+        }
+    }
+
 }
