@@ -32,7 +32,8 @@ public final class DomainSureHit {
 
 // Abyss fast-cast domains don't necessarily receive JC's
 // original domain_expansion effect.
-            boolean abyssFastCast = inst.skillDomain == 8.0
+            boolean abyssFastCast = inst.skillDomain == 4.0
+                    || inst.skillDomain == 8.0
                     || inst.skillDomain == 15.0;
 
             if (!abyssFastCast
@@ -90,45 +91,23 @@ public final class DomainSureHit {
             // Sure-hit is active, so keep neutralization
 // applied to living entities inside this domain.
             DomainNeutralization.refresh(domainLevel, inst);
-            // Run JC's original domain-specific attack logic.
-            // Do not run its full domain lifecycle procedure.
 
-// Run JC's domain attack logic with a controlled radius for Dagon.
-            if (skill == 8.0) {
-                var mapVars =
-                        net.mcreator.jujutsucraft.network.JujutsucraftModVariables
-                                .MapVariables.get(domainLevel);
+            // Use Abyss's larger arena radius for sure-hit
+            // while preserving Dagon's special behavior.
+            var mapVars =
+                    net.mcreator.jujutsucraft.network.JujutsucraftModVariables
+                            .MapVariables.get(domainLevel);
 
-                double originalRadius = mapVars.DomainExpansionRadius;
-                double dagonRadius = 22.0;
+            double originalRadius = mapVars.DomainExpansionRadius;
 
-                try {
-                    mapVars.DomainExpansionRadius = dagonRadius;
+            double targetRadius =
+                    skill == 8.0
+                            ? 22.0
+                            : DomainDimension.INNER_RADIUS;
 
-                    // Log whenever the original radius differs.
-                    if (originalRadius != dagonRadius) {
-                        com.ghosts.abyss.Abyss.LOGGER.info(
-                                "[Abyss DagonRadius] Correcting radius {} -> {} " +
-                                        "for owner={} slot={}",
-                                originalRadius,
-                                dagonRadius,
-                                owner.getName().getString(),
-                                inst.slot
-                        );
-                    }
+            try {
+                mapVars.DomainExpansionRadius = targetRadius;
 
-                    DomainActiveProcedure.execute(
-                            domainLevel,
-                            owner.getX(),
-                            owner.getY(),
-                            owner.getZ(),
-                            owner
-                    );
-                } finally {
-                    // Restore JC's original value immediately afterward.
-                    mapVars.DomainExpansionRadius = originalRadius;
-                }
-            } else {
                 DomainActiveProcedure.execute(
                         domainLevel,
                         owner.getX(),
@@ -136,7 +115,13 @@ public final class DomainSureHit {
                         owner.getZ(),
                         owner
                 );
+
+            } finally {
+                // Restore Jujutsucraft's shared setting.
+                mapVars.DomainExpansionRadius = originalRadius;
             }
+
+
 
         }
     }

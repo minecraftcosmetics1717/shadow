@@ -90,6 +90,11 @@ public class ModBlocks {
                     () -> new DomainSkyBlock(
                             DomainSkyBlock.SkyType.MOUNTAIN
                     ));
+    public static final RegistryObject<Block> DOMAIN_SKY_GAMBLE =
+            register("domain_sky_gamble",
+                    () -> new DomainSkyBlock(
+                            DomainSkyBlock.SkyType.GAMBLE
+                    ));
 
 
     private static RegistryObject<Block> register(String name, Supplier<Block> block) {

@@ -32,10 +32,9 @@ public final class DomainSkyMaskRenderer {
 
     // Number of chunk sections to search around the player.
     private static final int HORIZONTAL_RANGE = 8;
-    private static final int VERTICAL_RANGE = 5;
-
-    // Maximum section checks per client tick.
-    private static final int CHECKS_PER_TICK = 12;
+    private static final int VERTICAL_RANGE = 8;
+    private static final int INITIAL_CHECKS_PER_TICK = 24;
+    private static final int NORMAL_CHECKS_PER_TICK = 8;
 
     private record SectionKey(int x, int y, int z) {}
 
@@ -73,6 +72,7 @@ public final class DomainSkyMaskRenderer {
     private static VertexBuffer infiniteVoidSky;
     private static ClientLevel lastLevel;
     private static SectionKey lastCenter;
+    private static boolean initialScan = true;
 
     private DomainSkyMaskRenderer() {}
 
@@ -102,24 +102,78 @@ public final class DomainSkyMaskRenderer {
                 playerPos.getZ() >> 4
         );
 
+
         if (!center.equals(lastCenter)) {
             lastCenter = center;
-            rebuildQueue(center);
+
+            // Keep unfinished scans when moving.
+            updateQueue(center);
             removeDistantSections(center);
         }
 
-        // Continue checking sections in the background
-        // of normal client ticks, not all at once.
+// Restart a background scan after the previous pass finishes.
         if (QUEUE.isEmpty()) {
+            initialScan = false;
             rebuildQueue(center);
         }
 
-        for (int i = 0; i < CHECKS_PER_TICK; i++) {
+        int checks = initialScan
+                ? INITIAL_CHECKS_PER_TICK
+                : NORMAL_CHECKS_PER_TICK;
+
+        for (int i = 0; i < checks; i++) {
             SectionKey key = QUEUE.poll();
 
             if (key == null) break;
 
             checkSection(level, key);
+        }
+
+    }
+
+    private static void updateQueue(SectionKey center) {
+        // Preserve unfinished sections that are still nearby.
+        QUEUE.removeIf(key ->
+                Math.abs(key.x() - center.x()) > HORIZONTAL_RANGE
+                        || Math.abs(key.y() - center.y()) > VERTICAL_RANGE
+                        || Math.abs(key.z() - center.z()) > HORIZONTAL_RANGE
+        );
+
+        // Prevent duplicate entries.
+        Set<SectionKey> queued = new HashSet<>(QUEUE);
+
+        List<SectionKey> additions = new ArrayList<>();
+
+        for (int x = -HORIZONTAL_RANGE; x <= HORIZONTAL_RANGE; x++) {
+            for (int y = -VERTICAL_RANGE; y <= VERTICAL_RANGE; y++) {
+                for (int z = -HORIZONTAL_RANGE; z <= HORIZONTAL_RANGE; z++) {
+
+                    SectionKey key = new SectionKey(
+                            center.x() + x,
+                            center.y() + y,
+                            center.z() + z
+                    );
+
+                    // Only add sections not already scanned or queued.
+                    if (!queued.contains(key) && !CACHE.containsKey(key)) {
+                        additions.add(key);
+                    }
+                }
+            }
+        }
+
+        // Prioritize the nearest newly discovered sections.
+        additions.sort(Comparator.comparingInt(key -> {
+            int dx = key.x() - center.x();
+            int dy = key.y() - center.y();
+            int dz = key.z() - center.z();
+
+            return dx * dx + dy * dy + dz * dz;
+        }));
+
+        // Put newly discovered sections first.
+        for (int i = additions.size() - 1; i >= 0; i--) {
+            QUEUE.addFirst(additions.get(i));
         }
     }
 
@@ -812,6 +866,29 @@ public final class DomainSkyMaskRenderer {
             }
 
 
+            case GAMBLE -> {
+                // Hakari's Idle Death Gamble sky.
+                // White at the top and bottom.
+                // Green around the middle (horizon).
+
+                float height = y / radius;
+
+                // 1.0 at the horizon, 0.0 at top and bottom.
+                float middle = 1.0F - Math.abs(height);
+
+                // Smooth green band around the horizon.
+                middle = Math.max(0.0F, middle);
+                middle = middle * middle * (3.0F - 2.0F * middle);
+
+                // Green at the horizon: #198648
+                // White at the poles: #FFFFFF
+                red = Math.round(255F + (161F - 255F) * middle);
+                green = Math.round(255F + (231F - 255F) * middle);
+                blue = Math.round(255F + (178F - 255F) * middle);
+            }
+
+
+
             default -> {
                 red = 0;
                 green = 0;
@@ -840,5 +917,6 @@ public final class DomainSkyMaskRenderer {
 
         lastLevel = null;
         lastCenter = null;
+        initialScan = true;
     }
 }
