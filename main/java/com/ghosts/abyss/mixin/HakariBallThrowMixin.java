@@ -2,40 +2,46 @@
 package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.domain.HakariGambleManager;
-import net.mcreator.jujutsucraft.entity.BulletBallProjectileEntity;
-import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Pseudo
-@Mixin(value = BulletBallProjectileEntity.class, remap = false)
+@Mixin(
+        targets = "net.mcreator.jujutsucraft.procedures.BulletBallRangedItemUsedProcedure",
+        remap = false
+)
 public class HakariBallThrowMixin {
 
     @Inject(
-            method = "shoot(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/util/RandomSource;)Lnet/mcreator/jujutsucraft/entity/BulletBallProjectileEntity;",
+            method = "execute",
             at = @At("RETURN"),
             remap = false
     )
     private static void abyss$onReserveBallThrown(
-            Level world,
-            LivingEntity entity,
-            RandomSource random,
-            CallbackInfoReturnable<BulletBallProjectileEntity> cir
+            Entity entity,
+            ItemStack itemstack,
+            CallbackInfo ci
     ) {
-        // Server-side only.
-        if (world.isClientSide) return;
+        if (!(entity instanceof LivingEntity living)) {
+            return;
+        }
 
-        // Only register a throw when a projectile was created.
-        BulletBallProjectileEntity projectile = cir.getReturnValue();
-        if (projectile == null || projectile.isRemoved()) return;
+        // Only run on the server.
+        if (entity.level().isClientSide) {
+            return;
+        }
 
-        // HakariGambleManager checks that the player
-        // owns an active, uncontested Hakari domain.
-        HakariGambleManager.usedBall(entity);
+        // The original procedure has finished spawning
+        // the Reserve Ball projectile.
+        //
+        // The manager verifies that this entity owns
+        // an active, uncontested Hakari domain.
+        HakariGambleManager.usedBall(living);
     }
 }

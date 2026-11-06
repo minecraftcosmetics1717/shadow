@@ -17,8 +17,15 @@ public final class DomainHudSync {
 
     private DomainHudSync() {}
 
+
     public static void tick(ServerPlayer player) {
+
+        // Synchronize Hakari's gambling HUD alongside
+        // the existing Abyss domain HUD.
+        HakariGambleManager.syncToPlayer(player);
+
         boolean inDim = player.level().dimension().equals(DomainDimension.ID);
+
 
         DomainInstance inst = null;
 

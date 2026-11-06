@@ -106,5 +106,12 @@ public class ModNetwork {
               PacketSyncDomainHud::encode,
               PacketSyncDomainHud::new,
               PacketSyncDomainHud::handle);
+      CHANNEL.registerMessage( id++,
+              PacketSyncHakariGamble.class,
+              PacketSyncHakariGamble::encode,
+              PacketSyncHakariGamble::new,
+              PacketSyncHakariGamble::handle
+      );
+
    }
 }
