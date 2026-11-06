@@ -204,7 +204,7 @@ public class DomainArenaBuilder {
             int rIn = DomainDimension.INNER_RADIUS;
 
             for (int x = -rOut; x <= rOut; x++) {
-                for (int y = -rOut; y <= rOut; y++) {
+                for (int y = 0; y <= rOut; y++) {
                     for (int z = -rOut; z <= rOut; z++) {
                         double dist = Math.sqrt(x * x + y * y + z * z);
                         if (dist <= rOut + 0.5 && dist >= rOut - 0.5) {
