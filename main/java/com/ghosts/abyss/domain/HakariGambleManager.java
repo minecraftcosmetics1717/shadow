@@ -31,7 +31,8 @@ public final class HakariGambleManager {
 
     // Total roll duration: 3 seconds.
     private static final int ROLL_TICKS = 60;
-
+    // Wait 2 seconds after the winning triples appear.
+    private static final int JACKPOT_BREAK_DELAY = 60;
     // Number of successful indicators needed.
     private static final int REQUIRED_INDICATORS = 2;
 
@@ -49,7 +50,8 @@ public final class HakariGambleManager {
         // Current roll.
         int rollTicks;
         boolean rolling;
-
+        boolean jackpotPending;
+        int jackpotDelayTicks;
         // Final slot numbers.
         int first;
         int second;
@@ -128,8 +130,7 @@ public final class HakariGambleManager {
             STATES.put(entity.getUUID(), state);
         }
 
-        // Prevent registering moves while rolling.
-        if (state.rolling) {
+        if (state.rolling || state.jackpotPending) {
             return;
         }
 
@@ -231,7 +232,8 @@ public final class HakariGambleManager {
                 state.indicators = 0;
                 state.rolling = false;
                 state.rollTicks = 0;
-
+                state.jackpotPending = false;
+                state.jackpotDelayTicks = 0;
                 // Clear previous numbers.
                 state.first = 0;
                 state.second = 0;
@@ -240,7 +242,24 @@ public final class HakariGambleManager {
                 return false;
             }
 
-            // Nothing to update unless rolling.
+// Jackpot has landed. Wait before breaking the domain.
+            if (state.jackpotPending) {
+
+                state.jackpotDelayTicks--;
+
+                if (state.jackpotDelayTicks <= 0) {
+
+                    // End the domain, return everyone, and play
+                    // the glass-breaking sounds in the overworld.
+                    awardJackpot(living, inst, state.first);
+
+                    return true;
+                }
+
+                return false;
+            }
+
+// Nothing to update unless rolling.
             if (!state.rolling) {
                 return false;
             }
@@ -264,15 +283,14 @@ public final class HakariGambleManager {
 
                 if (jackpot) {
 
-                    // Award Jackpot and end the domain.
-                    awardJackpot(
-                            living,
-                            inst,
-                            state.first
-                    );
+                    // Jackpot confirmed, but don't end the domain yet.
+                    state.jackpotPending = true;
+                    state.jackpotDelayTicks = JACKPOT_BREAK_DELAY;
 
-                    // Remove this gambling session.
-                    return true;
+                    // Keep the winning numbers available.
+                    state.indicators = REQUIRED_INDICATORS;
+
+                    return false;
                 }
 
             }
@@ -280,6 +298,49 @@ public final class HakariGambleManager {
             return false;
         });
     }
+
+
+    private static void playDomainBreakSounds(
+            ServerLevel level,
+            DomainInstance inst
+    ) {
+        // Original domain position in the overworld.
+        double cx = inst.overworldCenter.x;
+        double cy = inst.overworldCenter.y;
+        double cz = inst.overworldCenter.z;
+
+        // Glass breaking around the domain's exterior.
+        double[][] offsets = {
+                {  0,  0,   0 },
+                { 12,  2,   0 },
+                {-12,  2,   0 },
+                {  0,  2,  12 },
+                {  0,  2, -12 },
+                { 10,  8,  10 },
+                {-10,  8, -10 },
+                { 10,  8, -10 },
+                {-10,  8,  10 },
+                {  0, 14,   0 }
+        };
+
+        for (double[] offset : offsets) {
+
+            float pitch = 0.75F
+                    + level.random.nextFloat() * 0.45F;
+
+            level.playSound(
+                    null,
+                    cx + offset[0],
+                    cy + offset[1],
+                    cz + offset[2],
+                    SoundEvents.GLASS_BREAK,
+                    SoundSource.PLAYERS,
+                    2.0F,
+                    pitch
+            );
+        }
+    }
+
 
     private static void awardJackpot(
             LivingEntity owner,
@@ -329,7 +390,7 @@ public final class HakariGambleManager {
         if (returnLevel == null) {
             returnLevel = server.overworld();
         }
-
+        playDomainBreakSounds(returnLevel, expectedDomain);
         // Resolve the owner after teleportation.
         // Teleporting a non-player entity can replace
         // its original Java entity instance.
@@ -365,17 +426,6 @@ public final class HakariGambleManager {
                         true,
                         true
                 )
-        );
-// Play glass breaking at Hakari's returned position.
-        returnLevel.playSound(
-                null,
-                returnedOwner.getX(),
-                returnedOwner.getY(),
-                returnedOwner.getZ(),
-                SoundEvents.GLASS_BREAK,
-                SoundSource.PLAYERS,
-                1.5F,
-                0.85F
         );
         com.ghosts.abyss.Abyss.LOGGER.info(
                 "[Hakari] {} received Jackpot (winning number {})",
