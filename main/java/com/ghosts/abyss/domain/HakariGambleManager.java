@@ -4,14 +4,21 @@ package com.ghosts.abyss.domain;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketSyncHakariGamble;
 
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -249,17 +256,132 @@ public final class HakariGambleManager {
                 // Reset indicators for the next attempt.
                 state.indicators = 0;
 
-                // Jackpot calculation.
+
+// Jackpot calculation.
                 boolean jackpot =
                         state.first == state.second
                                 && state.second == state.third;
 
-                // Jackpot effects and automatic domain ending
-                // will be implemented in the next step.
+                if (jackpot) {
+
+                    // Award Jackpot and end the domain.
+                    awardJackpot(
+                            living,
+                            inst,
+                            state.first
+                    );
+
+                    // Remove this gambling session.
+                    return true;
+                }
+
             }
 
             return false;
         });
+    }
+
+    private static void awardJackpot(
+            LivingEntity owner,
+            DomainInstance expectedDomain,
+            int winningNumber
+    ) {
+        // Confirm this is still Hakari's active,
+        // uncontested domain.
+        if (getHakariDomain(owner) != expectedDomain) {
+            return;
+        }
+
+        UUID ownerId = owner.getUUID();
+
+        MobEffect jackpotEffect =
+                ForgeRegistries.MOB_EFFECTS.getValue(
+                        new ResourceLocation(
+                                "jujutsucraft",
+                                "jackpot"
+                        )
+                );
+
+        if (jackpotEffect == null) {
+            com.ghosts.abyss.Abyss.LOGGER.error(
+                    "[Hakari] Jackpot effect not found!"
+            );
+            return;
+        }
+
+        // End the domain through Abyss's existing lifecycle.
+        // This returns players, cleans the arena,
+        // removes the domain effect, and applies cooldown.
+        DomainLifecycle.end(owner);
+
+        // Do not award if the domain wasn't successfully ended.
+        if (DomainInstanceManager.getByOwner(ownerId)
+                == expectedDomain) {
+            return;
+        }
+
+        var server = owner.level().getServer();
+        if (server == null) return;
+
+        ServerLevel returnLevel =
+                server.getLevel(expectedDomain.returnDim);
+
+        if (returnLevel == null) {
+            returnLevel = server.overworld();
+        }
+
+        // Resolve the owner after teleportation.
+        // Teleporting a non-player entity can replace
+        // its original Java entity instance.
+        LivingEntity returnedOwner =
+                DomainArenaService.findLivingIn(
+                        returnLevel,
+                        ownerId
+                );
+
+        if (returnedOwner == null) {
+            com.ghosts.abyss.Abyss.LOGGER.warn(
+                    "[Hakari] Could not find owner after jackpot teleport: {}",
+                    ownerId
+            );
+            return;
+        }
+
+        // Preserve JC's winning-number mode behavior.
+        if (winningNumber % 2 != 0) {
+            returnedOwner.getPersistentData()
+                    .putDouble("mode_hakari", 2.0D);
+        } else {
+            returnedOwner.getPersistentData()
+                    .putDouble("mode_hakari", 1.0D);
+        }
+
+        // Apply the original 90-second Jackpot effect.
+        returnedOwner.addEffect(
+                new MobEffectInstance(
+                        jackpotEffect,
+                        5020,
+                        0,
+                        true,
+                        true
+                )
+        );
+// Play glass breaking at Hakari's returned position.
+        returnLevel.playSound(
+                null,
+                returnedOwner.getX(),
+                returnedOwner.getY(),
+                returnedOwner.getZ(),
+                SoundEvents.GLASS_BREAK,
+                SoundSource.PLAYERS,
+                1.5F,
+                0.85F
+        );
+        com.ghosts.abyss.Abyss.LOGGER.info(
+                "[Hakari] {} received Jackpot (winning number {})",
+                returnedOwner.getName().getString(),
+                winningNumber
+        );
     }
 
     // =========================================================

@@ -20,7 +20,7 @@ public class HakariDoorsGambleMixin {
 
     @Inject(
             method = "execute",
-            at = @At("HEAD"),
+            at = @At("RETURN"),
             remap = false
     )
     private static void abyss$onShutterDoors(
@@ -28,10 +28,24 @@ public class HakariDoorsGambleMixin {
             Entity entity,
             CallbackInfo ci
     ) {
-        if (entity instanceof LivingEntity living
-                && !entity.level().isClientSide) {
-
-            HakariGambleManager.usedDoors(living);
+        if (!(entity instanceof LivingEntity living)) {
+            return;
         }
+
+        // Server-side only.
+        if (entity.level().isClientSide) {
+            return;
+        }
+
+        // Jujutsucraft increments cnt1 inside execute().
+        // cnt1 == 1 means this is the first tick
+        // of the Shutter Doors technique.
+        if (entity.getPersistentData().getDouble("cnt1") != 1.0D) {
+            return;
+        }
+
+        // Register exactly one 50% gambling attempt
+        // for this Shutter Doors activation.
+        HakariGambleManager.usedDoors(living);
     }
 }
