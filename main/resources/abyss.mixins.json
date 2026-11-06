@@ -96,7 +96,8 @@
     "HakariBallThrowMixin",
     "HakariDoorsGambleMixin",
     "HakariOldSlotsMixin",
-    "HakariReserveBallCooldownMixin"
+    "HakariReserveBallCooldownMixin",
+    "HakariJackpotTrailMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin"

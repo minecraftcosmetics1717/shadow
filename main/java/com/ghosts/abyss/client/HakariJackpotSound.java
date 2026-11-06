@@ -39,12 +39,24 @@ public class HakariJackpotSound
         this.attenuation = Attenuation.NONE;
 
         this.relative = false;
-        this.volume = 0.0F;
         this.pitch = 1.0F;
 
         this.x = owner.getX();
-        this.y = owner.getY();
+        this.y = owner.getY() + owner.getBbHeight() * 0.5;
         this.z = owner.getZ();
+
+// Initialize at the correct volume immediately.
+// This avoids starting the sound at zero volume.
+        Minecraft mc = Minecraft.getInstance();
+
+        double distance = mc.player != null
+                ? mc.player.distanceTo(owner)
+                : 80.0;
+
+        this.volume = (float) Math.max(
+                0.0,
+                1.0 - distance / MAX_DISTANCE
+        );
     }
 
     @Override
