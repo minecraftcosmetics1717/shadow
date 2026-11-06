@@ -5,9 +5,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class DomainInstance {
     public final int slot;
@@ -18,7 +16,7 @@ public class DomainInstance {
     public final Vec3 overworldCenter;          // JC sphere center
     public final Map<UUID, Vec3> returnPositions = new HashMap<>();
     public final DomainClashParticipants participants;
-
+    public final Set<UUID> yutaDecorationsSpawned = new HashSet<>();
     public DomainInstance(
             int slot,
             UUID ownerId,

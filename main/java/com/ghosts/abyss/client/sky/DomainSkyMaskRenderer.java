@@ -3,6 +3,8 @@ package com.ghosts.abyss.client.sky;
 
 import com.ghosts.abyss.block.DomainSkyBlock;
 import com.ghosts.abyss.block.DomainSkyBlock.SkyType;
+import com.ghosts.abyss.block.ModBlocks;
+import com.ghosts.abyss.domain.DomainDimension;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
@@ -75,6 +77,61 @@ public final class DomainSkyMaskRenderer {
     private static boolean initialScan = true;
 
     private DomainSkyMaskRenderer() {}
+
+    private static boolean abyss$applySkyFog(Minecraft mc) {
+        if (mc.level == null || mc.player == null) {
+            return false;
+        }
+
+        if (!mc.level.dimension().equals(DomainDimension.ID)) {
+            return false;
+        }
+
+        BlockPos floorPos = new BlockPos(
+                mc.player.getBlockX(),
+                DomainDimension.CENTER_Y,
+                mc.player.getBlockZ()
+        );
+
+        if (!mc.level.hasChunkAt(floorPos)) {
+            return false;
+        }
+
+        BlockState floor = mc.level.getBlockState(floorPos);
+
+        // Yuta - Authentic Mutual Love
+        if (floor.is(ModBlocks.DOMAIN_GRAVEL.get())) {
+
+            RenderSystem.setShaderFogColor(
+                    216.0F / 255.0F,
+                    139.0F / 255.0F,
+                    175.0F / 255.0F
+            );
+
+            RenderSystem.setShaderFogStart(18.0F);
+            RenderSystem.setShaderFogEnd(58.0F);
+
+            return true;
+        }
+
+        // Jogo - Coffin of the Iron Mountain
+        if (floor.is(ModBlocks.DOMAIN_MOUNTAIN.get())
+                || floor.is(ModBlocks.DOMAIN_MOUNTAIN_MAGMA.get())) {
+
+            RenderSystem.setShaderFogColor(
+                    232.0F / 255.0F,
+                    120.0F / 255.0F,
+                    48.0F / 255.0F
+            );
+
+            RenderSystem.setShaderFogStart(32.0F);
+            RenderSystem.setShaderFogEnd(70.0F);
+
+            return true;
+        }
+
+        return false;
+    }
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -531,14 +588,37 @@ public final class DomainSkyMaskRenderer {
                     SKIES.put(type, sky);
                 }
 
-                sky.bind();
-                sky.drawWithShader(
-                        skyMatrix,
-                        projection,
-                        GameRenderer.getPositionColorShader()
-                );
 
-                VertexBuffer.unbind();
+                float oldFogStart = RenderSystem.getShaderFogStart();
+                float oldFogEnd = RenderSystem.getShaderFogEnd();
+                float[] oldFogColor = RenderSystem.getShaderFogColor().clone();
+
+                try {
+                    // Apply Yuta or Jogo's fog only while drawing the sky.
+                    abyss$applySkyFog(mc);
+
+                    sky.bind();
+                    sky.drawWithShader(
+                            skyMatrix,
+                            projection,
+                            GameRenderer.getPositionColorShader()
+                    );
+
+                } finally {
+                    VertexBuffer.unbind();
+
+                    // Restore Minecraft's original fog settings.
+                    RenderSystem.setShaderFogStart(oldFogStart);
+                    RenderSystem.setShaderFogEnd(oldFogEnd);
+
+                    RenderSystem.setShaderFogColor(
+                            oldFogColor[0],
+                            oldFogColor[1],
+                            oldFogColor[2],
+                            oldFogColor[3]
+                    );
+                }
+
 
 
                 GL11.glStencilMask(0xFF);
