@@ -99,7 +99,9 @@
     "HakariReserveBallCooldownMixin",
     "HakariJackpotTrailMixin",
     "YutaDomainDisplayMixin",
-    "YutaDomainExecuteMixin"
+    "YutaDomainExecuteMixin",
+    "IdleTransfigurationDamageMixin",
+    "IdleTransfigurationEffectMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin"

@@ -382,7 +382,7 @@ public final class DomainDecorations {
 
     private static final int YUTA_SWORDS = 120;
     private static final int YUTA_GRAVESTONES = 42;
-    private static final int YUTA_AWAJI_KNOTS = 24;
+    private static final int YUTA_AWAJI_KNOTS = 19;
 
     private static final double YUTA_FLOOR_RADIUS = 54.0;
     private static final double YUTA_KNOT_RADIUS = 59.0;
