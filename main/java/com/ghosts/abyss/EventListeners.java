@@ -950,7 +950,7 @@ public class EventListeners {
          mahitoPunishCooldown.put(player.getUUID(), cd - 1);
       } else {
          double skill = player.getPersistentData().getDouble("skill");
-         if (skill == 1505.0D || skill == 1520.0D) {
+         if (skill == 1520.0D) {
             if (getPlayerCT(player) == 15.0D) {
                if (!hasAdvancement(player, "jujutsucraft:sorcerer_grade_special")) {
                   double range = (skill == 1505.0D) ? 10.0D : 30.0D;

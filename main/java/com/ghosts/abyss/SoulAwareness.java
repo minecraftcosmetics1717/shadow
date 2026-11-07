@@ -36,14 +36,17 @@ public final class SoulAwareness {
         set(entity, get(entity) + amount);
     }
 
+
     public static void initialize(LivingEntity entity) {
         CompoundTag data = entity.getPersistentData();
 
-        if (data.getBoolean(INITIALIZED)) {
-            return;
-        }
+        boolean initialized = data.getBoolean(INITIALIZED);
 
-        // Non-player Mahito starts at 30.
+        // Existing value, or zero for newly initialized entities.
+        int awareness = initialized
+                ? data.getInt(KEY)
+                : 0;
+
         int starting = entity instanceof MahitoEntity ? 30 : 0;
 
         if (entity instanceof Player player) {
@@ -54,35 +57,40 @@ public final class SoulAwareness {
                     ).orElse(null);
 
             if (vars != null) {
-                // Mahito's cursed technique is ID 15.
-                if (vars.PlayerCurseTechnique == 15.0
-                        || vars.PlayerCurseTechnique2 == 15.0) {
+                // Mahito technique.
+                if (vars.PlayerCurseTechnique == 15.0D
+                        || vars.PlayerCurseTechnique2 == 15.0D) {
                     starting = Math.max(starting, 30);
                 }
 
-                // Six Eyes starts at 15.
+                // Six Eyes.
                 if (vars.FlagSixEyes) {
                     starting = Math.max(starting, 15);
                 }
             }
         }
 
-        // Heavenly Restriction with the Physical Gifted effect.
-        // This should eventually use the same precise
-        // no-cursed-energy test as your existing upgrades.
+        // Temporary Heavenly Restriction check.
         if (entity.hasEffect(
                 JujutsucraftModMobEffects.PHYSICAL_GIFTED_EFFECT.get())) {
+
             var effect = entity.getEffect(
-                    JujutsucraftModMobEffects.PHYSICAL_GIFTED_EFFECT.get());
+                    JujutsucraftModMobEffects
+                            .PHYSICAL_GIFTED_EFFECT.get()
+            );
 
             if (effect != null && effect.getAmplifier() > 0) {
                 starting = 50;
             }
         }
 
-        data.putInt(KEY, starting);
+        // Never reduce earned awareness.
+        awareness = Math.max(awareness, starting);
+
+        data.putInt(KEY, Math.min(MAX, awareness));
         data.putBoolean(INITIALIZED, true);
     }
+
 
     public static double damageMultiplier(
             LivingEntity attacker,
