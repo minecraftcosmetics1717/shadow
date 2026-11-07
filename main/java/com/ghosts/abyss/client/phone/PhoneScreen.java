@@ -24,11 +24,12 @@ public class PhoneScreen extends Screen {
             new ResourceLocation("abyss", "textures/gui/phone/icon_rct.png");
     private static final ResourceLocation ICON_ASCENDANT =
             new ResourceLocation("abyss", "textures/gui/phone/icon_ascendant.png");
+    private static final ResourceLocation ICON_SOUL =
+            new ResourceLocation("abyss", "textures/gui/phone/icon_soul.png");
     private static final ResourceLocation ICON_COPY =
             new ResourceLocation("abyss", "textures/gui/phone/icon_copy.png");
     private static final ResourceLocation ICON_CSM =
             new ResourceLocation("abyss", "textures/gui/phone/icon_csm.png");
-
     private static final ResourceLocation ICON_MESSAGES =
             new ResourceLocation("abyss", "textures/gui/phone/icon_messages.png");
     private static final ResourceLocation ICON_MAP =
@@ -101,32 +102,55 @@ public class PhoneScreen extends Screen {
                 (int) ((ascX + ICON_SIZE / 2f) / LABEL_SCALE), labelY, 0xFF8B949E);
         pose.popPose();
 
-        // ===== SECOND ROW: Copy / CSM (a bit higher than before) =====
+// ===== SECOND ROW: Soul Awareness / Copy or CSM =====
+        int secondY = topY + ICON_SIZE + 16;
+
+        int soulX = domainX;
+        int secondX = domainX + ICON_SIZE + TOP_GAP;
+
+// Soul Awareness is always available.
+        drawIcon(g, ICON_SOUL, soulX, secondY,
+                mouseX, mouseY, ICON_SIZE);
+
+        pose.pushPose();
+        pose.scale(LABEL_SCALE, LABEL_SCALE, 1f);
+
+        int secondLabelY =
+                (int) ((secondY + ICON_SIZE + 3) / LABEL_SCALE);
+
+        g.drawCenteredString(font, "Soul",
+                (int) ((soulX + ICON_SIZE / 2f) / LABEL_SCALE),
+                secondLabelY, 0xFF8B949E);
+
+        g.drawCenteredString(font, "Awareness",
+                (int) ((soulX + ICON_SIZE / 2f) / LABEL_SCALE),
+                secondLabelY + 8, 0xFF8B949E);
+
+        pose.popPose();
+
         boolean isYuta = YutaTab.isLocalPlayerYuta();
-        boolean isCsm  = ClientSetup.isLocalPlayerCsm(Minecraft.getInstance());
+        boolean isCsm = ClientSetup.isLocalPlayerCsm(
+                Minecraft.getInstance()
+        );
 
         if (isYuta || isCsm) {
-            // was ICON_SIZE + 22 → lower number = higher on screen
-            int secondY = topY + ICON_SIZE + 16;
-            int secondX = domainX;
+            ResourceLocation icon = isYuta ? ICON_COPY : ICON_CSM;
 
-            if (isYuta) {
-                drawIcon(g, ICON_COPY, secondX, secondY, mouseX, mouseY, ICON_SIZE);
-                pose.pushPose();
-                pose.scale(LABEL_SCALE, LABEL_SCALE, 1f);
-                int cLabelY = (int) ((secondY + ICON_SIZE + 3) / LABEL_SCALE);
-                g.drawCenteredString(font, "Copy",
-                        (int) ((secondX + ICON_SIZE / 2f) / LABEL_SCALE), cLabelY, 0xFF8B949E);
-                pose.popPose();
-            } else {
-                drawIcon(g, ICON_CSM, secondX, secondY, mouseX, mouseY, ICON_SIZE);
-                pose.pushPose();
-                pose.scale(LABEL_SCALE, LABEL_SCALE, 1f);
-                int cLabelY = (int) ((secondY + ICON_SIZE + 3) / LABEL_SCALE);
-                g.drawCenteredString(font, "CSM",
-                        (int) ((secondX + ICON_SIZE / 2f) / LABEL_SCALE), cLabelY, 0xFF8B949E);
-                pose.popPose();
-            }
+            drawIcon(g, icon, secondX, secondY,
+                    mouseX, mouseY, ICON_SIZE);
+
+            pose.pushPose();
+            pose.scale(LABEL_SCALE, LABEL_SCALE, 1f);
+
+            g.drawCenteredString(
+                    font,
+                    isYuta ? "Copy" : "CSM",
+                    (int) ((secondX + ICON_SIZE / 2f) / LABEL_SCALE),
+                    secondLabelY,
+                    0xFF8B949E
+            );
+
+            pose.popPose();
         }
 
         // ===== BOTTOM DOCK =====
@@ -193,13 +217,36 @@ public class PhoneScreen extends Screen {
 
 
 
+        int secondY = topY + ICON_SIZE + 16;
+
+        int soulX = domainX;
+        int secondX = domainX + ICON_SIZE + TOP_GAP;
+
+// Open Soul Awareness.
+        if (isInside(mouseX, mouseY,
+                soulX, secondY, ICON_SIZE)) {
+
+            Minecraft.getInstance().setScreen(
+                    new PhoneSoulScreen()
+            );
+            return true;
+        }
+
+// Copy / CSM moves one slot to the right.
         boolean isYuta = YutaTab.isLocalPlayerYuta();
-        boolean isCsm  = ClientSetup.isLocalPlayerCsm(Minecraft.getInstance());
+        boolean isCsm = ClientSetup.isLocalPlayerCsm(
+                Minecraft.getInstance()
+        );
+
         if (isYuta || isCsm) {
-            int secondY = topY + ICON_SIZE + 16; // same as render
-            int secondX = domainX;
-            if (isInside(mouseX, mouseY, secondX, secondY, ICON_SIZE)) {
-                Minecraft.getInstance().setScreen(new AdvancedJujutsuScreen(isYuta ? -1 : -2));
+            if (isInside(mouseX, mouseY,
+                    secondX, secondY, ICON_SIZE)) {
+
+                Minecraft.getInstance().setScreen(
+                        new AdvancedJujutsuScreen(
+                                isYuta ? -1 : -2
+                        )
+                );
                 return true;
             }
         }

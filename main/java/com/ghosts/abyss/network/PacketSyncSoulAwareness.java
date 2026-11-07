@@ -13,17 +13,24 @@ import net.minecraftforge.network.NetworkEvent;
 public class PacketSyncSoulAwareness {
 
     private final int awareness;
+    private final int availablePoints;
 
-    public PacketSyncSoulAwareness(int awareness) {
+    public PacketSyncSoulAwareness(
+            int awareness,
+            int availablePoints
+    ) {
         this.awareness = awareness;
+        this.availablePoints = availablePoints;
     }
 
     public PacketSyncSoulAwareness(FriendlyByteBuf buf) {
         this.awareness = buf.readInt();
+        this.availablePoints = buf.readInt();
     }
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeInt(awareness);
+        buf.writeInt(availablePoints);
     }
 
     public void handle(
@@ -45,16 +52,23 @@ public class PacketSyncSoulAwareness {
     private void handleClient() {
         var player = Minecraft.getInstance().player;
 
-        if (player != null) {
-            player.getPersistentData().putInt(
-                    "abyss_soul_awareness",
-                    Math.max(0, Math.min(50, awareness))
-            );
-
-            player.getPersistentData().putBoolean(
-                    "abyss_soul_awareness_initialized",
-                    true
-            );
+        if (player == null) {
+            return;
         }
+
+        player.getPersistentData().putInt(
+                "abyss_soul_awareness",
+                Math.max(0, Math.min(50, awareness))
+        );
+
+        player.getPersistentData().putBoolean(
+                "abyss_soul_awareness_initialized",
+                true
+        );
+
+        player.getPersistentData().putInt(
+                "abyss_soul_points_available",
+                Math.max(0, availablePoints)
+        );
     }
 }

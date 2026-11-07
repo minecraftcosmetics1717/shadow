@@ -116,8 +116,19 @@ public class ModNetwork {
               PacketSyncSoulAwareness.class,
               PacketSyncSoulAwareness::encode,
               PacketSyncSoulAwareness::new,
-              PacketSyncSoulAwareness::handle
-      );
+              PacketSyncSoulAwareness::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketSpendSoulAwarenessPoint.class,
+              PacketSpendSoulAwarenessPoint::encode,
+              PacketSpendSoulAwarenessPoint::new,
+              PacketSpendSoulAwarenessPoint::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketSyncAscendantAdvancements.class,
+              PacketSyncAscendantAdvancements::encode,
+              PacketSyncAscendantAdvancements::new,
+              PacketSyncAscendantAdvancements::handle);
 
    }
 }

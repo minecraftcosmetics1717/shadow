@@ -105,7 +105,7 @@ public class PhoneMapScreen extends Screen {
             g.fill(btnX - 1, btnY, btnX, btnY + btnH, 0x66FFFFFF);
             g.fill(btnX + btnW, btnY, btnX + btnW + 1, btnY + btnH, 0x66FFFFFF);
         }
-        String label = unlocked ? "Unlocked" : "Spend Points";
+        String label = unlocked ? "Unlocked" : "Unlock";
         g.drawCenteredString(font, label, btnX + btnW / 2, btnY + 3,
                 (btnActive || unlocked) ? 0xFFFFFFFF : 0xFFAAAAAA);
 

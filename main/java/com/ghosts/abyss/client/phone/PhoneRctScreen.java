@@ -30,7 +30,8 @@ public class PhoneRctScreen extends Screen {
     private static final int PHONE_H = 240;
     private static final int DOCK_ICON_SIZE = 24;
     private static final int DOCK_GAP = 8;
-
+    private static final float PERK_TITLE_SCALE = 0.80f;
+    private static final float DESC_SCALE = 0.75f;
     // Green theme
     private static final int COL_TITLE = 0xFFE6EDF3;
     private static final int COL_CARD_BG = 0xFF020F05;
@@ -43,7 +44,7 @@ public class PhoneRctScreen extends Screen {
     private static final int COL_BTN = 0xFF00FF45;
     private static final int COL_BTN_HOVER = 0xFF5CFF7A;
     private static final int COL_BTN_DISABLED = 0xFF30363D;
-    private static final int COL_EXP = 0xFF009E27;
+    private static final int COL_EXP = 0xFF39D65A;
     private static final int COL_BTN_TEXT_DARK = 0xFF02200A;
 
     private int left, top;
@@ -114,7 +115,7 @@ public class PhoneRctScreen extends Screen {
                 "Each tier raises the output you are healed",
                 efficiency, 5,
                 efficiency < 5 && exp >= 5,
-                efficiency < 5 ? "Spend point" : "Maxed",
+                efficiency < 5 ? "Upgrade" : "Maxed",
                 Perk.EFFICIENCY);
 
         // RCT Proficiency (4 tiers)
@@ -123,7 +124,7 @@ public class PhoneRctScreen extends Screen {
                 "Delays the fatigue you suffer from after using RCT",
                 proficiency, 4,
                 proficiency < 4 && exp >= 5,
-                proficiency < 4 ? "Spend point" : "Maxed",
+                proficiency < 4 ? "Upgrade" : "Maxed",
                 Perk.PROFICIENCY);
 
         // RCT Output (one-time unlock)
@@ -135,82 +136,238 @@ public class PhoneRctScreen extends Screen {
         renderDock(g, mouseX, mouseY);
     }
 
-    private int drawPerkCard(GuiGraphics g, int mx, int my,
-                             int x, int y, int w, int cx,
-                             String title, String desc,
-                             int tier, int maxTier,
-                             boolean canBuy, String btnLabel, Perk perk) {
-        List<FormattedCharSequence> lines = font.split(Component.literal(desc), w - 16);
-        int boxH = 56 + lines.size() * 9;
+
+    private int drawPerkCard(
+            GuiGraphics g, int mx, int my,
+            int x, int y, int w, int cx,
+            String title, String desc,
+            int tier, int maxTier,
+            boolean canBuy, String btnLabel, Perk perk
+    ) {
+        List<FormattedCharSequence> lines = font.split(
+                Component.literal(desc),
+                (int) ((w - 16) / DESC_SCALE)
+        );
+
+        int descHeight = (int) Math.ceil(
+                lines.size() * 10 * DESC_SCALE
+        );
+
+        int boxH = 64 + descHeight;
 
         drawCard(g, x, y, w, boxH);
-        g.drawCenteredString(font, title, cx, y + 6, COL_HEADER);
 
+        // Scaled title
+        var pose = g.pose();
+        pose.pushPose();
+        pose.scale(PERK_TITLE_SCALE, PERK_TITLE_SCALE, 1f);
+
+        g.drawCenteredString(
+                font, title,
+                (int) (cx / PERK_TITLE_SCALE),
+                (int) ((y + 6) / PERK_TITLE_SCALE),
+                COL_HEADER
+        );
+
+        pose.popPose();
+
+        // Scaled description
         int dy = y + 18;
+
+        pose.pushPose();
+        pose.scale(DESC_SCALE, DESC_SCALE, 1f);
+
+        int scaledY = (int) (dy / DESC_SCALE);
+
         for (FormattedCharSequence line : lines) {
-            g.drawCenteredString(font, line, cx, dy, COL_LABEL);
-            dy += 9;
+            g.drawCenteredString(
+                    font, line,
+                    (int) (cx / DESC_SCALE),
+                    scaledY,
+                    COL_LABEL
+            );
+            scaledY += 10;
         }
 
-        g.drawCenteredString(font, tier + "/" + maxTier, cx, dy + 2, COL_SUB);
+        pose.popPose();
+
+        dy = (int) (scaledY * DESC_SCALE);
+
+        // Tier and segments
+        g.drawCenteredString(
+                font, tier + "/" + maxTier,
+                cx, dy + 2, COL_SUB
+        );
+
         drawSegments(g, cx, dy + 12, tier, maxTier);
 
-        int btnW = 70, btnH = 14;
+        // Upgrade button
+        int btnW = 80;
+        int btnH = 14;
         int btnX = cx - btnW / 2;
         int btnY = y + boxH - 18;
-        boolean hover = isInside(mx, my, btnX, btnY, btnW, btnH);
-        int col = !canBuy ? COL_BTN_DISABLED : (hover ? COL_BTN_HOVER : COL_BTN);
-        g.fill(btnX, btnY, btnX + btnW, btnY + btnH, col);
-        if (canBuy && hover) drawHoverEdge(g, btnX, btnY, btnW, btnH);
 
-        // Bright green button → dark text for readability
-        int textCol = canBuy ? COL_BTN_TEXT_DARK : 0xFFAAAAAA;
-        g.drawCenteredString(font, btnLabel, btnX + btnW / 2, btnY + 3, textCol);
+        boolean hover = isInside(
+                mx, my, btnX, btnY, btnW, btnH
+        );
 
-        if (canBuy && btnY + btnH > contentTop && btnY < contentBottom) {
-            buttons.add(new Btn(btnX, btnY, btnW, btnH, () ->
-                    ModNetwork.CHANNEL.sendToServer(new PacketPurchaseRctPerk(perk))));
+        int col = !canBuy
+                ? COL_BTN_DISABLED
+                : (hover ? COL_BTN_HOVER : COL_BTN);
+
+        g.fill(
+                btnX, btnY,
+                btnX + btnW, btnY + btnH,
+                col
+        );
+
+        if (canBuy && hover) {
+            drawHoverEdge(g, btnX, btnY, btnW, btnH);
+        }
+
+        int textCol = canBuy
+                ? 0xFFFFFFFF
+                : 0xFFAAAAAA;
+
+        g.drawCenteredString(
+                font, btnLabel,
+                btnX + btnW / 2,
+                btnY + 3,
+                textCol
+        );
+
+        if (canBuy
+                && btnY >= contentTop
+                && btnY + btnH <= contentBottom) {
+
+            buttons.add(new Btn(
+                    btnX, btnY, btnW, btnH,
+                    () -> ModNetwork.CHANNEL.sendToServer(
+                            new PacketPurchaseRctPerk(perk)
+                    )
+            ));
         }
 
         return y + boxH + 6;
     }
 
-    private int drawOutputCard(GuiGraphics g, int mx, int my,
-                               int x, int y, int w, int cx,
-                               int exp, boolean unlocked) {
-        String desc = "Complete mastery over RCT, allowing the user to manipulate the flow of their cursed energy";
-        List<FormattedCharSequence> lines = font.split(Component.literal(desc), w - 16);
-        int boxH = 48 + lines.size() * 9;
+
+
+    private int drawOutputCard(
+            GuiGraphics g, int mx, int my,
+            int x, int y, int w, int cx,
+            int exp, boolean unlocked
+    ) {
+        String desc =
+                "Complete mastery over RCT, allowing the user " +
+                        "to manipulate the flow of their cursed energy";
+
+        List<FormattedCharSequence> lines = font.split(
+                Component.literal(desc),
+                (int) ((w - 16) / DESC_SCALE)
+        );
+
+        int descHeight = (int) Math.ceil(
+                lines.size() * 10 * DESC_SCALE
+        );
+
+        int boxH = 58 + descHeight;
 
         drawCard(g, x, y, w, boxH);
-        g.drawCenteredString(font, "RCT Output", cx, y + 6, COL_HEADER);
 
+        // Scaled title
+        var pose = g.pose();
+        pose.pushPose();
+        pose.scale(PERK_TITLE_SCALE, PERK_TITLE_SCALE, 1f);
+
+        g.drawCenteredString(
+                font,
+                "RCT Output",
+                (int) (cx / PERK_TITLE_SCALE),
+                (int) ((y + 6) / PERK_TITLE_SCALE),
+                COL_HEADER
+        );
+
+        pose.popPose();
+
+        // Scaled description
         int dy = y + 18;
+
+        pose.pushPose();
+        pose.scale(DESC_SCALE, DESC_SCALE, 1f);
+
+        int scaledY = (int) (dy / DESC_SCALE);
+
         for (FormattedCharSequence line : lines) {
-            g.drawCenteredString(font, line, cx, dy, COL_LABEL);
-            dy += 9;
+            g.drawCenteredString(
+                    font,
+                    line,
+                    (int) (cx / DESC_SCALE),
+                    scaledY,
+                    COL_LABEL
+            );
+            scaledY += 10;
         }
 
+        pose.popPose();
+
+        // Unlock button
         boolean canUnlock = !unlocked && exp >= 20;
-        int btnW = 90, btnH = 14;
+
+        int btnW = 90;
+        int btnH = 14;
         int btnX = cx - btnW / 2;
         int btnY = y + boxH - 18;
-        boolean hover = isInside(mx, my, btnX, btnY, btnW, btnH);
-        int col = (!canUnlock && !unlocked) ? COL_BTN_DISABLED : (unlocked ? COL_BTN_DISABLED : (hover ? COL_BTN_HOVER : COL_BTN));
-        g.fill(btnX, btnY, btnX + btnW, btnY + btnH, col);
-        if (canUnlock && hover) drawHoverEdge(g, btnX, btnY, btnW, btnH);
 
-        String label = unlocked ? "Unlocked" : "Unlock (20 exp)";
-        int textCol = canUnlock ? COL_BTN_TEXT_DARK : 0xFFAAAAAA;
-        g.drawCenteredString(font, label, btnX + btnW / 2, btnY + 3, textCol);
+        boolean hover = isInside(
+                mx, my, btnX, btnY, btnW, btnH
+        );
 
-        if (canUnlock && btnY + btnH > contentTop && btnY < contentBottom) {
-            buttons.add(new Btn(btnX, btnY, btnW, btnH, () ->
-                    ModNetwork.CHANNEL.sendToServer(new PacketPurchaseRctPerk(Perk.OUTPUT))));
+        int col = !canUnlock
+                ? COL_BTN_DISABLED
+                : (hover ? COL_BTN_HOVER : COL_BTN);
+
+        g.fill(
+                btnX, btnY,
+                btnX + btnW, btnY + btnH,
+                col
+        );
+
+        if (canUnlock && hover) {
+            drawHoverEdge(g, btnX, btnY, btnW, btnH);
+        }
+
+        String label = unlocked
+                ? "Unlocked"
+                : "Unlock (20 exp)";
+
+        int textCol = canUnlock
+                ? COL_BTN_TEXT_DARK
+                : 0xFFAAAAAA;
+
+        g.drawCenteredString(
+                font,
+                label,
+                btnX + btnW / 2,
+                btnY + 3,
+                textCol
+        );
+
+        if (canUnlock
+                && btnY >= contentTop
+                && btnY + btnH <= contentBottom) {
+
+            buttons.add(new Btn(
+                    btnX, btnY, btnW, btnH,
+                    () -> ModNetwork.CHANNEL.sendToServer(
+                            new PacketPurchaseRctPerk(Perk.OUTPUT)
+                    )
+            ));
         }
 
         return y + boxH + 6;
     }
+
 
     private void drawSegments(GuiGraphics g, int cx, int y, int current, int max) {
         int segW = 12, gap = 3;

@@ -39,7 +39,8 @@ public class PhoneAscendantScreen extends Screen {
     private static final int DOCK_GAP = 8;
 
     // ---- size knobs (tweak these) ----
-    private static final float DESC_SCALE = 0.80f;   // description text size
+    private static final float DESC_SCALE = 0.75f;
+    private static final float PERK_TITLE_SCALE = 0.80f;
     private static final float COT_TITLE_SCALE = 0.80f; // "Cursed Object Transformation" title
     private static final float REQ_SCALE = 0.75f;    // Open Domain requirement lines
     private static final int OD_EXTRA_H = 96;        // Open Domain card height when locked (raise if still tight)
@@ -142,11 +143,14 @@ public class PhoneAscendantScreen extends Screen {
                                     boolean hasGrade1, boolean armsVisible,
                                     int atAvailable, boolean enabled) {
         String desc = "A binding vow made with a cursed spirit. Grant yourself four arms and two mouths, the perfect body for jujutsu.";
-        List<FormattedCharSequence> lines = font.split(Component.literal(desc), w - 12);
-        int boxH = 52 + (int) (lines.size() * 9 * DESC_SCALE);
+        List<FormattedCharSequence> lines = font.split(
+        Component.literal(desc),
+        (int) ((w - 16) / DESC_SCALE));
+        int descHeight = (int) Math.ceil(lines.size() * 10 * DESC_SCALE);
+        int boxH = 60 + descHeight;
 
         drawCard(g, x, y, w, boxH);
-        g.drawCenteredString(font, "Perfect Body", cx, y + 6, COL_HEADER);
+        drawScaledTitle(g, "Perfect Body", cx, y + 6);
 
         int dy = drawScaledLines(g, lines, cx, y + 18, COL_DESC, DESC_SCALE);
 
@@ -160,7 +164,7 @@ public class PhoneAscendantScreen extends Screen {
             g.fill(btnX, btnY, btnX + btnW, btnY + btnH, col);
             if (hover) drawHoverEdge(g, btnX, btnY, btnW, btnH);
             g.drawCenteredString(font, "Toggle visibility", btnX + btnW / 2, btnY + 3, COL_BTN_TEXT_DARK);
-            if (btnY + btnH > contentTop && btnY < contentBottom) {
+            if (btnY >= contentTop && btnY + btnH <= contentBottom) {
                 buttons.add(new Btn(btnX, btnY, btnW, btnH, () ->
                         ModNetwork.CHANNEL.sendToServer(new PacketToggleFourArms())));
             }
@@ -171,20 +175,20 @@ public class PhoneAscendantScreen extends Screen {
             if (can && hover) drawHoverEdge(g, btnX, btnY, btnW, btnH);
             g.drawCenteredString(font, "Recover vow", btnX + btnW / 2, btnY + 3,
                     can ? COL_BTN_TEXT_DARK : 0xFFAAAAAA);
-            if (can && btnY + btnH > contentTop && btnY < contentBottom) {
+            if (can && btnY >= contentTop && btnY + btnH <= contentBottom) {
                 buttons.add(new Btn(btnX, btnY, btnW, btnH, () ->
                         ModNetwork.CHANNEL.sendToServer(new PacketRecoverBindingVow())));
             }
         } else if (hasVow) {
             g.drawCenteredString(font, "Vow held — use it", cx, btnY + 3, COL_DESC);
         } else {
-            boolean can = enabled && hasGrade1 && atAvailable >= 10;
+            boolean can = enabled && hasGrade1 && atAvailable >= 20;
             int col = !can ? COL_BTN_DISABLED : (hover ? COL_BTN_HOVER : COL_BTN);
             g.fill(btnX, btnY, btnX + btnW, btnY + btnH, col);
             if (can && hover) drawHoverEdge(g, btnX, btnY, btnW, btnH);
-            g.drawCenteredString(font, "Purchase (10)", btnX + btnW / 2, btnY + 3,
+            g.drawCenteredString(font, "Purchase (20)", btnX + btnW / 2, btnY + 3,
                     can ? COL_BTN_TEXT_DARK : 0xFFAAAAAA);
-            if (can && btnY + btnH > contentTop && btnY < contentBottom) {
+            if (can && btnY >= contentTop && btnY + btnH <= contentBottom) {
                 buttons.add(new Btn(btnX, btnY, btnW, btnH, () ->
                         ModNetwork.CHANNEL.sendToServer(new PacketPurchaseBindingVow())));
             }
@@ -197,8 +201,11 @@ public class PhoneAscendantScreen extends Screen {
                             int x, int y, int w, int cx,
                             boolean unlocked, int atAvailable, boolean enabled) {
         String desc = "Transcend into a cursed object and find a suitable host for a secondary technique";
-        List<FormattedCharSequence> lines = font.split(Component.literal(desc), w - 12);
-        int boxH = 52 + (int) (lines.size() * 9 * DESC_SCALE);
+        List<FormattedCharSequence> lines = font.split(
+        Component.literal(desc),
+        (int) ((w - 16) / DESC_SCALE));
+        int descHeight = (int) Math.ceil(lines.size() * 10 * DESC_SCALE);
+        int boxH = 46 + descHeight;
 
         drawCard(g, x, y, w, boxH);
 
@@ -236,7 +243,7 @@ public class PhoneAscendantScreen extends Screen {
             if (can && hover) drawHoverEdge(g, btnX, btnY, btnW, btnH);
             g.drawCenteredString(font, "Transform", btnX + btnW / 2, btnY + 3,
                     can ? COL_BTN_TEXT_DARK : 0xFFAAAAAA);
-            if (can && btnY + btnH > contentTop && btnY < contentBottom) {
+            if (can && btnY >= contentTop && btnY + btnH <= contentBottom) {
                 buttons.add(new Btn(btnX, btnY, btnW, btnH, () ->
                         ModNetwork.CHANNEL.sendToServer(new PacketUnlockCursedObjectTransformation())));
             }
@@ -251,14 +258,16 @@ public class PhoneAscendantScreen extends Screen {
                                    int rpRefinement, int rpAvailable, int atAvailable,
                                    boolean enabled) {
         String desc = "Paint a picture in the air without a canvas, it is truly a divine feat";
-        List<FormattedCharSequence> lines = font.split(Component.literal(desc), w - 12);
+        List<FormattedCharSequence> lines = font.split(
+        Component.literal(desc),
+        (int) ((w - 16) / DESC_SCALE));
 
         int boxH = unlocked
                 ? (44 + (int) (lines.size() * 9 * DESC_SCALE))
                 : (OD_EXTRA_H + (int) (lines.size() * 9 * DESC_SCALE));
 
         drawCard(g, x, y, w, boxH);
-        g.drawCenteredString(font, "Open Domain", cx, y + 6, COL_HEADER);
+        drawScaledTitle(g, "Open Domain", cx, y + 6);
 
         int dy = drawScaledLines(g, lines, cx, y + 18, COL_DESC, DESC_SCALE);
 
@@ -299,7 +308,7 @@ public class PhoneAscendantScreen extends Screen {
             g.drawCenteredString(font, "Unlock", btnX + btnW / 2, btnY + 3,
                     can ? COL_BTN_TEXT_DARK : 0xFFAAAAAA);
 
-            if (can && btnY + btnH > contentTop && btnY < contentBottom) {
+            if (can && btnY >= contentTop && btnY + btnH <= contentBottom) {
                 buttons.add(new Btn(btnX, btnY, btnW, btnH, () ->
                         ModNetwork.CHANNEL.sendToServer(new PacketRequestUnlockOpenDomain())));
             }
@@ -307,7 +316,21 @@ public class PhoneAscendantScreen extends Screen {
 
         return y + boxH + 6;
     }
+    private void drawScaledTitle(GuiGraphics g, String title, int cx, int y) {
+        var pose = g.pose();
+        pose.pushPose();
+        pose.scale(PERK_TITLE_SCALE, PERK_TITLE_SCALE, 1f);
 
+        g.drawCenteredString(
+                font,
+                title,
+                (int) (cx / PERK_TITLE_SCALE),
+                (int) (y / PERK_TITLE_SCALE),
+                COL_HEADER
+        );
+
+        pose.popPose();
+    }
     /** Draws scaled centered lines; returns the Y just below them (unscaled). */
     private int drawScaledLines(GuiGraphics g, List<FormattedCharSequence> lines,
                                 int cx, int startY, int color, float scale) {
@@ -359,13 +382,16 @@ public class PhoneAscendantScreen extends Screen {
         g.blit(tex, x, y, 0, 0, DOCK_ICON_SIZE, DOCK_ICON_SIZE, DOCK_ICON_SIZE, DOCK_ICON_SIZE);
     }
 
-    // Client UI assumes eligible; server enforces real requirements
     private boolean hasGrade1Advancement(Player player) {
-        return true;
+        return player != null
+                && player.getPersistentData()
+                .getBoolean("abyss_has_grade_1");
     }
 
     private boolean hasSpecialGradeAdvancement(Player player) {
-        return true;
+        return player != null
+                && player.getPersistentData()
+                .getBoolean("abyss_has_special_grade");
     }
 
     @Override

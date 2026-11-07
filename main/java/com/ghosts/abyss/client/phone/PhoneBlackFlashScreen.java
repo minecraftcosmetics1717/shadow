@@ -31,7 +31,9 @@ public class PhoneBlackFlashScreen extends Screen {
     private static final int PHONE_H = 240;
     private static final int DOCK_ICON_SIZE = 24;
     private static final int DOCK_GAP = 8;
-
+    private static final float PERK_TITLE_SCALE = 0.80f;
+    private static final float DESC_SCALE = 0.75f;
+    private static final float REQ_SCALE = 0.75f;
     // Red theme
     private static final int COL_TITLE = 0xFFE6EDF3;
     private static final int COL_CARD_BG = 0xFF0A0000;
@@ -121,7 +123,7 @@ public class PhoneBlackFlashScreen extends Screen {
                 "Each tier grants an extra roll to hit a black flash",
                 chance, 5,
                 chance < 5 && exp >= 5,
-                chance < 5 ? "Spend point" : "Maxed",
+                chance < 5 ? "Upgrade" : "Maxed",
                 Perk.CHANCE);
 
         // --- Fatigue (max 4) ---
@@ -130,7 +132,7 @@ public class PhoneBlackFlashScreen extends Screen {
                 "Each tier deepens restoration upon black flashing",
                 fatigue, 4,
                 fatigue < 4 && exp >= 5,
-                fatigue < 4 ? "Spend point" : "Maxed",
+                fatigue < 4 ? "Upgrade" : "Maxed",
                 Perk.FATIGUE);
 
         // --- Cursed Energy (max 3) ---
@@ -139,7 +141,7 @@ public class PhoneBlackFlashScreen extends Screen {
                 "Gain cursed energy back from black flashing",
                 energy, 3,
                 energy < 3 && exp >= 5,
-                energy < 3 ? "Spend point" : "Maxed",
+                energy < 3 ? "Upgrade" : "Maxed",
                 Perk.ENERGY);
 
         // --- Brain Damage Recovery (max 3) ---
@@ -148,7 +150,7 @@ public class PhoneBlackFlashScreen extends Screen {
                 "Accelerate recovery from brain damage by hitting a black flash",
                 brain, 3,
                 brain < 3 && exp >= 5,
-                brain < 3 ? "Spend point" : "Maxed",
+                brain < 3 ? "Upgrade" : "Maxed",
                 Perk.BRAIN);
 
         // --- At-Will Black Flash ---
@@ -168,25 +170,62 @@ public class PhoneBlackFlashScreen extends Screen {
                              String title, String desc,
                              int tier, int maxTier,
                              boolean canBuy, String btnLabel, Perk perk) {
-        List<FormattedCharSequence> lines = font.split(Component.literal(desc), w - 16);
-        int boxH = 56 + lines.size() * 9;
+        List<FormattedCharSequence> lines = font.split(
+                Component.literal(desc),
+                (int) ((w - 16) / DESC_SCALE)
+        );
+
+        int descHeight = (int) Math.ceil(
+                lines.size() * 10 * DESC_SCALE
+        );
+
+        int boxH = 64 + descHeight;
 
         drawCard(g, x, y, w, boxH);
 
-        g.drawCenteredString(font, title, cx, y + 6, COL_HEADER);
+        var pose = g.pose();
+        pose.pushPose();
+        pose.scale(PERK_TITLE_SCALE, PERK_TITLE_SCALE, 1f);
+
+        g.drawCenteredString(
+                font,
+                title,
+                (int) (cx / PERK_TITLE_SCALE),
+                (int) ((y + 6) / PERK_TITLE_SCALE),
+                COL_HEADER
+        );
+
+        pose.popPose();
 
         int dy = y + 18;
+
+        var descPose = g.pose();
+        descPose.pushPose();
+        descPose.scale(DESC_SCALE, DESC_SCALE, 1f);
+
+        int scaledY = (int) (dy / DESC_SCALE);
+
         for (FormattedCharSequence line : lines) {
-            g.drawCenteredString(font, line, cx, dy, COL_LABEL);
-            dy += 9;
+            g.drawCenteredString(
+                    font,
+                    line,
+                    (int) (cx / DESC_SCALE),
+                    scaledY,
+                    COL_LABEL
+            );
+            scaledY += 10;
         }
+
+        descPose.popPose();
+
+        dy = (int) (scaledY * DESC_SCALE);
 
         // tier text + segments
         g.drawCenteredString(font, tier + "/" + maxTier, cx, dy + 2, COL_SUB);
         drawSegments(g, cx, dy + 12, tier, maxTier);
 
         // button
-        int btnW = 70, btnH = 14;
+        int btnW = 80, btnH = 14;
         int btnX = cx - btnW / 2;
         int btnY = y + boxH - 18;
         boolean hover = isInside(mx, my, btnX, btnY, btnW, btnH);
@@ -196,7 +235,7 @@ public class PhoneBlackFlashScreen extends Screen {
         g.drawCenteredString(font, btnLabel, btnX + btnW / 2, btnY + 3, 0xFFFFFFFF);
 
         // only clickable if visible in content area
-        if (canBuy && btnY + btnH > contentTop && btnY < contentBottom) {
+        if (canBuy && btnY >= contentTop && btnY + btnH <= contentBottom) {
             buttons.add(new Btn(btnX, btnY, btnW, btnH, () ->
                     ModNetwork.CHANNEL.sendToServer(new PacketPurchaseBlackFlashPerk(perk))));
         }
@@ -210,24 +249,78 @@ public class PhoneBlackFlashScreen extends Screen {
                                boolean unlocked, boolean charged,
                                boolean onCooldown, long cooldownLeft) {
         String desc = "The pinnacle of black flashes. Put your full focus onto getting a definite black flash";
-        List<FormattedCharSequence> lines = font.split(Component.literal(desc), w - 16);
-        int boxH = 62 + lines.size() * 9 + (unlocked ? 10 : 12);
+        List<FormattedCharSequence> lines = font.split(
+                Component.literal(desc),
+                (int) ((w - 16) / DESC_SCALE)
+        );
+
+        int descHeight = (int) Math.ceil(
+                lines.size() * 10 * DESC_SCALE
+        );
+
+        int boxH = 58 + descHeight + (unlocked ? 10 : 12);
 
         drawCard(g, x, y, w, boxH);
-        g.drawCenteredString(font, "At-Will Black Flash", cx, y + 6, COL_HEADER);
+        var pose = g.pose();
+        pose.pushPose();
+        pose.scale(PERK_TITLE_SCALE, PERK_TITLE_SCALE, 1f);
+
+        g.drawCenteredString(
+                font,
+                "At-Will Black Flash",
+                (int) (cx / PERK_TITLE_SCALE),
+                (int) ((y + 6) / PERK_TITLE_SCALE),
+                COL_HEADER
+        );
+
+        pose.popPose();
 
         int dy = y + 18;
+
+        var descPose = g.pose();
+        descPose.pushPose();
+        descPose.scale(DESC_SCALE, DESC_SCALE, 1f);
+
+        int scaledY = (int) (dy / DESC_SCALE);
+
         for (FormattedCharSequence line : lines) {
-            g.drawCenteredString(font, line, cx, dy, COL_LABEL);
-            dy += 9;
+            g.drawCenteredString(
+                    font,
+                    line,
+                    (int) (cx / DESC_SCALE),
+                    scaledY,
+                    COL_LABEL
+            );
+            scaledY += 10;
         }
+
+        descPose.popPose();
+
+        dy = (int) (scaledY * DESC_SCALE);
 
         if (!unlocked) {
             // Requirement: Max Black Flash Chance tier
+
             int reqColor = chanceMaxed ? COL_REQ_MET : COL_REQ_UNMET;
             String mark = chanceMaxed ? "✔" : "✘";
-            g.drawCenteredString(font, mark + " Max Black Flash Chance tier", cx, dy + 4, reqColor);
+
+// Draw requirement text at 75% size.
+            var reqPose = g.pose();
+            reqPose.pushPose();
+            reqPose.scale(REQ_SCALE, REQ_SCALE, 1f);
+
+            g.drawCenteredString(
+                    font,
+                    mark + " Max Black Flash Chance tier",
+                    (int) (cx / REQ_SCALE),
+                    (int) ((dy + 4) / REQ_SCALE),
+                    reqColor
+            );
+
+            reqPose.popPose();
+
             dy += 14;
+
 
             boolean canUnlock = chanceMaxed && exp >= 20;
             int btnW = 90, btnH = 14;
@@ -239,7 +332,7 @@ public class PhoneBlackFlashScreen extends Screen {
             if (canUnlock && hover) drawHoverEdge(g, btnX, btnY, btnW, btnH);
             g.drawCenteredString(font, "Unlock (20 exp)", btnX + btnW / 2, btnY + 3, 0xFFFFFFFF);
 
-            if (canUnlock && btnY + btnH > contentTop && btnY < contentBottom) {
+            if (canUnlock && btnY >= contentTop && btnY + btnH <= contentBottom) {
                 buttons.add(new Btn(btnX, btnY, btnW, btnH, () ->
                         ModNetwork.CHANNEL.sendToServer(new PacketPurchaseBlackFlashPerk(Perk.AT_WILL))));
             }
@@ -259,7 +352,7 @@ public class PhoneBlackFlashScreen extends Screen {
             String label = charged ? "Already Charged" : (onCooldown ? "On Cooldown" : "Charge At-Will");
             g.drawCenteredString(font, label, btnX + btnW / 2, btnY + 3, 0xFFFFFFFF);
 
-            if (canCharge && btnY + btnH > contentTop && btnY < contentBottom) {
+            if (canCharge && btnY >= contentTop && btnY + btnH <= contentBottom) {
                 buttons.add(new Btn(btnX, btnY, btnW, btnH, () ->
                         ModNetwork.CHANNEL.sendToServer(new PacketActivateAtWillBlackFlash())));
             }
