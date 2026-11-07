@@ -97,7 +97,8 @@ public final class SoulAwareness {
         double defenseFactor =
                 Math.pow(1.0 - defenseAwareness / 50.0, 2.0);
 
-        double minimumDamage = 0.10 * (attackAwareness / 50.0);
+        double minimumDamage =
+                0.10 * (attackAwareness / 50.0);
 
         return Math.max(
                 minimumDamage,

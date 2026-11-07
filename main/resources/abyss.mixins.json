@@ -24,7 +24,6 @@
     "RikaPartialExecuteMixin",
     "RikaPartialKeyHookMixin",
     "HollowWickerBasketMixin",
-    "MahitoSukunaBypassMixin",
     "OpenDomainMixin",
     "ShrineSlashSuppressMixin",
     "YutaDomainSwordFillMixin",
@@ -100,8 +99,7 @@
     "HakariJackpotTrailMixin",
     "YutaDomainDisplayMixin",
     "YutaDomainExecuteMixin",
-    "IdleTransfigurationDamageMixin",
-    "IdleTransfigurationEffectMixin"
+    "IdleTransfigurationMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin"
