@@ -36,19 +36,34 @@ public final class PiercingBloodBeamRenderer {
     private static final Map<UUID, BeamState> BEAMS =
             new HashMap<>();
 
+    // Beam appearance.
     private static final int SIDES = 8;
+    private static final float BEAM_RADIUS = 0.09F;
+
+    private static final int BEAM_RED = 120;
+    private static final int BEAM_GREEN = 0;
+    private static final int BEAM_BLUE = 12;
+    private static final int BEAM_ALPHA = 255;
+
+    // Beam grows to full length in 0.2 seconds.
     private static final long GROWTH_DURATION_NS =
             200_000_000L;
+
     private static final double MIN_GROWTH = 0.02D;
+
+    // Camera sensitivity while firing.
     private static final double FIRING_SENSITIVITY = 0.35D;
+
     private static Double originalSensitivity = null;
+
+    private PiercingBloodBeamRenderer() {}
+
     private static final class BeamState {
 
         Vec3 start;
         Vec3 end;
-        long lastUpdate;
 
-        // When this beam first appeared.
+        long lastUpdate;
         long startTime;
 
         BeamState(
@@ -63,8 +78,9 @@ public final class PiercingBloodBeamRenderer {
         }
     }
 
-
-    private PiercingBloodBeamRenderer() {}
+    // =========================================================
+    // NETWORK UPDATES
+    // =========================================================
 
     public static void update(PacketSyncPiercingBlood packet) {
 
@@ -80,7 +96,6 @@ public final class PiercingBloodBeamRenderer {
             return;
         }
 
-
         long now = mc.level.getGameTime();
 
         BeamState existing = BEAMS.get(packet.playerId);
@@ -94,7 +109,7 @@ public final class PiercingBloodBeamRenderer {
 
         } else {
 
-            // A newly created beam begins growing.
+            // New beam starts its growth animation.
             BEAMS.put(
                     packet.playerId,
                     new BeamState(
@@ -106,8 +121,14 @@ public final class PiercingBloodBeamRenderer {
         }
     }
 
+    // =========================================================
+    // WORLD RENDERING
+    // =========================================================
+
     @SubscribeEvent
-    public static void onRender(RenderLevelStageEvent event) {
+    public static void onRender(
+            RenderLevelStageEvent event
+    ) {
 
         if (event.getStage()
                 != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
@@ -132,6 +153,7 @@ public final class PiercingBloodBeamRenderer {
                 BEAMS.entrySet().iterator();
 
         while (iterator.hasNext()) {
+
             BeamState state = iterator.next().getValue();
 
             if (now - state.lastUpdate > 5) {
@@ -163,56 +185,77 @@ public final class PiercingBloodBeamRenderer {
 
         Matrix4f matrix = pose.last().pose();
 
-        for (Map.Entry<UUID, BeamState> entry : BEAMS.entrySet()) {
+        for (Map.Entry<UUID, BeamState> entry
+                : BEAMS.entrySet()) {
 
             BeamState state = entry.getValue();
 
-            Vec3 beamStart = state.start;
-            Vec3 beamEnd = state.end;
+            Vec3 beamStart;
+            Vec3 beamEnd;
 
             boolean localFirstPerson =
                     entry.getKey().equals(mc.player.getUUID())
-                            && mc.options.getCameraType().isFirstPerson();
+                            && mc.options
+                            .getCameraType()
+                            .isFirstPerson();
 
+            // =================================================
+            // FIRST-PERSON POSITIONING
+            // =================================================
 
             if (localFirstPerson) {
 
-                Vec3 forward = mc.player.getLookAngle().normalize();
+                Vec3 forward =
+                        mc.player.getLookAngle().normalize();
 
-                // Use the camera's vertical direction.
-                Vec3 cameraUp = new Vec3(
+                Vec3 worldUp = new Vec3(
                         0.0D,
                         1.0D,
                         0.0D
                 );
 
-                Vec3 right = forward.cross(cameraUp);
+                Vec3 right = forward.cross(worldUp);
 
                 if (right.lengthSqr() > 0.0001D) {
+
                     right = right.normalize();
+
                 } else {
-                    right = new Vec3(1.0D, 0.0D, 0.0D);
+
+                    right = new Vec3(
+                            1.0D,
+                            0.0D,
+                            0.0D
+                    );
                 }
 
-                Vec3 down = right.cross(forward).normalize()
+                Vec3 down = right.cross(forward)
+                        .normalize()
                         .scale(-1.0D);
 
-                // Keep the visible beam lower on screen.
+                // Start lower on the screen.
                 beamStart = mc.player.getEyePosition()
                         .add(forward.scale(0.85D))
                         .add(down.scale(0.40D));
 
-                // Keep the visual endpoint aligned with
-                // the player's current aiming direction.
-                double distance = Math.max(
-                        0.1D,
-                        state.end.distanceTo(state.start)
-                );
+                // Keep the endpoint calculated by the server.
+                beamEnd = state.end;
 
-                beamEnd = mc.player.getEyePosition()
-                        .add(forward.scale(distance));
+            } else {
+
+                // =============================================
+                // THIRD-PERSON POSITIONING
+                // =============================================
+
+                // Use the server-calculated positions.
+                // The origin is near the extended hands.
+                beamStart = state.start;
+                beamEnd = state.end;
             }
 
+            // =================================================
+            // BEAM GROWTH ANIMATION
+            // =================================================
 
             double elapsed = Math.max(
                     0.0D,
@@ -220,32 +263,50 @@ public final class PiercingBloodBeamRenderer {
                             / (double) GROWTH_DURATION_NS
             );
 
-            double progress = Math.min(1.0D, elapsed);
+            double progress = Math.min(
+                    1.0D,
+                    elapsed
+            );
 
-// Ease out: starts fast and finishes smoothly.
+            // Ease out: fast at first, smooth at the end.
             double growth = 1.0D -
                     Math.pow(1.0D - progress, 3.0D);
 
-            growth = Math.max(MIN_GROWTH, growth);
-
-// Extend the visible endpoint gradually.
-            beamEnd = beamStart.add(
-                    beamEnd.subtract(beamStart).scale(growth)
+            growth = Math.max(
+                    MIN_GROWTH,
+                    growth
             );
+
+            beamEnd = beamStart.add(
+                    beamEnd.subtract(beamStart)
+                            .scale(growth)
+            );
+
+            // =================================================
+            // DRAW THE BEAM
+            // =================================================
 
             drawBeam(
                     vertices,
                     matrix,
                     beamStart,
                     beamEnd,
-                    0.09F,
-                    120, 0, 12, 255
-            );}
+                    BEAM_RADIUS,
+                    BEAM_RED,
+                    BEAM_GREEN,
+                    BEAM_BLUE,
+                    BEAM_ALPHA
+            );
+        }
 
         buffers.endBatch(RenderType.debugQuads());
 
         pose.popPose();
     }
+
+    // =========================================================
+    // CAMERA SENSITIVITY
+    // =========================================================
 
     @SubscribeEvent
     public static void onClientTick(
@@ -290,6 +351,7 @@ public final class PiercingBloodBeamRenderer {
 
         } else if (originalSensitivity != null) {
 
+            // Restore the player's normal sensitivity.
             mc.options.sensitivity().set(
                     originalSensitivity
             );
@@ -297,6 +359,10 @@ public final class PiercingBloodBeamRenderer {
             originalSensitivity = null;
         }
     }
+
+    // =========================================================
+    // BEAM GEOMETRY
+    // =========================================================
 
     private static void drawBeam(
             VertexConsumer buffer,
@@ -318,37 +384,116 @@ public final class PiercingBloodBeamRenderer {
 
         Vec3 forward = direction.normalize();
 
-        Vec3 reference = Math.abs(forward.y) > 0.95D
-                ? new Vec3(1, 0, 0)
-                : new Vec3(0, 1, 0);
+        // Keep the cylinder's orientation stable.
+        Vec3 reference = new Vec3(
+                0.0D,
+                1.0D,
+                0.0D
+        );
 
-        Vec3 right = forward.cross(reference).normalize();
-        Vec3 up = forward.cross(right).normalize();
+        // Project world-up onto the plane perpendicular
+        // to the beam direction.
+        Vec3 up = reference.subtract(
+                forward.scale(
+                        forward.dot(reference)
+                )
+        );
 
+        // Fallback when aiming almost vertically.
+        if (up.lengthSqr() < 0.0001D) {
+
+            reference = new Vec3(
+                    0.0D,
+                    0.0D,
+                    1.0D
+            );
+
+            up = reference.subtract(
+                    forward.scale(
+                            forward.dot(reference)
+                    )
+            );
+        }
+
+        up = up.normalize();
+
+        Vec3 right = forward.cross(up).normalize();
+
+        // Draw an eight-sided solid cylinder.
         for (int i = 0; i < SIDES; i++) {
 
-            double angle1 = Math.PI * 2.0D * i / SIDES;
-            double angle2 = Math.PI * 2.0D * (i + 1) / SIDES;
+            double angle1 =
+                    Math.PI * 2.0D * i / SIDES;
 
-            Vec3 offset1 = right.scale(Math.cos(angle1) * radius)
-                    .add(up.scale(Math.sin(angle1) * radius));
+            double angle2 =
+                    Math.PI * 2.0D * (i + 1) / SIDES;
 
-            Vec3 offset2 = right.scale(Math.cos(angle2) * radius)
-                    .add(up.scale(Math.sin(angle2) * radius));
+            Vec3 offset1 = right.scale(
+                    Math.cos(angle1) * radius
+            ).add(
+                    up.scale(
+                            Math.sin(angle1) * radius
+                    )
+            );
+
+            Vec3 offset2 = right.scale(
+                    Math.cos(angle2) * radius
+            ).add(
+                    up.scale(
+                            Math.sin(angle2) * radius
+                    )
+            );
 
             Vec3 a = start.add(offset1);
             Vec3 b = start.add(offset2);
             Vec3 c = end.add(offset2);
             Vec3 d = end.add(offset1);
 
-// RenderType.lightning() uses quadrilaterals.
-// Each cylinder side is one four-vertex quad.
-            vertex(buffer, matrix, a, red, green, blue, alpha);
-            vertex(buffer, matrix, b, red, green, blue, alpha);
-            vertex(buffer, matrix, c, red, green, blue, alpha);
-            vertex(buffer, matrix, d, red, green, blue, alpha);
+            vertex(
+                    buffer,
+                    matrix,
+                    a,
+                    red,
+                    green,
+                    blue,
+                    alpha
+            );
+
+            vertex(
+                    buffer,
+                    matrix,
+                    b,
+                    red,
+                    green,
+                    blue,
+                    alpha
+            );
+
+            vertex(
+                    buffer,
+                    matrix,
+                    c,
+                    red,
+                    green,
+                    blue,
+                    alpha
+            );
+
+            vertex(
+                    buffer,
+                    matrix,
+                    d,
+                    red,
+                    green,
+                    blue,
+                    alpha
+            );
         }
     }
+
+    // =========================================================
+    // VERTEX HELPER
+    // =========================================================
 
     private static void vertex(
             VertexConsumer buffer,
@@ -365,6 +510,11 @@ public final class PiercingBloodBeamRenderer {
                 (float) position.x,
                 (float) position.y,
                 (float) position.z
-        ).color(red, green, blue, alpha).endVertex();
+        ).color(
+                red,
+                green,
+                blue,
+                alpha
+        ).endVertex();
     }
 }

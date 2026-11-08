@@ -116,7 +116,7 @@ public final class PiercingBloodBeam {
                     || hitbox.clip(start, end).isPresent()) {
 
                 target.hurt(
-                        level.damageSources().playerAttack(player),
+                        level.damageSources().magic(),
                         DAMAGE
                 );
             }
