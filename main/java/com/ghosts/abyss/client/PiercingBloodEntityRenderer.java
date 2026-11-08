@@ -12,24 +12,28 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public class PiercingBloodEntityRenderer
         extends EntityRenderer<PiercingBloodEntity> {
 
-    private static final double RANGE = 48.0D;
     private static final double HALF_WIDTH = 0.075D;
 
     private static final double FIRST_PERSON_FORWARD = 0.85D;
     private static final double FIRST_PERSON_DOWN = 0.65D;
 
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation("abyss", "textures/entity/piercing_blood.png");
+            new ResourceLocation(
+                    "abyss",
+                    "textures/entity/piercing_blood.png"
+            );
 
     public PiercingBloodEntityRenderer(
             EntityRendererProvider.Context context
@@ -60,35 +64,48 @@ public class PiercingBloodEntityRenderer
                 owner == mc.player
                         && mc.options.getCameraType().isFirstPerson();
 
-        Vec3 direction = owner.getViewVector(partialTick).normalize();
+        Vec3 direction = owner
+                .getViewVector(partialTick)
+                .normalize();
 
         Vec3 origin;
 
-        if (localFirstPerson) {
+        // =========================================
+        // FIRST-PERSON STARTING POSITION
+        // =========================================
 
-            // Minecraft already positions this PoseStack
-            // relative to the beam entity.
-            // Convert the camera position into that space.
+        if (localFirstPerson) {
 
             Vec3 camera = mc.gameRenderer
                     .getMainCamera()
                     .getPosition();
 
             double entityX = Mth.lerp(
-                    partialTick, beam.xOld, beam.getX()
+                    partialTick,
+                    beam.xOld,
+                    beam.getX()
             );
+
             double entityY = Mth.lerp(
-                    partialTick, beam.yOld, beam.getY()
+                    partialTick,
+                    beam.yOld,
+                    beam.getY()
             );
+
             double entityZ = Mth.lerp(
-                    partialTick, beam.zOld, beam.getZ()
+                    partialTick,
+                    beam.zOld,
+                    beam.getZ()
             );
 
             Vec3 renderEntityPosition = new Vec3(
-                    entityX, entityY, entityZ
+                    entityX,
+                    entityY,
+                    entityZ
             );
 
             Vec3 worldUp = new Vec3(0, 1, 0);
+
             Vec3 right = direction.cross(worldUp);
 
             if (right.lengthSqr() < 0.0001D) {
@@ -108,27 +125,29 @@ public class PiercingBloodEntityRenderer
 
         } else {
 
-            // The entity is already positioned near
-            // its owner's eyes on the server.
+            // Preserve existing third-person position.
             origin = Vec3.ZERO;
         }
 
-// Use the length calculated by the server.
+        // =========================================
+        // SERVER-SYNCHRONIZED BEAM LENGTH
+        // =========================================
+
         double beamLength = beam.getBeamLength();
 
         Vec3 end;
 
-        if (localFirstPerson) {
+        // =========================================
+        // FIRST-PERSON CROSSHAIR ALIGNMENT
+        // =========================================
 
-            // The crosshair follows the camera's look direction.
-            // Keep the beam's existing low starting position,
-            // but aim its endpoint toward the crosshair.
+        if (localFirstPerson) {
 
             Vec3 camera = mc.gameRenderer
                     .getMainCamera()
                     .getPosition();
 
-            org.joml.Vector3f look = mc.gameRenderer
+            Vector3f look = mc.gameRenderer
                     .getMainCamera()
                     .getLookVector();
 
@@ -142,30 +161,51 @@ public class PiercingBloodEntityRenderer
                     cameraForward.scale(beamLength)
             );
 
-            // Convert the crosshair target into the same
-            // entity-relative coordinates as the beam origin.
             Vec3 entityPosition = new Vec3(
-                    Mth.lerp(partialTick, beam.xOld, beam.getX()),
-                    Mth.lerp(partialTick, beam.yOld, beam.getY()),
-                    Mth.lerp(partialTick, beam.zOld, beam.getZ())
+                    Mth.lerp(
+                            partialTick,
+                            beam.xOld,
+                            beam.getX()
+                    ),
+                    Mth.lerp(
+                            partialTick,
+                            beam.yOld,
+                            beam.getY()
+                    ),
+                    Mth.lerp(
+                            partialTick,
+                            beam.zOld,
+                            beam.getZ()
+                    )
             );
 
             end = targetWorld.subtract(entityPosition);
 
         } else {
 
-            // Keep third-person rendering exactly as before.
+            // Preserve existing third-person direction.
             end = origin.add(
                     direction.scale(beamLength)
             );
         }
 
+        // =========================================
+        // RENDER THE BEAM WITH LIGHTING
+        // =========================================
+
         Matrix4f matrix = pose.last().pose();
 
-        VertexConsumer vertices =
-                buffers.getBuffer(RenderType.debugQuads());
+        VertexConsumer vertices = buffers.getBuffer(
+                RenderType.entityCutoutNoCull(TEXTURE)
+        );
 
-        drawBeam(vertices, matrix, origin, end);
+        drawBeam(
+                vertices,
+                matrix,
+                origin,
+                end,
+                packedLight
+        );
 
         super.render(
                 beam,
@@ -177,14 +217,25 @@ public class PiercingBloodEntityRenderer
         );
     }
 
+    // =============================================
+    // BEAM GEOMETRY AND ROTATION
+    // =============================================
+
     private static void drawBeam(
             VertexConsumer buffer,
             Matrix4f matrix,
             Vec3 start,
-            Vec3 end
+            Vec3 end,
+            int packedLight
     ) {
 
-        Vec3 forward = end.subtract(start).normalize();
+        Vec3 difference = end.subtract(start);
+
+        if (difference.lengthSqr() < 0.000001D) {
+            return;
+        }
+
+        Vec3 forward = difference.normalize();
 
         Vec3 reference = new Vec3(0, 1, 0);
 
@@ -192,32 +243,41 @@ public class PiercingBloodEntityRenderer
             reference = new Vec3(1, 0, 0);
         }
 
-        Vec3 right = forward.cross(reference).normalize();
-        Vec3 up = right.cross(forward).normalize();
+        Vec3 right = forward
+                .cross(reference)
+                .normalize();
 
-// Rotate the beam around its own length.
-// 360 degrees every 20 ticks (1 second).
+        Vec3 up = right
+                .cross(forward)
+                .normalize();
+
+        // Rotate clockwise around the beam's axis.
+        // One complete rotation every second.
+
         double angle = Math.toRadians(
                 (System.currentTimeMillis() % 1000L) * 0.36D
         );
 
-        Vec3 rotatedRight = right.scale(Math.cos(angle))
+        Vec3 rotatedRight = right
+                .scale(Math.cos(angle))
                 .add(up.scale(Math.sin(angle)));
 
-        Vec3 rotatedUp = up.scale(Math.cos(angle))
+        Vec3 rotatedUp = up
+                .scale(Math.cos(angle))
                 .subtract(right.scale(Math.sin(angle)));
 
         right = rotatedRight;
         up = rotatedUp;
 
-        // Two perpendicular rectangles form a visible
-        // cross-shaped beam from most viewing angles.
+        // Two intersecting quads create the beam.
+
         drawQuad(
                 buffer,
                 matrix,
                 start,
                 end,
-                right.scale(HALF_WIDTH)
+                right.scale(HALF_WIDTH),
+                packedLight
         );
 
         drawQuad(
@@ -225,16 +285,22 @@ public class PiercingBloodEntityRenderer
                 matrix,
                 start,
                 end,
-                up.scale(HALF_WIDTH)
+                up.scale(HALF_WIDTH),
+                packedLight
         );
     }
+
+    // =============================================
+    // DRAW DOUBLE-SIDED QUAD
+    // =============================================
 
     private static void drawQuad(
             VertexConsumer buffer,
             Matrix4f matrix,
             Vec3 start,
             Vec3 end,
-            Vec3 offset
+            Vec3 offset,
+            int packedLight
     ) {
 
         Vec3 a = start.subtract(offset);
@@ -242,32 +308,56 @@ public class PiercingBloodEntityRenderer
         Vec3 c = end.add(offset);
         Vec3 d = end.subtract(offset);
 
-        vertex(buffer, matrix, a);
-        vertex(buffer, matrix, b);
-        vertex(buffer, matrix, c);
-        vertex(buffer, matrix, d);
+        // Front face.
+        vertex(buffer, matrix, a, packedLight);
+        vertex(buffer, matrix, b, packedLight);
+        vertex(buffer, matrix, c, packedLight);
+        vertex(buffer, matrix, d, packedLight);
 
-        // Reverse side.
-        vertex(buffer, matrix, d);
-        vertex(buffer, matrix, c);
-        vertex(buffer, matrix, b);
-        vertex(buffer, matrix, a);
+        // Back face.
+        vertex(buffer, matrix, d, packedLight);
+        vertex(buffer, matrix, c, packedLight);
+        vertex(buffer, matrix, b, packedLight);
+        vertex(buffer, matrix, a, packedLight);
     }
+
+    // =============================================
+    // VERTEX COLOR AND LIGHTING
+    // =============================================
 
     private static void vertex(
             VertexConsumer buffer,
             Matrix4f matrix,
-            Vec3 point
+            Vec3 point,
+            int packedLight
     ) {
+
         buffer.vertex(
                         matrix,
                         (float) point.x,
                         (float) point.y,
                         (float) point.z
                 )
+                // #7F0000 - dark red
                 .color(127, 0, 0, 255)
+
+                // White texture supplies the base color.
+                .uv(0.0F, 0.0F)
+
+                // No damage overlay.
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+
+                // Minecraft's block and sky lighting.
+                .uv2(packedLight)
+
+                .normal(0.0F, 1.0F, 0.0F)
                 .endVertex();
     }
+
+    // =============================================
+    // ALWAYS RENDER THE BEAM ENTITY
+    // =============================================
+
     @Override
     public boolean shouldRender(
             PiercingBloodEntity entity,
@@ -278,10 +368,14 @@ public class PiercingBloodEntityRenderer
     ) {
         return true;
     }
+
+    // =============================================
+    // TEXTURE
+    // =============================================
+
     @Override
     public ResourceLocation getTextureLocation(
             PiercingBloodEntity entity
-
     ) {
         return TEXTURE;
     }
