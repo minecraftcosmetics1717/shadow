@@ -27,11 +27,13 @@ public final class PiercingBloodBeam {
         Vec3 direction = player.getLookAngle().normalize();
         Vec3 eye = player.getEyePosition();
 
-        // Origin near the extended hands.
-        // Increase/decrease 0.28 to adjust vertical position.
-        Vec3 start = eye
+// Position the beam near the player's extended hands.
+        Vec3 visualStart = eye
                 .add(direction.scale(0.85D))
                 .add(0.0D, -0.28D, 0.0D);
+
+// Keep the beam's actual trajectory aligned with the camera.
+        Vec3 start = visualStart;
 
         // Aim at the center of the crosshair.
         Vec3 desiredEnd = eye.add(

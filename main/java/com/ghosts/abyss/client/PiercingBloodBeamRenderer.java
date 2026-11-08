@@ -174,23 +174,45 @@ public final class PiercingBloodBeamRenderer {
                     entry.getKey().equals(mc.player.getUUID())
                             && mc.options.getCameraType().isFirstPerson();
 
+
             if (localFirstPerson) {
 
                 Vec3 forward = mc.player.getLookAngle().normalize();
 
-                // Camera-relative right and down directions.
-                Vec3 right = forward.cross(
-                        new Vec3(0.0D, 1.0D, 0.0D)
-                ).normalize();
+                // Use the camera's vertical direction.
+                Vec3 cameraUp = new Vec3(
+                        0.0D,
+                        1.0D,
+                        0.0D
+                );
+
+                Vec3 right = forward.cross(cameraUp);
+
+                if (right.lengthSqr() > 0.0001D) {
+                    right = right.normalize();
+                } else {
+                    right = new Vec3(1.0D, 0.0D, 0.0D);
+                }
 
                 Vec3 down = right.cross(forward).normalize()
                         .scale(-1.0D);
 
-                // Move only the visible beam origin.
+                // Keep the visible beam lower on screen.
                 beamStart = mc.player.getEyePosition()
                         .add(forward.scale(0.85D))
-                        .add(down.scale(0.55D));
+                        .add(down.scale(0.40D));
+
+                // Keep the visual endpoint aligned with
+                // the player's current aiming direction.
+                double distance = Math.max(
+                        0.1D,
+                        state.end.distanceTo(state.start)
+                );
+
+                beamEnd = mc.player.getEyePosition()
+                        .add(forward.scale(distance));
             }
+
 
             double elapsed = Math.max(
                     0.0D,
