@@ -3,6 +3,8 @@ package com.ghosts.abyss.blood;
 
 import com.ghosts.abyss.entity.PiercingBloodEntity;
 
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -11,6 +13,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -102,6 +105,28 @@ public final class PiercingBloodBeam {
                         ? aimedEnd
                         : beamHit.getLocation();
 
+// Calculate the visible length of Piercing Blood.
+// Project the collision point onto the firing direction
+// so the length matches the beam's forward axis.
+        double visibleLength = end.subtract(start).dot(direction);
+
+// Keep the length within the beam's maximum range.
+        visibleLength = Math.max(
+                0.0D,
+                Math.min(MAX_RANGE, visibleLength)
+        );
+
+// Synchronize the length to all clients.
+        beam.setBeamLength((float) visibleLength);
+// Only create impact particles when a block was hit.
+        boolean hitBlock =
+                beamHit.getType() == HitResult.Type.BLOCK
+                        || aimHit.getType() == HitResult.Type.BLOCK;
+
+        if (hitBlock && player.tickCount % 2 == 0) {
+            spawnImpactParticles(level, end, direction);
+        }
+// Existing damage logic remains unchanged.
         if (player.tickCount % 4 == 0) {
             damageEntities(player, start, end);
         }
@@ -140,6 +165,50 @@ public final class PiercingBloodBeam {
                 );
             }
         }
+    }
+
+    private static void spawnImpactParticles(
+            ServerLevel level,
+            Vec3 impact,
+            Vec3 direction
+    ) {
+
+        // Dark crimson, matching the Piercing Blood beam.
+        ParticleOptions crimson = new DustParticleOptions(
+                new Vector3f(0.47F, 0.0F, 0.05F),
+                1.0F
+        );
+
+        // A few particles spreading from the impact point.
+        level.sendParticles(
+                crimson,
+                impact.x,
+                impact.y,
+                impact.z,
+                5,
+                0.10D,
+                0.10D,
+                0.10D,
+                0.015D
+        );
+
+        // A smaller, brighter center.
+        ParticleOptions brightRed = new DustParticleOptions(
+                new Vector3f(0.85F, 0.08F, 0.12F),
+                0.7F
+        );
+
+        level.sendParticles(
+                brightRed,
+                impact.x,
+                impact.y,
+                impact.z,
+                2,
+                0.035D,
+                0.035D,
+                0.035D,
+                0.005D
+        );
     }
 
     public static void stop(ServerPlayer player) {

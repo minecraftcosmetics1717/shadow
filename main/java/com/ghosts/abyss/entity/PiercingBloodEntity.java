@@ -28,7 +28,11 @@ public class PiercingBloodEntity extends Entity {
                     PiercingBloodEntity.class,
                     EntityDataSerializers.INT
             );
-
+    private static final EntityDataAccessor<Float> BEAM_LENGTH =
+            SynchedEntityData.defineId(
+                    PiercingBloodEntity.class,
+                    EntityDataSerializers.FLOAT
+            );
     private UUID ownerUUID;
 
     public PiercingBloodEntity(
@@ -48,8 +52,18 @@ public class PiercingBloodEntity extends Entity {
     @Override
     protected void defineSynchedData() {
         entityData.define(OWNER_ID, -1);
+        entityData.define(BEAM_LENGTH, 48.0F);
+    }
+    public void setBeamLength(float length) {
+        entityData.set(
+                BEAM_LENGTH,
+                Math.max(0.0F, Math.min(48.0F, length))
+        );
     }
 
+    public float getBeamLength() {
+        return entityData.get(BEAM_LENGTH);
+    }
     public void setOwner(Player player) {
         ownerUUID = player.getUUID();
         entityData.set(OWNER_ID, player.getId());
@@ -116,7 +130,10 @@ public class PiercingBloodEntity extends Entity {
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
     }
-
+    @Override
+    public boolean shouldBeSaved() {
+        return false;
+    }
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return distance < 256.0D * 256.0D;

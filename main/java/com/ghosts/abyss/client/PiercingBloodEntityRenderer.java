@@ -26,7 +26,7 @@ public class PiercingBloodEntityRenderer
     private static final double HALF_WIDTH = 0.075D;
 
     private static final double FIRST_PERSON_FORWARD = 0.85D;
-    private static final double FIRST_PERSON_DOWN = 0.30D;
+    private static final double FIRST_PERSON_DOWN = 0.65D;
 
     private static final ResourceLocation TEXTURE =
             new ResourceLocation("abyss", "textures/entity/piercing_blood.png");
@@ -97,9 +97,9 @@ public class PiercingBloodEntityRenderer
                 right = right.normalize();
             }
 
-            Vec3 down = right.cross(direction)
+            Vec3 down = direction.cross(right)
                     .normalize()
-                    .scale(-FIRST_PERSON_DOWN);
+                    .scale(FIRST_PERSON_DOWN);
 
             origin = camera
                     .add(direction.scale(FIRST_PERSON_FORWARD))
@@ -113,7 +113,52 @@ public class PiercingBloodEntityRenderer
             origin = Vec3.ZERO;
         }
 
-        Vec3 end = origin.add(direction.scale(RANGE));
+// Use the length calculated by the server.
+        double beamLength = beam.getBeamLength();
+
+        Vec3 end;
+
+        if (localFirstPerson) {
+
+            // The crosshair follows the camera's look direction.
+            // Keep the beam's existing low starting position,
+            // but aim its endpoint toward the crosshair.
+
+            Vec3 camera = mc.gameRenderer
+                    .getMainCamera()
+                    .getPosition();
+
+            org.joml.Vector3f look = mc.gameRenderer
+                    .getMainCamera()
+                    .getLookVector();
+
+            Vec3 cameraForward = new Vec3(
+                    look.x(),
+                    look.y(),
+                    look.z()
+            );
+
+            Vec3 targetWorld = camera.add(
+                    cameraForward.scale(beamLength)
+            );
+
+            // Convert the crosshair target into the same
+            // entity-relative coordinates as the beam origin.
+            Vec3 entityPosition = new Vec3(
+                    Mth.lerp(partialTick, beam.xOld, beam.getX()),
+                    Mth.lerp(partialTick, beam.yOld, beam.getY()),
+                    Mth.lerp(partialTick, beam.zOld, beam.getZ())
+            );
+
+            end = targetWorld.subtract(entityPosition);
+
+        } else {
+
+            // Keep third-person rendering exactly as before.
+            end = origin.add(
+                    direction.scale(beamLength)
+            );
+        }
 
         Matrix4f matrix = pose.last().pose();
 
@@ -149,6 +194,21 @@ public class PiercingBloodEntityRenderer
 
         Vec3 right = forward.cross(reference).normalize();
         Vec3 up = right.cross(forward).normalize();
+
+// Rotate the beam around its own length.
+// 360 degrees every 20 ticks (1 second).
+        double angle = Math.toRadians(
+                (System.currentTimeMillis() % 1000L) * 0.36D
+        );
+
+        Vec3 rotatedRight = right.scale(Math.cos(angle))
+                .add(up.scale(Math.sin(angle)));
+
+        Vec3 rotatedUp = up.scale(Math.cos(angle))
+                .subtract(right.scale(Math.sin(angle)));
+
+        right = rotatedRight;
+        up = rotatedUp;
 
         // Two perpendicular rectangles form a visible
         // cross-shaped beam from most viewing angles.
@@ -205,7 +265,7 @@ public class PiercingBloodEntityRenderer
                         (float) point.y,
                         (float) point.z
                 )
-                .color(120, 0, 12, 255)
+                .color(127, 0, 0, 255)
                 .endVertex();
     }
     @Override
