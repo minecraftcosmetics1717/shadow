@@ -15,7 +15,11 @@ public class ModEffects {
 
     public static final RegistryObject<MobEffect> FLIGHT = MOB_EFFECTS.register("flight",
             () -> new FlightEffect(MobEffectCategory.BENEFICIAL, 0x66CCFF));
-
+    public static final RegistryObject<MobEffect> BLOOD_POISONING =
+            MOB_EFFECTS.register(
+                    "blood_poisoning",
+                    BloodPoisoningEffect::new
+            );
     public static void register(IEventBus eventBus) {
         MOB_EFFECTS.register(eventBus);
     }}

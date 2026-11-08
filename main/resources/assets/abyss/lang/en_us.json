@@ -168,5 +168,7 @@
   "key.abyss.shadow_inventory": "[TST] Open Shadow Inventory",
   "key.abyss.life_charms": "Open Life Charms",
   "key.abyss.innerself_inventory": "Open Innerself",
-  "key.abyss.phone": "Open Phone"
+  "key.abyss.phone": "Open Phone",
+  "effect.abyss.blood_poisoning": "Blood Poisoning",
+  "death.attack.blood_poisoning": "%1$s rotted"
 }

@@ -129,6 +129,12 @@ public class ModNetwork {
               PacketSyncAscendantAdvancements::encode,
               PacketSyncAscendantAdvancements::new,
               PacketSyncAscendantAdvancements::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketSyncPiercingBlood.class,
+              PacketSyncPiercingBlood::encode,
+              PacketSyncPiercingBlood::new,
+              PacketSyncPiercingBlood::handle);
 
    }
 }

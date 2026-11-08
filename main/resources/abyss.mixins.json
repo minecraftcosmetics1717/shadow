@@ -99,7 +99,9 @@
     "HakariJackpotTrailMixin",
     "YutaDomainDisplayMixin",
     "YutaDomainExecuteMixin",
-    "IdleTransfigurationMixin"
+    "IdleTransfigurationMixin",
+    "BloodTechniqueOverrideMixin",
+    "PiercingBloodCostMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin"
