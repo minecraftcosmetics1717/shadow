@@ -11,7 +11,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -23,23 +22,22 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = "abyss")
 public final class BlackFlashTiming {
 
-    private static final Map<UUID, Attempt> ATTEMPTS =
-            new HashMap<>();
+    private static final Map<UUID, Attempt> ATTEMPTS = new HashMap<>();
 
-    // Initial balancing values, in server ticks.
-    private static final int MIN_DELAY = 1;
-    private static final int BASE_MAX_DELAY = 3;
+    // All timing values are in server ticks.
+    private static final int BASE_WINDOW = 1;
     private static final int MAX_CHAIN_BONUS = 2;
     private static final int ATTACK_TIMEOUT = 15;
     private static final int CHAIN_TIMEOUT = 100;
 
-    private static boolean applyingBonus = false;
+    // Multiplier applied to the original punch damage.
+    private static final float BLACK_FLASH_MULTIPLIER = 2.5F;
 
     private static final class Attempt {
         long attackTick;
-        long hitTick = -1;
-        UUID targetId;
-        boolean pressed = false;
+        long pressTick = -1;
+        boolean hitSeen = false;
+        boolean finished = false;
         int chain = 0;
         long lastSuccessTick = -1;
     }
@@ -49,22 +47,18 @@ public final class BlackFlashTiming {
     public static void beginAttack(Entity attacker) {
         if (!(attacker instanceof ServerPlayer player)) return;
 
-        // TEMPORARY DEBUG: Attack procedure reached
-        player.sendSystemMessage(
-                net.minecraft.network.chat.Component.literal(
-                        "§b[BF DEBUG] Punch procedure running!"
-                )
-        );
-
         long now = player.level().getGameTime();
-
         Attempt old = ATTEMPTS.get(player.getUUID());
 
-        if (old != null && now - old.attackTick < ATTACK_TIMEOUT) {
+        // Jujutsucraft calls its punch procedure repeatedly.
+        // Do not restart the attempt every tick.
+        if (old != null
+                && now - old.attackTick < ATTACK_TIMEOUT) {
             return;
         }
 
         Attempt next = new Attempt();
+        next.attackTick = now;
 
         if (old != null
                 && old.lastSuccessTick >= 0
@@ -73,70 +67,7 @@ public final class BlackFlashTiming {
             next.lastSuccessTick = old.lastSuccessTick;
         }
 
-        next.attackTick = now;
         ATTEMPTS.put(player.getUUID(), next);
-    }
-
-    @SubscribeEvent
-    public static void onDamage(LivingDamageEvent event) {
-        if (applyingBonus) return;
-
-        Entity source = event.getSource().getEntity();
-
-        // TEMPORARY DEBUG: Inspect damage before filtering
-        if (event.getEntity().level() instanceof ServerLevel level) {
-            for (ServerPlayer observer : level.players()) {
-                if (observer.distanceToSqr(event.getEntity()) <= 100.0D) {
-                    observer.sendSystemMessage(
-                            net.minecraft.network.chat.Component.literal(
-                                    "§e[BF DEBUG] Damage event | ID: "
-                                            + event.getSource().getMsgId()
-                                            + " | Attacker: "
-                                            + (source == null ? "null" : source.getName().getString())
-                                            + " | Amount: "
-                                            + event.getAmount()
-                            )
-                    );
-                }
-            }
-        }
-
-        if (!(source instanceof ServerPlayer player)) return;
-        if (event.getAmount() <= 0) return;
-
-// TEMPORARY DEBUG: A player dealt damage
-        if ("damage_curse".equals(event.getSource().getMsgId())) {
-            player.sendSystemMessage(
-                    net.minecraft.network.chat.Component.literal(
-                            "§e[BF DEBUG] Jujutsucraft damage detected! Attack flag: "
-                                    + player.getPersistentData().getBoolean("attack")
-                    )
-            );
-        }
-
-        Attempt attempt = ATTEMPTS.get(player.getUUID());
-        if (attempt == null || attempt.pressed) return;
-
-        long now = player.level().getGameTime();
-
-        if (now - attempt.attackTick > ATTACK_TIMEOUT) return;
-        if (attempt.targetId != null) return;
-
-        // Only Jujutsucraft's physical attack damage.
-        if (!player.getPersistentData().getBoolean("attack")) return;
-        if (!"damage_curse".equals(event.getSource().getMsgId())) return;
-
-        LivingEntity target = event.getEntity();
-
-        if (target == player || !target.isAlive()) return;
-
-        attempt.hitTick = now;
-        attempt.targetId = target.getUUID();
-        player.sendSystemMessage(
-                net.minecraft.network.chat.Component.literal(
-                        "§a[BF DEBUG] Valid punch registered!"
-                )
-        );
     }
 
     public static void press(ServerPlayer player) {
@@ -146,32 +77,76 @@ public final class BlackFlashTiming {
         }
 
         Attempt attempt = ATTEMPTS.get(player.getUUID());
-        if (attempt == null) return;
-
-        // The first press permanently consumes this attempt.
-        if (attempt.pressed) return;
-        attempt.pressed = true;
+        if (attempt == null || attempt.finished) return;
 
         long now = player.level().getGameTime();
 
-        // Simultaneous activation and Black Flash is invalid.
-        if (now <= attempt.attackTick) {
+        // One input per attempt.
+        if (attempt.pressTick >= 0) return;
+
+        // Pressing before the attack starts is invalid.
+        if (now < attempt.attackTick
+                || now - attempt.attackTick >= ATTACK_TIMEOUT) {
+            attempt.finished = true;
             breakChain(attempt);
             return;
         }
 
-        // Pressing before a confirmed hit also fails.
-        if (attempt.hitTick < 0 || attempt.targetId == null) {
+        // A Black Flash cannot be activated after the hit.
+        if (attempt.hitSeen) {
+            attempt.finished = true;
             breakChain(attempt);
             return;
         }
 
-        int chainBonus = Math.min(attempt.chain, MAX_CHAIN_BONUS);
-        int maxDelay = BASE_MAX_DELAY + chainBonus;
+        // Arm the current punch.
+        attempt.pressTick = now;
+    }
 
-        long delay = now - attempt.hitTick;
+    @SubscribeEvent
+    public static void onDamage(LivingDamageEvent event) {
+        Entity source = event.getSource().getEntity();
 
-        if (delay < MIN_DELAY || delay > maxDelay) {
+        if (!(source instanceof ServerPlayer player)) return;
+        if (event.getAmount() <= 0.0F) return;
+
+        Attempt attempt = ATTEMPTS.get(player.getUUID());
+        if (attempt == null || attempt.finished) return;
+
+        long now = player.level().getGameTime();
+
+        if (now - attempt.attackTick >= ATTACK_TIMEOUT) return;
+
+        // Only physical Jujutsucraft attacks.
+        if (!player.getPersistentData().getBoolean("attack")) return;
+
+        String damageId = event.getSource().getMsgId();
+
+        if (!"damage_combat".equals(damageId)
+                && !"damage_curse".equals(damageId)) {
+            return;
+        }
+
+        LivingEntity target = event.getEntity();
+
+        if (target == player || !target.isAlive()) return;
+
+        // The first valid hit is the only hit eligible.
+        attempt.hitSeen = true;
+        attempt.finished = true;
+
+        // No E input before impact: ordinary punch.
+        if (attempt.pressTick < 0) {
+            breakChain(attempt);
+            return;
+        }
+
+        // Input must happen shortly BEFORE impact.
+        long delay = now - attempt.pressTick;
+        int window = BASE_WINDOW
+                + Math.min(attempt.chain, MAX_CHAIN_BONUS);
+
+        if (delay < 0 || delay > window) {
             breakChain(attempt);
             return;
         }
@@ -187,40 +162,13 @@ public final class BlackFlashTiming {
 
         if (!(player.level() instanceof ServerLevel level)) return;
 
-        Entity found = level.getEntity(attempt.targetId);
+        // Increase the damage of the original punch.
+        // Do NOT apply a second target.hurt() call.
+        event.setAmount(
+                event.getAmount() * BLACK_FLASH_MULTIPLIER
+        );
 
-        if (!(found instanceof LivingEntity target)
-                || !target.isAlive()) {
-            breakChain(attempt);
-            return;
-        }
-
-        // Prevent delayed bonuses against distant targets.
-        if (player.distanceToSqr(target) > 100.0D) {
-            breakChain(attempt);
-            return;
-        }
-
-        successfulBlackFlash(player, target, attempt, now);
-    }
-
-    private static void successfulBlackFlash(
-            ServerPlayer player,
-            LivingEntity target,
-            Attempt attempt,
-            long now
-    ) {
-        ServerLevel level = (ServerLevel) player.level();
-
-        // Prototype bonus damage. This does not modify the
-        // timing or duration of the original punch.
-        applyingBonus = true;
-        try {
-            target.hurt(level.damageSources().playerAttack(player), 12.0F);
-        } finally {
-            applyingBonus = false;
-        }
-
+        // Black Flash visuals and effects.
         JujutsucraftModEntities.ENTITY_BLACK_FLASH.get().spawn(
                 level,
                 BlockPos.containing(target.position()),

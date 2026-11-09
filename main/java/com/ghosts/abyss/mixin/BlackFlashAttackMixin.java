@@ -51,4 +51,45 @@ public class BlackFlashAttackMixin {
             }
         }
     }
+
+    @Pseudo
+    @Mixin(
+            targets = "net.mcreator.jujutsucraft.procedures.AttackWeakSwordProcedure",
+            remap = false
+    )
+    public static class WeakSword {
+
+        @Inject(method = "execute", at = @At("HEAD"), remap = false)
+        private static void abyss$start(
+                LevelAccessor world,
+                double x, double y, double z,
+                Entity entity,
+                CallbackInfo ci
+        ) {
+            if (entity != null && !world.isClientSide()) {
+                BlackFlashTiming.beginAttack(entity);
+            }
+        }
+    }
+
+    @Pseudo
+    @Mixin(
+            targets = "net.mcreator.jujutsucraft.procedures.AttackStrongSwordProcedure",
+            remap = false
+    )
+    public static class StrongSword {
+
+        @Inject(method = "execute", at = @At("HEAD"), remap = false)
+        private static void abyss$start(
+                LevelAccessor world,
+                double x, double y, double z,
+                Entity entity,
+                CallbackInfo ci
+        ) {
+            if (entity != null && !world.isClientSide()) {
+                BlackFlashTiming.beginAttack(entity);
+            }
+        }
+    }
+
 }
