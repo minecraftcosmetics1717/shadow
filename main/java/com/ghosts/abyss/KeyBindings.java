@@ -28,7 +28,7 @@ public class KeyBindings {
       AT_WILL_BLACK_FLASH = new KeyMapping("key.abyss.at_will_black_flash", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       REGISTER_COPY = new KeyMapping("key.abyss.register_copy", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       RCT_OUTPUT = new KeyMapping("key.abyss.rct_output", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
-
+      AT_WILL_BLACK_FLASH = new KeyMapping("key.abyss.black_flash", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       ABILITY_SLOTS = new KeyMapping[8];
 
       for (int i = 0; i < 8; ++i) {

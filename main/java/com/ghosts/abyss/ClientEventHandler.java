@@ -1,6 +1,7 @@
 package com.ghosts.abyss;
 
 import com.ghosts.abyss.network.ModNetwork;
+import com.ghosts.abyss.network.PacketBlackFlashInput;
 import com.ghosts.abyss.network.PacketRctOutputHold;
 import com.ghosts.abyss.network.PacketToggleOpenDomain;
 import net.minecraft.client.Minecraft;
@@ -51,6 +52,10 @@ public class ClientEventHandler {
       if (isDown != wasRctOutputDown) {
          ModNetwork.CHANNEL.sendToServer(new PacketRctOutputHold(isDown));
          wasRctOutputDown = isDown;
+      }
+      // Black Flash timing key
+      while (KeyBindings.AT_WILL_BLACK_FLASH.consumeClick()) {
+         ModNetwork.CHANNEL.sendToServer(new PacketBlackFlashInput());
       }
    }
 }

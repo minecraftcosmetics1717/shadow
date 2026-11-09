@@ -129,6 +129,12 @@ public class ModNetwork {
               PacketSyncAscendantAdvancements::encode,
               PacketSyncAscendantAdvancements::new,
               PacketSyncAscendantAdvancements::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketBlackFlashInput.class,
+              PacketBlackFlashInput::encode,
+              PacketBlackFlashInput::decode,
+              PacketBlackFlashInput::handle);
 
    }
 }
