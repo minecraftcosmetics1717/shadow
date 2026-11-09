@@ -20,7 +20,7 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 public class ClientEventHandler {
 
    private static boolean wasRctOutputDown = false;
-
+   private static boolean wasBlackFlashDown = false;
    @SubscribeEvent
    public static void onKeyInput(InputEvent.Key event) {
       Minecraft mc = Minecraft.getInstance();
@@ -41,6 +41,7 @@ public class ClientEventHandler {
 
       Minecraft mc = Minecraft.getInstance();
       if (mc.player == null || mc.screen != null) {
+         wasBlackFlashDown = KeyBindings.AT_WILL_BLACK_FLASH.isDown();
          if (wasRctOutputDown) {
             ModNetwork.CHANNEL.sendToServer(new PacketRctOutputHold(false));
             wasRctOutputDown = false;
@@ -53,9 +54,13 @@ public class ClientEventHandler {
          ModNetwork.CHANNEL.sendToServer(new PacketRctOutputHold(isDown));
          wasRctOutputDown = isDown;
       }
-      // Black Flash timing key
-      while (KeyBindings.AT_WILL_BLACK_FLASH.consumeClick()) {
+// Black Flash timing key: only trigger on a fresh press
+      boolean blackFlashDown = KeyBindings.AT_WILL_BLACK_FLASH.isDown();
+
+      if (blackFlashDown && !wasBlackFlashDown) {
          ModNetwork.CHANNEL.sendToServer(new PacketBlackFlashInput());
       }
+
+      wasBlackFlashDown = blackFlashDown;
    }
 }

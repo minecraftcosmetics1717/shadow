@@ -23,6 +23,12 @@ public class PacketBlackFlashInput {
 
         ctx.enqueueWork(() -> {
             if (player != null) {
+                player.sendSystemMessage(
+                        net.minecraft.network.chat.Component.literal(
+                                "§a[BF DEBUG] E key received by server!"
+                        )
+                );
+
                 BlackFlashTiming.press(player);
             }
         });

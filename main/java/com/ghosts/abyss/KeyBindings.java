@@ -25,7 +25,6 @@ public class KeyBindings {
       TOGGLE_ABSORBED_TECHNIQUE = new KeyMapping("key.abyss.toggle_absorbed_technique", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       GIVE_TECHNIQUE_STARTER = new KeyMapping("key.abyss.give_technique_starter", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       OPEN_KEYBIND_MENU = new KeyMapping("key.abyss.open_keybind_menu", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
-      AT_WILL_BLACK_FLASH = new KeyMapping("key.abyss.at_will_black_flash", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       REGISTER_COPY = new KeyMapping("key.abyss.register_copy", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       RCT_OUTPUT = new KeyMapping("key.abyss.rct_output", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       AT_WILL_BLACK_FLASH = new KeyMapping("key.abyss.black_flash", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");

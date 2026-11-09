@@ -87,11 +87,6 @@ class ClientForgeEvents {
          ModNetwork.CHANNEL.sendToServer(new PacketGiveCursedTechniqueStarter());
       }
 
-      // At-Will Black Flash
-      if (KeyBindings.AT_WILL_BLACK_FLASH.consumeClick() && BlackFlashPoints.isClientAtWillUnlocked()) {
-         ModNetwork.CHANNEL.sendToServer(new PacketActivateAtWillBlackFlash());
-      }
-
       // Register Yuta Copy
       if (KeyBindings.REGISTER_COPY.consumeClick()) {
          if (!YutaTab.isLocalPlayerYuta()) return;

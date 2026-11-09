@@ -79,6 +79,16 @@ public final class BlackFlashTiming {
         if (!(source instanceof ServerPlayer player)) return;
         if (event.getAmount() <= 0) return;
 
+// TEMPORARY DEBUG: A player dealt damage
+        if ("damage_curse".equals(event.getSource().getMsgId())) {
+            player.sendSystemMessage(
+                    net.minecraft.network.chat.Component.literal(
+                            "§e[BF DEBUG] Jujutsucraft damage detected! Attack flag: "
+                                    + player.getPersistentData().getBoolean("attack")
+                    )
+            );
+        }
+
         Attempt attempt = ATTEMPTS.get(player.getUUID());
         if (attempt == null || attempt.pressed) return;
 
@@ -97,6 +107,11 @@ public final class BlackFlashTiming {
 
         attempt.hitTick = now;
         attempt.targetId = target.getUUID();
+        player.sendSystemMessage(
+                net.minecraft.network.chat.Component.literal(
+                        "§a[BF DEBUG] Valid punch registered!"
+                )
+        );
     }
 
     public static void press(ServerPlayer player) {
