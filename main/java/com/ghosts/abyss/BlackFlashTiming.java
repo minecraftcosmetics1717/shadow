@@ -49,6 +49,13 @@ public final class BlackFlashTiming {
     public static void beginAttack(Entity attacker) {
         if (!(attacker instanceof ServerPlayer player)) return;
 
+        // TEMPORARY DEBUG: Attack procedure reached
+        player.sendSystemMessage(
+                net.minecraft.network.chat.Component.literal(
+                        "§b[BF DEBUG] Punch procedure running!"
+                )
+        );
+
         long now = player.level().getGameTime();
 
         Attempt old = ATTEMPTS.get(player.getUUID());
@@ -75,6 +82,24 @@ public final class BlackFlashTiming {
         if (applyingBonus) return;
 
         Entity source = event.getSource().getEntity();
+
+        // TEMPORARY DEBUG: Inspect damage before filtering
+        if (event.getEntity().level() instanceof ServerLevel level) {
+            for (ServerPlayer observer : level.players()) {
+                if (observer.distanceToSqr(event.getEntity()) <= 100.0D) {
+                    observer.sendSystemMessage(
+                            net.minecraft.network.chat.Component.literal(
+                                    "§e[BF DEBUG] Damage event | ID: "
+                                            + event.getSource().getMsgId()
+                                            + " | Attacker: "
+                                            + (source == null ? "null" : source.getName().getString())
+                                            + " | Amount: "
+                                            + event.getAmount()
+                            )
+                    );
+                }
+            }
+        }
 
         if (!(source instanceof ServerPlayer player)) return;
         if (event.getAmount() <= 0) return;
