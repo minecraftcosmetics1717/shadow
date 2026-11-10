@@ -1,7 +1,7 @@
 package com.ghosts.abyss.network;
 
 import com.ghosts.abyss.Abyss;
-import com.ghosts.abyss.YutaTechniqueRegistry;
+import com.ghosts.abyss.yuta.YutaTechniqueRegistry;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;

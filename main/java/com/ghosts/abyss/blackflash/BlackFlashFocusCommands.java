@@ -1,5 +1,5 @@
 
-package com.ghosts.abyss;
+package com.ghosts.abyss.blackflash;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.minecraft.commands.Commands;

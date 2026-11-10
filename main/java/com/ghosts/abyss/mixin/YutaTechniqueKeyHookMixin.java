@@ -1,12 +1,11 @@
 package com.ghosts.abyss.mixin;
 
-import com.ghosts.abyss.ClientYutaTechniqueCache;
+import com.ghosts.abyss.yuta.ClientYutaTechniqueCache;
 import com.ghosts.abyss.Abyss;
 
 import java.lang.reflect.Field;
 import java.util.List;
 
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;

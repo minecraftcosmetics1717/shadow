@@ -1,6 +1,6 @@
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.AdvTechPoints;
+import com.ghosts.abyss.progression.AdvTechPoints;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;

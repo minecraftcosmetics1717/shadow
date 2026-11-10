@@ -1,6 +1,6 @@
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.AbilityScanHandler;
+import com.ghosts.abyss.ability.AbilityScanHandler;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;

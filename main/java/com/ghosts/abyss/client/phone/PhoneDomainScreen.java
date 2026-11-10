@@ -1,8 +1,8 @@
 package com.ghosts.abyss.client.phone;
 
 import com.ghosts.abyss.AbyssGamerules;
-import com.ghosts.abyss.AdvTechPoints;
-import com.ghosts.abyss.RefinementPoints;
+import com.ghosts.abyss.progression.AdvTechPoints;
+import com.ghosts.abyss.domain.RefinementPoints;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketRequestUnlockHWB;
 import com.ghosts.abyss.network.PacketSpendRefinementPoint;

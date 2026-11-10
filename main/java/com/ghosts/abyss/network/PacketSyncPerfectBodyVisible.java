@@ -1,6 +1,6 @@
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.PerfectBodySync;
+import com.ghosts.abyss.sukuna.PerfectBodySync;
 import java.util.UUID;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;

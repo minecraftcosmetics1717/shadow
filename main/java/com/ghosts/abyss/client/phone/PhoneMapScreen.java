@@ -1,6 +1,6 @@
 package com.ghosts.abyss.client.phone;
 
-import com.ghosts.abyss.AdvTechPoints;
+import com.ghosts.abyss.progression.AdvTechPoints;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketUnlockMinimap;
 import net.minecraft.client.Minecraft;

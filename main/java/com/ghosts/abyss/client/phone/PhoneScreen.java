@@ -1,6 +1,6 @@
 package com.ghosts.abyss.client.phone;
 
-import com.ghosts.abyss.AdvancedJujutsuScreen;
+import com.ghosts.abyss.gui.AdvancedJujutsuScreen;
 import com.ghosts.abyss.ClientSetup;
 import com.ghosts.abyss.gui.YutaTab;
 import com.ghosts.abyss.network.ModNetwork;

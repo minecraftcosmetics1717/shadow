@@ -1,4 +1,4 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.ability;
 
 import java.util.HashMap;
 import java.util.Map;

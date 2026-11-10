@@ -1,7 +1,7 @@
 package com.ghosts.abyss.client.phone;
 
 import com.ghosts.abyss.AbyssGamerules;
-import com.ghosts.abyss.BlackFlashPoints;
+import com.ghosts.abyss.blackflash.BlackFlashPoints;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketActivateAtWillBlackFlash;
 import com.ghosts.abyss.network.PacketPurchaseBlackFlashPerk;

@@ -1,5 +1,6 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.domain;
 
+import com.ghosts.abyss.Abyss;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketSyncRefinementData;
 import net.minecraft.nbt.CompoundTag;

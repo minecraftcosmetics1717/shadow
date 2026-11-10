@@ -1,7 +1,7 @@
 package com.ghosts.abyss.client.phone;
 
 import com.ghosts.abyss.AbyssGamerules;
-import com.ghosts.abyss.RctPoints;
+import com.ghosts.abyss.rct.RctPoints;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketPurchaseRctPerk;
 import com.ghosts.abyss.network.PacketPurchaseRctPerk.Perk;

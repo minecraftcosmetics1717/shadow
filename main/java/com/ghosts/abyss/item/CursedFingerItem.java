@@ -1,6 +1,6 @@
 package com.ghosts.abyss.item;
 
-import com.ghosts.abyss.NpcTechniqueMap;
+import com.ghosts.abyss.ability.NpcTechniqueMap;
 import com.ghosts.abyss.network.PacketToggleAbsorbedTechnique;
 import java.util.List;
 import java.util.UUID;

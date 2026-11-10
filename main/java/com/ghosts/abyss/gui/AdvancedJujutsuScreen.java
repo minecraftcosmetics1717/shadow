@@ -1,15 +1,8 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.gui;
 
-import com.ghosts.abyss.gui.AscendantTab;
-import com.ghosts.abyss.gui.BlackFlashTab;
-import com.ghosts.abyss.gui.CsmTab;
-import com.ghosts.abyss.gui.DomainTab;
-import com.ghosts.abyss.gui.IMenuTab;
-import com.ghosts.abyss.gui.RctTab;
-import com.ghosts.abyss.gui.YutaTab;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.client.gui.Font;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;

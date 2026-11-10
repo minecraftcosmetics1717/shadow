@@ -1,7 +1,7 @@
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.ClientAbilityCache;
-import com.ghosts.abyss.ScannedAbility;
+import com.ghosts.abyss.ability.ClientAbilityCache;
+import com.ghosts.abyss.ability.ScannedAbility;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;

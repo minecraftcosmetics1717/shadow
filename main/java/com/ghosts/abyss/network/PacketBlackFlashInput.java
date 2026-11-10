@@ -1,7 +1,7 @@
 
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.BlackFlashTiming;
+import com.ghosts.abyss.blackflash.BlackFlashTiming;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;

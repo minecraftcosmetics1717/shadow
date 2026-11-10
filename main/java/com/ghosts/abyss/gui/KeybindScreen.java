@@ -1,10 +1,10 @@
 package com.ghosts.abyss.gui;
 
-import com.ghosts.abyss.ClientAbilityCache;
+import com.ghosts.abyss.ability.ClientAbilityCache;
 import com.ghosts.abyss.KeyBindings;
 import com.ghosts.abyss.KeybindConfig;
 import com.ghosts.abyss.KeybindConfig.Ability;
-import com.ghosts.abyss.ScannedAbility;
+import com.ghosts.abyss.ability.ScannedAbility;
 import com.ghosts.abyss.csm.ClientCsmCache;
 import com.ghosts.abyss.csm.CsmSpiritData;
 import com.ghosts.abyss.network.ModNetwork;

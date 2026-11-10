@@ -1,7 +1,7 @@
 package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.Abyss;
-import com.ghosts.abyss.YutaTechniqueRegistry;
+import com.ghosts.abyss.yuta.YutaTechniqueRegistry;
 import java.util.List;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;

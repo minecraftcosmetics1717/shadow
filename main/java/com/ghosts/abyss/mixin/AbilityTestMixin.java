@@ -1,6 +1,6 @@
 package com.ghosts.abyss.mixin;
 
-import com.ghosts.abyss.AbilityScanHandler;
+import com.ghosts.abyss.ability.AbilityScanHandler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;
 import org.spongepowered.asm.mixin.Mixin;

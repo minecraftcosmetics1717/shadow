@@ -1,4 +1,6 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.yuta;
+
+import com.ghosts.abyss.Abyss;
 
 import java.util.ArrayList;
 import java.util.Collections;

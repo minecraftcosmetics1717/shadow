@@ -1,11 +1,11 @@
 package com.ghosts.abyss.gui;
 
-import com.ghosts.abyss.AdvTechPoints;
+import com.ghosts.abyss.progression.AdvTechPoints;
 import com.ghosts.abyss.AbyssGamerules;
 import com.ghosts.abyss.KeyBindings;
 import com.ghosts.abyss.ModItems;
-import com.ghosts.abyss.PerfectBodySync;
-import com.ghosts.abyss.RefinementPoints;
+import com.ghosts.abyss.sukuna.PerfectBodySync;
+import com.ghosts.abyss.domain.RefinementPoints;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketPurchaseBindingVow;
 import com.ghosts.abyss.network.PacketRecoverBindingVow;
@@ -20,7 +20,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;

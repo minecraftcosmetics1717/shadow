@@ -1,6 +1,7 @@
 
-package com.ghosts.abyss;
+package com.ghosts.abyss.blackflash;
 
+import com.ghosts.abyss.AbyssGamerules;
 import net.mcreator.jujutsucraft.init.JujutsucraftModEntities;
 import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;

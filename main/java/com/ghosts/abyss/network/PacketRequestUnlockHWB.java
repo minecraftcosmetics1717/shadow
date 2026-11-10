@@ -1,6 +1,6 @@
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.AdvTechPoints;
+import com.ghosts.abyss.progression.AdvTechPoints;
 import com.ghosts.abyss.AbyssGamerules;
 import java.util.function.Supplier;
 import net.minecraft.advancements.Advancement;
@@ -8,7 +8,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 

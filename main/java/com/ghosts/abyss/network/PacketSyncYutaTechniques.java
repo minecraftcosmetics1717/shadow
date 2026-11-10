@@ -1,7 +1,7 @@
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.ClientYutaTechniqueCache;
-import com.ghosts.abyss.YutaTechniqueRegistry;
+import com.ghosts.abyss.yuta.ClientYutaTechniqueCache;
+import com.ghosts.abyss.yuta.YutaTechniqueRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;

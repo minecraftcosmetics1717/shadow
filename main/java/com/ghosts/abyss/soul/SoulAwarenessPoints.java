@@ -1,5 +1,5 @@
 
-package com.ghosts.abyss;
+package com.ghosts.abyss.soul;
 
 import com.ghosts.abyss.event.SoulAwarenessEvents;
 

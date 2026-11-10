@@ -1,13 +1,13 @@
 
-package com.ghosts.abyss;
+package com.ghosts.abyss.mahito;
 
+import com.ghosts.abyss.soul.SoulAwareness;
 import net.mcreator.jujutsucraft.procedures.LogicAttackProcedure;
 import net.mcreator.jujutsucraft.procedures.LogicBetrayalProcedure;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;

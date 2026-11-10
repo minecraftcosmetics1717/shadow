@@ -1,6 +1,6 @@
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.BlackFlashPoints;
+import com.ghosts.abyss.blackflash.BlackFlashPoints;
 import com.ghosts.abyss.AbyssGamerules;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;

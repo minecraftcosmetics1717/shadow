@@ -1,5 +1,5 @@
 
-package com.ghosts.abyss;
+package com.ghosts.abyss.blackflash;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;

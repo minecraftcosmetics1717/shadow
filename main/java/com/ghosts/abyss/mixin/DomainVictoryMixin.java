@@ -1,6 +1,6 @@
 package com.ghosts.abyss.mixin;
 
-import com.ghosts.abyss.RefinementPoints;
+import com.ghosts.abyss.domain.RefinementPoints;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;

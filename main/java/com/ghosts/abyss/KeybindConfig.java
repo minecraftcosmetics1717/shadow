@@ -1,5 +1,7 @@
 package com.ghosts.abyss;
 
+import com.ghosts.abyss.ability.ClientAbilityCache;
+import com.ghosts.abyss.ability.ScannedAbility;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import java.io.OutputStreamWriter;

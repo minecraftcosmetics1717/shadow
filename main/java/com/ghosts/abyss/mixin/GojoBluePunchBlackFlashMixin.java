@@ -1,6 +1,6 @@
 package com.ghosts.abyss.mixin;
 
-import com.ghosts.abyss.BlackFlashTiming;
+import com.ghosts.abyss.blackflash.BlackFlashTiming;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;

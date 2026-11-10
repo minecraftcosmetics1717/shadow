@@ -1,12 +1,13 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.ability;
 
+import com.ghosts.abyss.Abyss;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketSyncAbilities;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.core.Direction;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerPlayer;

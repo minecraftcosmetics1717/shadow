@@ -1,4 +1,4 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.sukuna;
 
 import java.util.Map;
 import java.util.UUID;

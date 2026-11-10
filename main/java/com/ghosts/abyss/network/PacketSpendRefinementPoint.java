@@ -1,7 +1,7 @@
 package com.ghosts.abyss.network;
 
 import com.ghosts.abyss.AbyssGamerules;
-import com.ghosts.abyss.RefinementPoints;
+import com.ghosts.abyss.domain.RefinementPoints;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;

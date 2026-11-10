@@ -1,10 +1,11 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.rct;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.network.chat.Component;
+
+import com.ghosts.abyss.AbyssGamerules;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;

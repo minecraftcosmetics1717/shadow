@@ -1,6 +1,6 @@
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.AdvTechPoints;
+import com.ghosts.abyss.progression.AdvTechPoints;
 import com.ghosts.abyss.AbyssGamerules;
 import java.util.function.Supplier;
 import net.minecraft.nbt.CompoundTag;

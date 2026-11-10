@@ -1,9 +1,7 @@
 
 package com.ghosts.abyss.domain;
 
-import com.ghosts.abyss.RefinementPoints;
 import com.ghosts.abyss.client.XaeroMinimapBridge;
-import com.ghosts.abyss.effect.ModEffects;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;

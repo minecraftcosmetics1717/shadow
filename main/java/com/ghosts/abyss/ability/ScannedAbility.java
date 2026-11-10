@@ -1,4 +1,6 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.ability;
+
+import com.ghosts.abyss.KeybindConfig;
 
 public record ScannedAbility(int ct, int select, String name, double cost, boolean physical, boolean passive, boolean available) {
    public static final ScannedAbility UNBOUND = new ScannedAbility(-999, -999, "— Unbound —", (double)0.0F, false, false, false);

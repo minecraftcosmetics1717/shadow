@@ -1,8 +1,8 @@
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.AbilityScanHandler;
+import com.ghosts.abyss.ability.AbilityScanHandler;
 import com.ghosts.abyss.Abyss;
-import com.ghosts.abyss.YutaTechniqueRegistry;
+import com.ghosts.abyss.yuta.YutaTechniqueRegistry;
 import java.util.function.Supplier;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;

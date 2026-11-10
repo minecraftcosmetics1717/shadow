@@ -1,6 +1,6 @@
 package com.ghosts.abyss.gui;
 
-import com.ghosts.abyss.BlackFlashPoints;
+import com.ghosts.abyss.blackflash.BlackFlashPoints;
 import com.ghosts.abyss.AbyssGamerules;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketActivateAtWillBlackFlash;

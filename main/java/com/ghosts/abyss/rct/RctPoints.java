@@ -1,4 +1,4 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.rct;
 
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketSyncRctData;

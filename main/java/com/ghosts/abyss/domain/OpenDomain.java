@@ -1,7 +1,9 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.domain;
 
+import com.ghosts.abyss.Abyss;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketSyncOpenDomainData;
+import com.ghosts.abyss.progression.AdvTechPoints;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;

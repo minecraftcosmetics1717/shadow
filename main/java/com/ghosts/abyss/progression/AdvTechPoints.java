@@ -1,9 +1,10 @@
-package com.ghosts.abyss;
+package com.ghosts.abyss.progression;
 
+import com.ghosts.abyss.Abyss;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketSyncAdvTechData;
 import java.lang.reflect.Field;
-import net.minecraft.core.Direction;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;

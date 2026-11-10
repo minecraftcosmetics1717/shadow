@@ -1,7 +1,7 @@
 
 package com.ghosts.abyss.mixin;
 
-import com.ghosts.abyss.AbyssIdleTransfiguration;
+import com.ghosts.abyss.mahito.AbyssIdleTransfiguration;
 
 import net.mcreator.jujutsucraft.procedures.IdleTransfigurationProcedure;
 

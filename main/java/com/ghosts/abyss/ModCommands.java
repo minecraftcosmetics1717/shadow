@@ -1,5 +1,10 @@
 package com.ghosts.abyss;
 
+import com.ghosts.abyss.blackflash.BlackFlashPoints;
+import com.ghosts.abyss.domain.OpenDomain;
+import com.ghosts.abyss.domain.RefinementPoints;
+import com.ghosts.abyss.progression.AdvTechPoints;
+import com.ghosts.abyss.rct.RctPoints;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.ghosts.abyss.network.PacketRequestUnlockOpenDomain;

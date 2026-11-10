@@ -1,7 +1,7 @@
 
 package com.ghosts.abyss.mixin;
 
-import com.ghosts.abyss.SoulAwareness;
+import com.ghosts.abyss.soul.SoulAwareness;
 import net.mcreator.jujutsucraft.procedures.ChangeDamage1Procedure;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;

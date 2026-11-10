@@ -2,8 +2,8 @@
 package com.ghosts.abyss.event;
 
 import com.ghosts.abyss.Abyss;
-import com.ghosts.abyss.SoulAwareness;
-import com.ghosts.abyss.SoulAwarenessPoints;
+import com.ghosts.abyss.soul.SoulAwareness;
+import com.ghosts.abyss.soul.SoulAwarenessPoints;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketSyncSoulAwareness;
 

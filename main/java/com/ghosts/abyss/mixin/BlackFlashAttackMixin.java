@@ -1,7 +1,7 @@
 
 package com.ghosts.abyss.mixin;
 
-import com.ghosts.abyss.BlackFlashTiming;
+import com.ghosts.abyss.blackflash.BlackFlashTiming;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;
 import org.spongepowered.asm.mixin.Mixin;

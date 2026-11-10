@@ -1,7 +1,7 @@
 package com.ghosts.abyss.network;
 
 import com.ghosts.abyss.AbyssGamerules;
-import com.ghosts.abyss.OpenDomain;
+import com.ghosts.abyss.domain.OpenDomain;
 import java.lang.reflect.Field;
 import java.util.function.Supplier;
 import net.minecraft.core.Direction;

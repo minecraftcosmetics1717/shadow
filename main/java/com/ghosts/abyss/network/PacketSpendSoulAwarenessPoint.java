@@ -1,8 +1,8 @@
 
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.SoulAwareness;
-import com.ghosts.abyss.SoulAwarenessPoints;
+import com.ghosts.abyss.soul.SoulAwareness;
+import com.ghosts.abyss.soul.SoulAwarenessPoints;
 
 import java.util.function.Supplier;
 
