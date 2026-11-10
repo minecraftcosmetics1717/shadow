@@ -102,7 +102,9 @@
     "YutaDomainExecuteMixin",
     "IdleTransfigurationMixin",
     "BloodTechniqueOverrideMixin",
-    "PiercingBloodCostMixin"
+    "PiercingBloodCostMixin",
+    "GojoBluePunchBlackFlashMixin",
+    "SixEyesInfinityUnlockMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin"
