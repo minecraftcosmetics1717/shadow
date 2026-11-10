@@ -379,6 +379,13 @@ public final class PlayerLifecycleEvents {
         }
 
         PacketSyncYutaTechniques.sync(player);
+
+// Refresh the cursed technique cache and abilities
+// after the new player entity has been created.
+        CursedTechniqueEvents.initializePlayer(player);
+
+// Refresh Perfect Body visibility for all players.
+        PerfectBodyEvents.initializePlayer(player);
     }
 
     // =========================================

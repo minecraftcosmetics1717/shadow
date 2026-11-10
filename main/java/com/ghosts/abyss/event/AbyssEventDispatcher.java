@@ -27,11 +27,10 @@ import net.minecraftforge.eventbus.api.EventPriority;
 /**
  * Central Forge event dispatcher for Abyss.
  *
- * All feature implementations live in separate classes.
+ * Registered through AbyssEventDispatcher.register()
+ * during mod initialization.
  *
- * IMPORTANT:
- * This class is NOT registered to Forge yet.
- * EventListeners remains active until final migration.
+ * Delegates Forge events to feature-specific classes.
  */
 
 public final class AbyssEventDispatcher {

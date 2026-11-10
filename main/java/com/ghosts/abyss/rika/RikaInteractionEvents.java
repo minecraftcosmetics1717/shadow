@@ -23,7 +23,7 @@ public final class RikaInteractionEvents {
             new ResourceLocation("jujutsucraft", "rika_2");
 
     private RikaInteractionEvents() {}
-    
+
     public static void onRikaInteract(
             PlayerInteractEvent.EntityInteract event) {
 
