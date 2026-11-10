@@ -135,6 +135,11 @@ public class ModNetwork {
               PacketBlackFlashInput::encode,
               PacketBlackFlashInput::decode,
               PacketBlackFlashInput::handle);
-
+      CHANNEL.registerMessage(
+              id++,
+              PacketPiercingBloodPose.class,
+              PacketPiercingBloodPose::encode,
+              PacketPiercingBloodPose::new,
+              PacketPiercingBloodPose::handle);
    }
 }

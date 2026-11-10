@@ -1,6 +1,8 @@
 
 package com.ghosts.abyss.blood;
 
+import com.ghosts.abyss.network.ModNetwork;
+import com.ghosts.abyss.network.PacketPiercingBloodPose;
 import net.mcreator.jujutsucraft.init.JujutsucraftModAttributes;
 import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 
@@ -15,6 +17,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraftforge.network.PacketDistributor;
 
 public final class AbyssPiercingBlood {
 
@@ -25,7 +28,8 @@ public final class AbyssPiercingBlood {
 
     private static final String READY_KEY =
             "abyss_piercing_blood_ready";
-
+    private static final String POSE_KEY =
+            "abyss_piercing_blood_pose_active";
     // Slowness II
     private static final int SLOWNESS_AMPLIFIER = 3;
 
@@ -80,12 +84,17 @@ public final class AbyssPiercingBlood {
         // but is no longer active, clean it up.
         if (!activeSkill || !holding) {
 
+            syncFirstPersonPose(player, false);
+
             if (isRunning(player)) {
                 stop(player);
             }
 
             return;
         }
+
+// Start the first-person hand pose.
+        syncFirstPersonPose(player, true);
 
         // Apply short-duration slowness continuously
         // during both preparation and firing.
@@ -125,7 +134,22 @@ public final class AbyssPiercingBlood {
             PiercingBloodBeam.update(player);
         }
     }
+    private static void syncFirstPersonPose(
+            ServerPlayer player,
+            boolean active
+    ) {
+        CompoundTag data = player.getPersistentData();
+        if (data.getBoolean(POSE_KEY) == active) {
+            return;
+        }
 
+        data.putBoolean(POSE_KEY, active);
+
+        ModNetwork.CHANNEL.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new PacketPiercingBloodPose(active)
+        );
+    }
     private static void applySlowness(
             ServerPlayer player
     ) {
@@ -178,7 +202,7 @@ public final class AbyssPiercingBlood {
     public static void stop(ServerPlayer player) {
 
         CompoundTag data = player.getPersistentData();
-
+        syncFirstPersonPose(player, false);
         boolean wasRunning = isRunning(player);
 
         if (wasRunning) {
@@ -214,6 +238,7 @@ public final class AbyssPiercingBlood {
 
         data.remove(CHARGE_KEY);
         data.remove(READY_KEY);
+        syncFirstPersonPose(player, false);
     }
 
     private static boolean consumeFiringEnergy(
