@@ -1,3 +1,4 @@
+
 package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.util.InventoryRestrictionHelper;
@@ -15,6 +16,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Slot.class)
 public abstract class SlotMixin {
 
+    private boolean abyss$isLocked() {
+        Slot slot = (Slot) (Object) this;
+
+        if (slot.container instanceof Inventory inventory) {
+            return !InventoryRestrictionHelper.isSlotAllowed(
+                    inventory.player,
+                    slot.getSlotIndex()
+            );
+        }
+
+        return false;
+    }
+
     @Inject(
             method = "mayPlace",
             at = @At("HEAD"),
@@ -24,15 +38,8 @@ public abstract class SlotMixin {
             ItemStack stack,
             CallbackInfoReturnable<Boolean> cir
     ) {
-        Slot slot = (Slot) (Object) this;
-
-        if (slot.container instanceof Inventory inventory) {
-            if (!InventoryRestrictionHelper.isSlotAllowed(
-                    inventory.player,
-                    slot.getSlotIndex())) {
-
-                cir.setReturnValue(false);
-            }
+        if (abyss$isLocked()) {
+            cir.setReturnValue(false);
         }
     }
 
@@ -45,15 +52,21 @@ public abstract class SlotMixin {
             Player player,
             CallbackInfoReturnable<Boolean> cir
     ) {
-        Slot slot = (Slot) (Object) this;
+        if (abyss$isLocked()) {
+            cir.setReturnValue(false);
+        }
+    }
 
-        if (slot.container instanceof Inventory inventory) {
-            if (!InventoryRestrictionHelper.isSlotAllowed(
-                    inventory.player,
-                    slot.getSlotIndex())) {
-
-                cir.setReturnValue(false);
-            }
+    @Inject(
+            method = "isHighlightable",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void abyss$restrictHighlight(
+            CallbackInfoReturnable<Boolean> cir
+    ) {
+        if (abyss$isLocked()) {
+            cir.setReturnValue(false);
         }
     }
 }

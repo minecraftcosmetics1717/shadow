@@ -106,8 +106,7 @@
     "SixEyesInfinityUnlockMixin"
   ],
   "client": [
-    "GojoVoidHoleScaleMixin",
-    "InventoryScreenMixin"
+    "GojoVoidHoleScaleMixin"
   ],
   "injectors": {
     "defaultRequire": 1
