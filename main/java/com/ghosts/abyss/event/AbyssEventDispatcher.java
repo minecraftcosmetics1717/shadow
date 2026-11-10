@@ -14,6 +14,7 @@ import com.ghosts.abyss.sukuna.PerfectBodyEvents;
 
 import net.minecraft.server.level.ServerPlayer;
 
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -21,6 +22,7 @@ import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 
 /**
  * Central Forge event dispatcher for Abyss.
@@ -31,9 +33,77 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
  * This class is NOT registered to Forge yet.
  * EventListeners remains active until final migration.
  */
+
 public final class AbyssEventDispatcher {
 
+    private static boolean registered = false;
+
     private AbyssEventDispatcher() {}
+
+    public static void register() {
+
+        if (registered) {
+            return;
+        }
+
+        registered = true;
+
+        var bus = MinecraftForge.EVENT_BUS;
+
+        // Player tick
+        bus.addListener(
+                AbyssEventDispatcher::onPlayerTick
+        );
+
+        // Player lifecycle
+        bus.addListener(
+                AbyssEventDispatcher::onPlayerLoggedIn
+        );
+
+        bus.addListener(
+                EventPriority.HIGHEST,
+                AbyssEventDispatcher::onPlayerDeath
+        );
+
+        bus.addListener(
+                EventPriority.LOWEST,
+                AbyssEventDispatcher::onPlayerRespawn
+        );
+
+        bus.addListener(
+                AbyssEventDispatcher::onPlayerLoggedOut
+        );
+
+        // Hollow Wicker Basket
+        bus.addListener(
+                EventPriority.LOWEST,
+                AbyssEventDispatcher::onPlayerHurtCancelHwb
+        );
+
+        bus.addListener(
+                AbyssEventDispatcher::onItemUseStart
+        );
+
+        // Cursed Spirit Manipulation
+        bus.addListener(
+                EventPriority.HIGHEST,
+                AbyssEventDispatcher::onCsmSpiritRightClickRecall
+        );
+
+        bus.addListener(
+                AbyssEventDispatcher::onSpiritDeath
+        );
+
+        bus.addListener(
+                AbyssEventDispatcher::onSpiritUnload
+        );
+
+        // Rika inventory
+        bus.addListener(
+                AbyssEventDispatcher::onRikaInteract
+        );
+    }
+
 
     // ========================================
     // PLAYER TICK
