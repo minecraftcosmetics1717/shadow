@@ -1,36 +1,95 @@
 package com.ghosts.abyss.util;
 
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
-public class InventoryRestrictionHelper {
+public final class InventoryRestrictionHelper {
+
+    public static final int NORMAL_SLOTS = 3;
+    public static final int PERFECT_BODY_SLOTS = 5;
+
+    private InventoryRestrictionHelper() {}
 
     public static int getAllowedHotbarSlots(Player player) {
-        boolean hasPerfectBody = player.getPersistentData().getBoolean("perfect_body");
-        return hasPerfectBody ? 5 : 3;
-    }
-
-    /**
-     * Returns true if the player is allowed to use this inventory slot.
-     * Only the first N hotbar slots are allowed.
-     * Armor (36-39) and Offhand (40) are always allowed.
-     */
-    public static boolean isSlotAllowed(Player player, int slotIndex) {
-        // Always allow armor + offhand
-        if (slotIndex >= 36) {
-            return true;
+        if (player == null) {
+            return NORMAL_SLOTS;
         }
 
-        // Only allow the first few hotbar slots
-        return slotIndex >= 0 && slotIndex < getAllowedHotbarSlots(player);
+        return player.getPersistentData()
+                .getBoolean("perfect_body")
+                ? PERFECT_BODY_SLOTS
+                : NORMAL_SLOTS;
+    }
+
+    public static boolean isSlotAllowed(
+            Player player,
+            int slotIndex
+    ) {
+        if (player == null) {
+            return false;
+        }
+
+        // Hotbar: first 3 or 5 slots.
+        if (slotIndex >= 0 && slotIndex < 9) {
+            return slotIndex < getAllowedHotbarSlots(player);
+        }
+
+        // Main inventory: completely locked.
+        if (slotIndex >= 9 && slotIndex < 36) {
+            return false;
+        }
+
+        // Armor and offhand remain usable.
+        return slotIndex >= 36 && slotIndex <= 40;
     }
 
     public static boolean hasFreeAllowedSlot(Player player) {
+        return findFreeAllowedSlot(player) != -1;
+    }
+
+    public static int findFreeAllowedSlot(Player player) {
+        if (player == null) {
+            return -1;
+        }
+
+        Inventory inventory = player.getInventory();
         int allowed = getAllowedHotbarSlots(player);
+
         for (int i = 0; i < allowed; i++) {
-            if (player.getInventory().getItem(i).isEmpty()) {
-                return true;
+            if (inventory.getItem(i).isEmpty()) {
+                return i;
             }
         }
-        return false;
+
+        return -1;
+    }
+
+    public static int findAllowedStackSlot(
+            Player player,
+            ItemStack incoming
+    ) {
+        if (player == null || incoming.isEmpty()) {
+            return -1;
+        }
+
+        Inventory inventory = player.getInventory();
+        int allowed = getAllowedHotbarSlots(player);
+
+        for (int i = 0; i < allowed; i++) {
+            ItemStack existing = inventory.getItem(i);
+
+            if (!existing.isEmpty()
+                    && ItemStack.isSameItemSameTags(
+                    existing, incoming)
+                    && existing.getCount()
+                    < Math.min(
+                    existing.getMaxStackSize(),
+                    inventory.getMaxStackSize())) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }

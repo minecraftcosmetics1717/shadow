@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.ghosts.abyss.progression.AdvTechPoints;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
@@ -297,6 +298,7 @@ public final class PerfectBodyEvents {
                 );
 
                 broadcastPerfectBodyToAll(player, current);
+                AdvTechPoints.sync(player);
             }
         }
     }

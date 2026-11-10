@@ -5,6 +5,9 @@ import com.ghosts.abyss.Abyss;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
+
+import com.ghosts.abyss.progression.AdvTechPoints;
+import com.ghosts.abyss.sukuna.PerfectBodyEvents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -81,6 +84,12 @@ public class PacketPactResponse {
 
                   persistentData.putBoolean("perfect_body", true);
                   player.getMainHandItem().shrink(1);
+
+// Immediately update the player's client-side state.
+                  AdvTechPoints.sync(player);
+
+// Update Perfect Body visuals and state tracking.
+                  PerfectBodyEvents.initializePlayer(player);
 
                   Abyss.LOGGER.debug("{} completed the Perfect Body pact", player.getScoreboardName());
                }

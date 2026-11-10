@@ -1,10 +1,14 @@
 package com.ghosts.abyss.mixin;
 
+import com.ghosts.abyss.util.InventoryRestrictionHelper;
+
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
-import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,67 +18,169 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(AbstractContainerMenu.class)
 public abstract class AbstractContainerMenuMixin {
 
-    @Inject(method = "clicked", at = @At("HEAD"), cancellable = true)
-    private void lockInventorySlots(int slotId, int button, ClickType clickType, Player player, CallbackInfo ci) {
-        AbstractContainerMenu menu = (AbstractContainerMenu) (Object) this;
+    private static boolean abyss$isLocked(Slot slot) {
+        if (slot.container instanceof Inventory inventory) {
+            return !InventoryRestrictionHelper.isSlotAllowed(
+                    inventory.player,
+                    slot.getSlotIndex()
+            );
+        }
 
-        if (menu instanceof InventoryMenu) {
-            if (slotId < 0 || slotId >= menu.slots.size()) return;
+        return false;
+    }
 
-            boolean hasPerfectBody = player.getPersistentData().getBoolean("perfect_body");
-            int maxAllowedHotbarSlot = hasPerfectBody ? 4 : 2;
+    @Inject(
+            method = "clicked",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void abyss$restrictClicks(
+            int slotId,
+            int button,
+            ClickType clickType,
+            Player player,
+            CallbackInfo ci
+    ) {
+        AbstractContainerMenu menu =
+                (AbstractContainerMenu) (Object) this;
 
-            // Block Main Inventory slots (9..35)
-            if (slotId >= 9 && slotId <= 35) {
-                ci.cancel();
-                return;
-            }
+        // Block number-key swaps into locked hotbar positions,
+        // even when the clicked slot belongs to a chest.
+        if (clickType == ClickType.SWAP
+                && button >= 0 && button < 9
+                && !InventoryRestrictionHelper.isSlotAllowed(
+                player, button)) {
+            ci.cancel();
+            return;
+        }
 
-            // Block locked Hotbar slots (36..44 mapped past active limit)
-            if (slotId >= 36 && slotId <= 44) {
-                int hotbarIndex = slotId - 36;
-                if (hotbarIndex > maxAllowedHotbarSlot) {
-                    ci.cancel();
-                }
-            }
+        if (slotId < 0 || slotId >= menu.slots.size()) {
+            return;
+        }
+
+        Slot slot = menu.slots.get(slotId);
+
+        if (abyss$isLocked(slot)) {
+            ci.cancel();
         }
     }
 
-    // Intercept shift-click transfer logic across ALL container menus
-    @Inject(method = "moveItemStackTo", at = @At("HEAD"))
-    private void capContainerMoveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean reverse, CallbackInfoReturnable<Boolean> cir) {
-        AbstractContainerMenu menu = (AbstractContainerMenu) (Object) this;
+    @Inject(
+            method = "moveItemStackTo",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void abyss$restrictShiftTransfers(
+            ItemStack stack,
+            int startIndex,
+            int endIndex,
+            boolean reverse,
+            CallbackInfoReturnable<Boolean> cir
+    ) {
+        AbstractContainerMenu menu =
+                (AbstractContainerMenu) (Object) this;
 
-        // Skip standard Survival InventoryMenu (handled separately in InventoryMenuMixin)
-        if (menu instanceof InventoryMenu) return;
-
-        // Obtain player instance associated with menu
-        Player player = null;
-        if (!menu.slots.isEmpty() && menu.slots.get(0).container instanceof Player p) {
-            player = p;
+        if (stack.isEmpty()) {
+            return;
         }
 
-        if (player == null) return;
+        if (startIndex < 0
+                || endIndex > menu.slots.size()
+                || startIndex >= endIndex) {
+            return;
+        }
 
-        boolean hasPerfectBody = player.getPersistentData().getBoolean("perfect_body");
-        int maxAllowedSlot = hasPerfectBody ? 4 : 2; // Slots 0..2 or 0..4
+        // Only replace transfers whose destination range
+        // contains player-inventory slots.
+        boolean hasPlayerInventory = false;
 
-        int totalSlots = menu.slots.size();
-        int hotbarStart = totalSlots - 9; // Last 9 slots in container menus are the hotbar
-
-        // If the target range includes main inventory or locked hotbar slots:
-        // Cap the endIndex so moveItemStackTo cannot access slots beyond (hotbarStart + maxAllowedSlot + 1)
-        if (endIndex == totalSlots) {
-            // Force transfer logic to stop right after slot index 2 (3 slots total) or slot index 4 (5 slots total)
-            int cappedEndIndex = hotbarStart + maxAllowedSlot + 1;
-
-            // Re-route transfer by executing custom capped loop if standard range exceeds allowed boundary
-            if (endIndex > cappedEndIndex) {
-                // Adjust parameter scope on local execution
-                try {
-                    java.lang.reflect.Field endField = net.minecraft.world.inventory.AbstractContainerMenu.class.getDeclaredField("endIndex");
-                } catch (Exception ignored) {}
+        for (int i = startIndex; i < endIndex; i++) {
+            if (menu.slots.get(i).container instanceof Inventory) {
+                hasPlayerInventory = true;
+                break;
             }
         }
+
+        if (!hasPlayerInventory) {
+            return;
+        }
+
+        boolean moved = false;
+
+        // Pass 1: merge into existing compatible stacks.
+        int index = reverse ? endIndex - 1 : startIndex;
+
+        while (!stack.isEmpty()
+                && index >= startIndex
+                && index < endIndex) {
+
+            Slot slot = menu.slots.get(index);
+
+            if (!abyss$isLocked(slot) && slot.mayPlace(stack)) {
+                ItemStack existing = slot.getItem();
+
+                if (!existing.isEmpty()
+                        && ItemStack.isSameItemSameTags(
+                        existing, stack)) {
+
+                    int max = Math.min(
+                            slot.getMaxStackSize(stack),
+                            existing.getMaxStackSize()
+                    );
+
+                    int space = max - existing.getCount();
+
+                    if (space > 0) {
+                        int amount = Math.min(
+                                space,
+                                stack.getCount()
+                        );
+
+                        existing.grow(amount);
+                        stack.shrink(amount);
+
+                        slot.setChanged();
+                        moved = true;
+                    }
+                }
+            }
+
+            index += reverse ? -1 : 1;
+        }
+
+        // Pass 2: fill empty permitted slots.
+        index = reverse ? endIndex - 1 : startIndex;
+
+        while (!stack.isEmpty()
+                && index >= startIndex
+                && index < endIndex) {
+
+            Slot slot = menu.slots.get(index);
+
+            if (!abyss$isLocked(slot)
+                    && !slot.hasItem()
+                    && slot.mayPlace(stack)) {
+
+                int amount = Math.min(
+                        stack.getCount(),
+                        slot.getMaxStackSize(stack)
+                );
+
+                if (amount > 0) {
+                    ItemStack placed = stack.copy();
+                    placed.setCount(amount);
+
+                    slot.set(placed);
+                    stack.shrink(amount);
+
+                    slot.setChanged();
+                    moved = true;
+                }
+            }
+
+            index += reverse ? -1 : 1;
+        }
+
+        cir.setReturnValue(moved);
     }
 }

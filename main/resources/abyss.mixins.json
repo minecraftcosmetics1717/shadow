@@ -53,7 +53,6 @@
     "KaoriSelfLapseExecuteMixin",
     "MixinStevensonScreenEntity",
     "HideXpTextMixin",
-    "MixinMythicalBeastAmber",
     "CombatHudRendererMixin",
     "SixEyesSlashMixin",
     "HideArmorInShadowDiveMixin",
@@ -107,7 +106,8 @@
     "SixEyesInfinityUnlockMixin"
   ],
   "client": [
-    "GojoVoidHoleScaleMixin"
+    "GojoVoidHoleScaleMixin",
+    "InventoryScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
