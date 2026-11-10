@@ -1,6 +1,6 @@
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.EventListeners;
+import com.ghosts.abyss.sukuna.PerfectBodyEvents;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,7 +26,7 @@ public class PacketToggleFourArms {
             boolean current = player.getPersistentData().getBoolean("jslop_hide_four_arms");
             player.getPersistentData().putBoolean("jslop_hide_four_arms", !current);
             boolean perfectBody = player.getPersistentData().getBoolean("perfect_body");
-            EventListeners.broadcastPerfectBodyToAll(player, perfectBody);
+            PerfectBodyEvents.broadcastPerfectBodyToAll(player, perfectBody);
          }
       });
       ctx.setPacketHandled(true);
