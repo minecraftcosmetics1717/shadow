@@ -67,10 +67,13 @@ import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
 
-@EventBusSubscriber(
-        modid = "abyss",
-        bus = Bus.FORGE
-)
+/**
+ * Legacy Abyss event implementations.
+ *
+ * No longer registered to the Forge event bus.
+ * Kept temporarily for compatibility and reference.
+ */
+@Deprecated
 public class EventListeners {
    private static final Map<UUID, CompoundTag> deathDataCache = new HashMap<>();
    private static final Map<UUID, CompoundTag> mbaPreDeathCache = new HashMap<>();

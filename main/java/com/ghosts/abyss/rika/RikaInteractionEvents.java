@@ -14,7 +14,6 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.registries.ForgeRegistries;
 
-@EventBusSubscriber(modid = "abyss")
 public final class RikaInteractionEvents {
 
     private static final ResourceLocation RIKA_RL =

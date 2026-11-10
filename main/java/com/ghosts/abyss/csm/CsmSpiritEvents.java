@@ -26,12 +26,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.registries.ForgeRegistries;
 
-@EventBusSubscriber(modid = "abyss")
 public final class CsmSpiritEvents {
 
     private CsmSpiritEvents() {}
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onCsmSpiritRightClickRecall(
             PlayerInteractEvent.EntityInteract event) {
 
@@ -144,7 +142,6 @@ public final class CsmSpiritEvents {
         }
     }
 
-    @SubscribeEvent
     public static void onSpiritDeath(LivingDeathEvent event) {
         Entity entity = event.getEntity();
 
@@ -188,7 +185,6 @@ public final class CsmSpiritEvents {
         }
     }
 
-    @SubscribeEvent
     public static void onSpiritUnload(EntityLeaveLevelEvent event) {
         if (event.getLevel().isClientSide()) return;
 

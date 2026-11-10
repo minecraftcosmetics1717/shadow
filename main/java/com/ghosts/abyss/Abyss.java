@@ -1,6 +1,7 @@
 package com.ghosts.abyss;
 
 import com.ghosts.abyss.block.ModBlocks;
+import com.ghosts.abyss.event.AbyssEventDispatcher;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.rika.RikaMenuTypes;
 
@@ -65,6 +66,9 @@ public class Abyss {
       modBus.addListener(this::onEntityAttributeCreation);
 
       MinecraftForge.EVENT_BUS.register(ShadowDiveTickHandler.class);
+
+// Register the central Abyss event dispatcher.
+      AbyssEventDispatcher.register();
 
       LOGGER.info("Abyss initialising...");
    }
