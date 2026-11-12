@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Player.class)
 public abstract class FlightTravelMixin {
 
-    public static final double FLIGHT_SPEED = 0.65D;
+    private static final double FLIGHT_SPEED = 0.65D;
 
     @Inject(
             method = "travel(Lnet/minecraft/world/phys/Vec3;)V",
