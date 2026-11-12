@@ -141,5 +141,17 @@ public class ModNetwork {
               PacketPiercingBloodPose::encode,
               PacketPiercingBloodPose::new,
               PacketPiercingBloodPose::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketGojoFlightInput.class,
+              PacketGojoFlightInput::encode,
+              PacketGojoFlightInput::decode,
+              PacketGojoFlightInput::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketUroAirSwim.class,
+              PacketUroAirSwim::encode,
+              PacketUroAirSwim::decode,
+              PacketUroAirSwim::handle);
    }
 }
