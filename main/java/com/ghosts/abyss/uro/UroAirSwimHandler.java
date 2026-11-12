@@ -3,7 +3,6 @@ package com.ghosts.abyss.uro;
 
 import com.ghosts.abyss.effect.ModEffects;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -13,10 +12,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = "abyss")
 public final class UroAirSwimHandler {
 
-    // Blocks per tick.
     public static final double MAX_SPEED = 0.65D;
-
-    // Higher values reach the target speed faster.
     public static final double ACCELERATION = 0.12D;
 
     private static final String ACTIVE = "abyss_uro_air_swim";
@@ -29,6 +25,7 @@ public final class UroAirSwimHandler {
                 && !player.isSpectator()
                 && player.hasEffect(ModEffects.FLIGHT.get())
                 && player.getAbilities().flying
+                && !player.onGround()
                 && !player.isPassenger()
                 && !player.isInWaterOrBubble()
                 && !player.isInLava()
@@ -51,11 +48,6 @@ public final class UroAirSwimHandler {
     private static void stop(ServerPlayer player) {
         player.getPersistentData().remove(ACTIVE);
         player.getPersistentData().remove(LAST_INPUT);
-
-        // Clear the old forced swimming pose, if present.
-        if (player.getForcedPose() == Pose.SWIMMING) {
-            player.setForcedPose(null);
-        }
     }
 
     @SubscribeEvent
@@ -65,8 +57,7 @@ public final class UroAirSwimHandler {
 
         if (!player.getPersistentData().getBoolean(ACTIVE)) return;
 
-        long lastInput =
-                player.getPersistentData().getLong(LAST_INPUT);
+        long lastInput = player.getPersistentData().getLong(LAST_INPUT);
 
         if (!canSwim(player)
                 || player.level().getGameTime() - lastInput > 10) {
@@ -74,9 +65,6 @@ public final class UroAirSwimHandler {
             return;
         }
 
-
-        // The direction comes from the server's view of the player,
-        // not from an arbitrary velocity supplied by the client.
         Vec3 direction = player.getLookAngle().normalize();
         Vec3 target = direction.scale(MAX_SPEED);
         Vec3 current = player.getDeltaMovement();

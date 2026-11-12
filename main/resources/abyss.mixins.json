@@ -107,7 +107,8 @@
   ],
   "client": [
     "GojoVoidHoleScaleMixin",
-    "client.UroElytraPoseMixin"
+    "client.UroElytraPoseMixin",
+    "client.FlightPlayerRotationMixin"
   ],
   "injectors": {
     "defaultRequire": 1

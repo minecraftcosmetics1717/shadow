@@ -1,10 +1,10 @@
 
 package com.ghosts.abyss.mixin.client;
 
-import com.ghosts.abyss.client.UroAirSwimClient;
-import net.minecraft.client.Minecraft;
+import com.ghosts.abyss.client.FlightPoseHelper;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,7 +17,7 @@ public abstract class UroElytraPoseMixin {
             method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V",
             at = @At("TAIL")
     )
-    private void abyss$uroFlyingPose(
+    private void abyss$flightPose(
             LivingEntity entity,
             float limbSwing,
             float limbSwingAmount,
@@ -26,21 +26,21 @@ public abstract class UroElytraPoseMixin {
             float headPitch,
             CallbackInfo ci
     ) {
-        Minecraft mc = Minecraft.getInstance();
-
-        if (mc.player == null || entity != mc.player) return;
-        if (!UroAirSwimClient.isAirSwimming()) return;
+        if (!(entity instanceof Player player)) return;
+        if (!FlightPoseHelper.shouldUseFlightPose(player)) return;
 
         PlayerModel<?> model = (PlayerModel<?>) (Object) this;
 
-        // Horizontal flying body.
-        model.body.xRot = (float) Math.PI / 2.0F;
+        // Vanilla-style Elytra flying posture.
+        // The renderer mixin rotates the entire player.
+        model.body.xRot = 0.0F;
+        model.body.yRot = 0.0F;
+        model.body.zRot = 0.0F;
 
-        // Head faces forward.
-        model.head.xRot = -0.35F;
+        model.head.xRot = -(float) Math.PI / 4.0F;
         model.head.yRot = 0.0F;
+        model.head.zRot = 0.0F;
 
-        // Arms trail backward, similar to Elytra flight.
         model.rightArm.xRot = -(float) Math.PI;
         model.leftArm.xRot = -(float) Math.PI;
 
@@ -50,11 +50,20 @@ public abstract class UroElytraPoseMixin {
         model.rightArm.zRot = 0.12F;
         model.leftArm.zRot = -0.12F;
 
-        // Straight legs.
         model.rightLeg.xRot = 0.0F;
         model.leftLeg.xRot = 0.0F;
 
         model.rightLeg.yRot = 0.0F;
         model.leftLeg.yRot = 0.0F;
+
+        model.rightLeg.zRot = 0.0F;
+        model.leftLeg.zRot = 0.0F;
+
+        model.hat.copyFrom(model.head);
+        model.leftSleeve.copyFrom(model.leftArm);
+        model.rightSleeve.copyFrom(model.rightArm);
+        model.leftPants.copyFrom(model.leftLeg);
+        model.rightPants.copyFrom(model.rightLeg);
+        model.jacket.copyFrom(model.body);
     }
 }

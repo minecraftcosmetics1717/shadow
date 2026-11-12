@@ -7,56 +7,48 @@ import com.ghosts.abyss.network.PacketUroAirSwim;
 import com.ghosts.abyss.uro.UroAirSwimHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(
-        modid = "abyss",
-        value = Dist.CLIENT
-)
+@Mod.EventBusSubscriber(modid = "abyss", value = Dist.CLIENT)
 public final class UroAirSwimClient {
 
-    private static boolean active = false;
-    public static boolean isAirSwimming() {
-        return active;
-    }
-    private static boolean lastSent = false;
-    private static int refreshTicks = 0;
+    private static boolean active;
+    private static boolean lastSent;
+    private static int refreshTicks;
 
     private UroAirSwimClient() {}
 
-    private static boolean canSwim(LocalPlayer player) {
+    public static boolean isAirSwimming() {
+        return active;
+    }
+
+    private static boolean canFly(LocalPlayer player) {
         return player.isAlive()
                 && !player.isSpectator()
                 && player.hasEffect(ModEffects.FLIGHT.get())
                 && player.getAbilities().flying
+                && !player.onGround()
                 && !player.isPassenger()
                 && !player.isInWaterOrBubble()
                 && !player.isInLava()
                 && !player.isFallFlying();
     }
 
-    private static void send(boolean swimming) {
+    private static void send(boolean flying) {
         refreshTicks++;
 
-        if (swimming != lastSent || refreshTicks >= 5) {
+        if (flying != lastSent || refreshTicks >= 5) {
             ModNetwork.CHANNEL.sendToServer(
-                    new PacketUroAirSwim(swimming)
+                    new PacketUroAirSwim(flying)
             );
 
-            lastSent = swimming;
+            lastSent = flying;
             refreshTicks = 0;
         }
-    }
-
-    private static void stop(LocalPlayer player) {
-
-        active = false;
-        send(false);
     }
 
     @SubscribeEvent
@@ -73,31 +65,25 @@ public final class UroAirSwimClient {
             return;
         }
 
-        // Sprint + forward movement activates air swimming.
-        boolean wantsSwimming =
+        boolean shouldFly =
                 mc.screen == null
-                        && canSwim(player)
+                        && canFly(player)
                         && player.isSprinting()
-                        && mc.options.keyUp.isDown();
+                        && player.input.forwardImpulse > 0.0F;
 
-        if (!wantsSwimming) {
-            stop(player);
+        active = shouldFly;
+
+        if (!active) {
+            send(false);
             return;
         }
 
-        active = true;
-
-
-        // Swim toward the direction the camera is looking.
+        // Accelerate toward the direction the camera faces.
         Vec3 direction = player.getLookAngle().normalize();
-        Vec3 target = direction.scale(
-                UroAirSwimHandler.MAX_SPEED
-        );
-
+        Vec3 target = direction.scale(UroAirSwimHandler.MAX_SPEED);
         Vec3 current = player.getDeltaMovement();
 
-        double acceleration =
-                UroAirSwimHandler.ACCELERATION;
+        double acceleration = UroAirSwimHandler.ACCELERATION;
 
         Vec3 movement = new Vec3(
                 current.x + (target.x - current.x) * acceleration,
