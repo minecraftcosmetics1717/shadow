@@ -104,11 +104,11 @@
     "PiercingBloodCostMixin",
     "GojoBluePunchBlackFlashMixin",
     "SixEyesInfinityUnlockMixin",
-    "FlightElytraMixin",
-    "FlightTravelMixin"
+    "FlightElytraMixin"
   ],
   "client": [
-    "GojoVoidHoleScaleMixin"
+    "GojoVoidHoleScaleMixin",
+    "FlightTravelMixin"
   ],
   "injectors": {
     "defaultRequire": 1
