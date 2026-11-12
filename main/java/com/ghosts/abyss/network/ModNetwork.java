@@ -147,11 +147,5 @@ public class ModNetwork {
               PacketGojoFlightInput::encode,
               PacketGojoFlightInput::decode,
               PacketGojoFlightInput::handle);
-      CHANNEL.registerMessage(
-              id++,
-              PacketUroAirSwim.class,
-              PacketUroAirSwim::encode,
-              PacketUroAirSwim::decode,
-              PacketUroAirSwim::handle);
    }
 }

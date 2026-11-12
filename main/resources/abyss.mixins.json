@@ -106,9 +106,7 @@
     "SixEyesInfinityUnlockMixin"
   ],
   "client": [
-    "GojoVoidHoleScaleMixin",
-    "client.UroElytraPoseMixin",
-    "client.FlightPlayerRotationMixin"
+    "GojoVoidHoleScaleMixin"
   ],
   "injectors": {
     "defaultRequire": 1
