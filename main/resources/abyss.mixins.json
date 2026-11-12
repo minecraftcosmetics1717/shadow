@@ -103,7 +103,9 @@
     "BloodTechniqueOverrideMixin",
     "PiercingBloodCostMixin",
     "GojoBluePunchBlackFlashMixin",
-    "SixEyesInfinityUnlockMixin"
+    "SixEyesInfinityUnlockMixin",
+    "FlightElytraMixin",
+    "FlightTravelMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin"

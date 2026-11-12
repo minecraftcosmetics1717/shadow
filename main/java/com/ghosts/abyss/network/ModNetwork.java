@@ -147,5 +147,13 @@ public class ModNetwork {
               PacketGojoFlightInput::encode,
               PacketGojoFlightInput::decode,
               PacketGojoFlightInput::handle);
+
+      CHANNEL.registerMessage(
+              id++,
+              PacketFlightToggle.class,
+              PacketFlightToggle::encode,
+              PacketFlightToggle::new,
+              PacketFlightToggle::handle);
+
    }
 }
