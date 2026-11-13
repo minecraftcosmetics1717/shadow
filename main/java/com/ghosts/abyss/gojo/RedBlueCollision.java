@@ -47,10 +47,17 @@ public final class RedBlueCollision {
                 continue;
             }
 
-            // Hook for the future Red + Blue interaction.
-            red.discard();
-            blue.discard();
-            return true;
+
+            Vec3 collisionPoint = blue.position();
+
+            if (RedBluePurple.combine(
+                    red,
+                    blue,
+                    collisionPoint
+            )) {
+                return true;
+            }
+
         }
         return false;
     }

@@ -93,9 +93,17 @@ public final class ControlledRedProjectile {
             }
 
             // Future Red + Blue interaction.
-            red.discard();
-            blue.discard();
-            return;
+
+            Vec3 collisionPoint = blue.position();
+
+            if (RedBluePurple.combine(
+                    red,
+                    blue,
+                    collisionPoint
+            )) {
+                return;
+            }
+
         }
 
         // Damage and repel mobs Red passes through.
