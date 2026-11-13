@@ -105,7 +105,9 @@
     "GojoBluePunchBlackFlashMixin",
     "SixEyesInfinityUnlockMixin",
     "FlightElytraMixin",
-    "BlockJujutsuFlightMixin"
+    "BlockJujutsuFlightMixin",
+    "AbyssGradeAdvancementMixin",
+    "PlayerPhysicalAbilityHealthMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

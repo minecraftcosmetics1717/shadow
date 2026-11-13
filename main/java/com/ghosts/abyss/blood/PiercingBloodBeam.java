@@ -3,6 +3,7 @@ package com.ghosts.abyss.blood;
 
 import com.ghosts.abyss.entity.PiercingBloodEntity;
 
+import net.mcreator.jujutsucraft.procedures.DamageFixProcedure;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.server.level.ServerLevel;
@@ -55,6 +56,71 @@ public final class PiercingBloodBeam {
             DAMAGE_STATES = new HashMap<>();
 
     private PiercingBloodBeam() {}
+
+    private static float calculateScaledDamage(
+            ServerPlayer player,
+            float baseDamage
+    ) {
+        var data = player.getPersistentData();
+
+        // Save the attack data used by Jujutsucraft.
+        boolean hadDamage = data.contains("Damage");
+        double previousDamage = data.getDouble("Damage");
+
+        boolean hadAttack = data.contains("attack");
+        boolean previousAttack = data.getBoolean("attack");
+
+        boolean hadKnockback = data.contains("knockback");
+        double previousKnockback = data.getDouble("knockback");
+
+        boolean hadIgnore = data.contains("ignore");
+        boolean previousIgnore = data.getBoolean("ignore");
+
+        try {
+            // Treat Piercing Blood as a cursed technique,
+            // not a physical attack.
+            data.putBoolean("attack", false);
+
+            // Supply the base damage to Jujutsucraft.
+            data.putDouble("Damage", baseDamage);
+
+            // Apply its normal Strength, Weakness,
+            // attack-attribute and Zone scaling.
+            DamageFixProcedure.execute(player);
+
+            return (float) Math.max(
+                    0.0D,
+                    data.getDouble("Damage")
+            );
+
+        } finally {
+
+            // Restore existing Jujutsucraft attack data.
+            if (hadDamage) {
+                data.putDouble("Damage", previousDamage);
+            } else {
+                data.remove("Damage");
+            }
+
+            if (hadAttack) {
+                data.putBoolean("attack", previousAttack);
+            } else {
+                data.remove("attack");
+            }
+
+            if (hadKnockback) {
+                data.putDouble("knockback", previousKnockback);
+            } else {
+                data.remove("knockback");
+            }
+
+            if (hadIgnore) {
+                data.putBoolean("ignore", previousIgnore);
+            } else {
+                data.remove("ignore");
+            }
+        }
+    }
 
     // Each activation gets its own damage history.
     private static final class DamageState {
@@ -246,7 +312,7 @@ public final class PiercingBloodBeam {
 
                 boolean damaged = target.hurt(
                         level.damageSources().magic(),
-                        INITIAL_DAMAGE
+                        calculateScaledDamage(player, INITIAL_DAMAGE)
                 );
 
                 if (damaged) {
@@ -280,7 +346,7 @@ public final class PiercingBloodBeam {
 
             boolean damaged = target.hurt(
                     level.damageSources().magic(),
-                    SUSTAINED_DAMAGE
+                    calculateScaledDamage(player, SUSTAINED_DAMAGE)
             );
 
             if (damaged) {
