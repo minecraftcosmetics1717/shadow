@@ -69,11 +69,20 @@ public final class GradeHealthCalculator {
                         : Math.min(level / 3.0, 4.0)
         );
 
+
         if (sukunaLevel > 0.0) {
             amplifier = Math.round(Math.max(amplifier, 14.0));
         }
 
-        // Vanilla Health Boost adds 4 HP per effect level.
+// Gojo (Curse Technique ID 2) receives 40 hearts
+// instead of 30 hearts at Special Grade.
+        if (AbyssGradeManager.getGrade(player) == AbyssGrade.SPECIAL_GRADE
+                && ct1 == 2.0) {
+            return 60.0D; // 20 base HP + 60 bonus HP = 80 HP
+        }
+
+// Vanilla Health Boost adds 4 HP per effect level.
         return 4.0 * (amplifier + 1.0);
+
     }
 }

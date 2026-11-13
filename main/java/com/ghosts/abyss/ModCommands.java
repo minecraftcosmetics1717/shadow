@@ -1,6 +1,7 @@
 package com.ghosts.abyss;
 
 import com.ghosts.abyss.blackflash.BlackFlashPoints;
+import com.ghosts.abyss.command.TotalityCommand;
 import com.ghosts.abyss.domain.OpenDomain;
 import com.ghosts.abyss.domain.RefinementPoints;
 import com.ghosts.abyss.progression.AdvTechPoints;
@@ -26,7 +27,7 @@ public class ModCommands {
 
    @SubscribeEvent
    public static void onRegisterCommands(RegisterCommandsEvent event) {
-      LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("jslop")
+      LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("abyss")
               .requires(src -> src.hasPermission(2));
 
       // /jslop refinement add/remove/set
@@ -163,6 +164,7 @@ public class ModCommands {
                       .executes(ctx -> grantCOT(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))));
 
       event.getDispatcher().register(root);
+       TotalityCommand.register(event.getDispatcher());
    }
 
    private static int grantHWB(CommandSourceStack src, ServerPlayer player) {
