@@ -112,7 +112,12 @@
     "ProximityDeathMixin",
     "ControlledBlueLifetimeMixin",
     "ControlledBlueTechniqueMixin",
-    "ControlledBlueBlockMixin"
+    "ControlledBlueBlockMixin",
+    "ControlledRedTechniqueMixin",
+    "ControlledRedPressMixin",
+    "ControlledRedReleaseMixin",
+    "ControlledRedSharedAIMixin",
+    "ControlledRedFlightMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

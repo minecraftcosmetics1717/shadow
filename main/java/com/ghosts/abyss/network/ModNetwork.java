@@ -171,6 +171,21 @@ public class ModNetwork {
               PacketBlueScroll::encode,
               PacketBlueScroll::new,
               PacketBlueScroll::handle);
+      CHANNEL.registerMessage(id++,
+              PacketFireRed.class,
+              PacketFireRed::encode,
+              PacketFireRed::new,
+              PacketFireRed::handle);
+      CHANNEL.registerMessage(id++,
+              PacketRedScroll.class,
+              PacketRedScroll::encode,
+              PacketRedScroll::new,
+              PacketRedScroll::handle);
+      CHANNEL.registerMessage(id++,
+              PacketRedControlState.class,
+              PacketRedControlState::encode,
+              PacketRedControlState::new,
+              PacketRedControlState::handle);
 
    }
 }
