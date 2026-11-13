@@ -19,12 +19,13 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PacketDistributor;
+import virtuoel.pehkui.api.ScaleTypes;
 
 public final class ControlledRedManager {
     public static final String MODE = "abyss_red_mode";
     public static final int CONTROLLED = 1;
     public static final int FIRED = 2;
-
+    public static final int FLYING = 3;
     private static final String ACTIVE = "abyss_red_active";
     private static final String PRESS_TICK = "abyss_red_press_tick";
     private static final String ENTITY_ID = "abyss_red_entity_id";
@@ -35,6 +36,7 @@ public final class ControlledRedManager {
     private static final double CE_PER_TICK = 5.0D;
     private static final double MIN_DISTANCE = 2.0D;
     private static final double MAX_DISTANCE = 24.0D;
+    private static final double INITIAL_DISTANCE = 3.0D;
 
     private ControlledRedManager() {}
 
@@ -50,7 +52,7 @@ public final class ControlledRedManager {
 
         data.putBoolean(ACTIVE, true);
         data.putLong(PRESS_TICK, player.serverLevel().getGameTime());
-        data.putDouble(DISTANCE, MAX_DISTANCE);
+        data.putDouble(DISTANCE, INITIAL_DISTANCE);
     }
 
     // Called BEFORE Jujutsucraft clears PRESS_Z on key release.
@@ -131,9 +133,14 @@ public final class ControlledRedManager {
             return;
         }
         Vec3 target = getTarget(player);
+
         red.setDeltaMovement(Vec3.ZERO);
         red.setPos(target.x, target.y, target.z);
         red.hasImpulse = true;
+
+// Damage and repel nearby entities.
+// Apply Blue-style block destruction.
+        ControlledRedEffects.tick(player, red);
     }
 
     private static void spawnControlled(ServerPlayer player) {
@@ -150,6 +157,7 @@ public final class ControlledRedManager {
         SetRangedAmmoProcedure.execute(player, red);
 
         CompoundTag tag = red.getPersistentData();
+        tag.putUUID("abyss_red_caster", player.getUUID());
         tag.putInt(MODE, CONTROLLED);
         tag.putDouble("cnt1", 0.0D);
         tag.putDouble("cnt6", 0.0D);
@@ -158,9 +166,10 @@ public final class ControlledRedManager {
 
         var health = red.getAttribute(Attributes.MAX_HEALTH);
         if (health != null) {
-            health.setBaseValue(40.0D);
-            red.setHealth(40.0F);
+            health.setBaseValue(200.0D);
+            red.setHealth(200.0F);
         }
+        ScaleTypes.BASE.getScaleData(red).setScale(2.3F);
 
         if (player.serverLevel().addFreshEntity(red)) {
             player.getPersistentData().putUUID(ENTITY_ID, red.getUUID());
@@ -182,38 +191,43 @@ public final class ControlledRedManager {
                 Math.min(MAX_DISTANCE, current + direction)));
     }
 
+
     public static void fire(ServerPlayer player) {
         if (!isValidControl(player)) {
             return;
         }
+
         RedEntity red = getControlledRed(player);
         if (red == null) {
             return;
         }
 
-        // Original AIRedProcedure advances its attack position using
-        // x_power/y_power/z_power. It does not need a new projectile type.
-        Vec3 power = player.getLookAngle().normalize().scale(3.0D);
+        Vec3 direction = player.getLookAngle().normalize();
         CompoundTag tag = red.getPersistentData();
-        tag.putDouble("x_power", power.x);
-        tag.putDouble("y_power", power.y);
-        tag.putDouble("z_power", power.z);
-        tag.putDouble("cnt1", 0.0D);
-        tag.putDouble("cnt_life", 0.0D);
-        tag.putDouble("cnt6", 0.0D);
-        tag.putDouble("x_pos", red.getX());
-        tag.putDouble("y_pos", red.getY());
-        tag.putDouble("z_pos", red.getZ());
-        tag.putInt(MODE, FIRED);
+
+        // Store the flight direction.
+        tag.putDouble("abyss_red_dir_x", direction.x);
+        tag.putDouble("abyss_red_dir_y", direction.y);
+        tag.putDouble("abyss_red_dir_z", direction.z);
+
+        tag.putDouble("abyss_red_travel", 0.0D);
+        tag.putInt(MODE, FLYING);
+
+        // Do not activate the original instant attack yet.
+        red.getEntityData().set(
+                RedEntity.DATA_flag_start,
+                false
+        );
 
         red.setYRot(player.getYRot());
         red.setXRot(player.getXRot());
         red.setDeltaMovement(Vec3.ZERO);
-        red.getEntityData().set(RedEntity.DATA_flag_start, true);
 
-        // Leave Red alive to execute JC's original shot on subsequent ticks.
+        // Restore the player's controls.
+        // Red remains alive and will fly independently.
         reset(player, true);
     }
+
 
     private static boolean isValidControl(ServerPlayer player) {
         CompoundTag data = player.getPersistentData();
