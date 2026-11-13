@@ -4,6 +4,7 @@ package com.ghosts.abyss.client;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketAnchorBlue;
 
+import com.ghosts.abyss.network.PacketBlueScroll;
 import net.minecraft.client.Minecraft;
 
 import net.minecraftforge.api.distmarker.Dist;
@@ -50,4 +51,36 @@ public final class ControlledBlueInput {
                 new PacketAnchorBlue()
         );
     }
+
+    @SubscribeEvent
+    public static void onMouseScroll(
+            InputEvent.MouseScrollingEvent event
+    ) {
+        Minecraft mc = Minecraft.getInstance();
+
+        if (mc.player == null || mc.screen != null) {
+            return;
+        }
+
+        if (!BlueControlClientState.isControlling()) {
+            return;
+        }
+
+        double scroll = event.getScrollDelta();
+
+        if (scroll == 0.0D) {
+            return;
+        }
+
+        // Prevent scrolling through hotbar slots
+        // while Blue is being controlled.
+        event.setCanceled(true);
+
+        int direction = scroll > 0.0D ? 1 : -1;
+
+        ModNetwork.CHANNEL.sendToServer(
+                new PacketBlueScroll(direction)
+        );
+    }
+
 }

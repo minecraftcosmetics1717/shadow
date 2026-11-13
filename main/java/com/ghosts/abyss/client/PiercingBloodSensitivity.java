@@ -18,54 +18,83 @@ import net.minecraftforge.fml.common.Mod;
 )
 public final class PiercingBloodSensitivity {
 
-    // 35% of the player's normal sensitivity.
-    private static final double FIRING_MULTIPLIER = 0.35D;
+    // Keep Piercing Blood's existing slowdown.
+    private static final double PIERCING_MULTIPLIER = 0.35D;
+
+    // Blue is slowed less than Piercing Blood.
+    private static final double BLUE_MULTIPLIER = 0.65D;
 
     private static Double originalSensitivity = null;
+    private static double appliedMultiplier = 1.0D;
 
     private PiercingBloodSensitivity() {}
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-
+    public static void onClientTick(
+            TickEvent.ClientTickEvent event
+    ) {
         if (event.phase != TickEvent.Phase.END) {
             return;
         }
 
         Minecraft mc = Minecraft.getInstance();
 
-        boolean firing = false;
+        if (mc.player == null || mc.level == null) {
+            BlueControlClientState.setControlling(false);
+        }
+
+        boolean piercingFiring = false;
 
         if (mc.level != null && mc.player != null) {
-
             for (Entity entity : mc.level.entitiesForRendering()) {
 
                 if (entity instanceof PiercingBloodEntity beam
                         && beam.getOwnerPlayer() == mc.player) {
 
-                    firing = true;
+                    piercingFiring = true;
                     break;
                 }
             }
         }
 
-        if (firing) {
+        boolean blueControlling =
+                BlueControlClientState.isControlling();
 
-            if (originalSensitivity == null) {
+        double wantedMultiplier;
 
-                originalSensitivity =
-                        mc.options.sensitivity().get();
+        if (piercingFiring) {
+            wantedMultiplier = PIERCING_MULTIPLIER;
+        } else if (blueControlling) {
+            wantedMultiplier = BLUE_MULTIPLIER;
+        } else {
+            wantedMultiplier = 1.0D;
+        }
 
+        if (wantedMultiplier == 1.0D) {
+
+            if (originalSensitivity != null) {
                 mc.options.sensitivity().set(
-                        originalSensitivity * FIRING_MULTIPLIER
+                        originalSensitivity
                 );
+
+                originalSensitivity = null;
             }
 
-        } else if (originalSensitivity != null) {
+            appliedMultiplier = 1.0D;
+            return;
+        }
 
-            mc.options.sensitivity().set(originalSensitivity);
+        if (originalSensitivity == null) {
+            originalSensitivity =
+                    mc.options.sensitivity().get();
+        }
 
-            originalSensitivity = null;
+        if (appliedMultiplier != wantedMultiplier) {
+            mc.options.sensitivity().set(
+                    originalSensitivity * wantedMultiplier
+            );
+
+            appliedMultiplier = wantedMultiplier;
         }
     }
 }

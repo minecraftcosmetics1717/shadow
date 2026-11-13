@@ -147,7 +147,6 @@ public class ModNetwork {
               PacketGojoFlightInput::encode,
               PacketGojoFlightInput::decode,
               PacketGojoFlightInput::handle);
-
       CHANNEL.registerMessage(
               id++,
               PacketFlightToggle.class,
@@ -160,6 +159,18 @@ public class ModNetwork {
               PacketAnchorBlue::encode,
               PacketAnchorBlue::new,
               PacketAnchorBlue::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketBlueControlState.class,
+              PacketBlueControlState::encode,
+              PacketBlueControlState::new,
+              PacketBlueControlState::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketBlueScroll.class,
+              PacketBlueScroll::encode,
+              PacketBlueScroll::new,
+              PacketBlueScroll::handle);
 
    }
 }

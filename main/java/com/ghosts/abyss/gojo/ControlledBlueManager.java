@@ -1,6 +1,8 @@
 
 package com.ghosts.abyss.gojo;
 
+import com.ghosts.abyss.network.ModNetwork;
+import com.ghosts.abyss.network.PacketBlueControlState;
 import com.ghosts.abyss.progression.GojoProgression;
 
 import net.mcreator.jujutsucraft.entity.BlueEntity;
@@ -17,6 +19,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.PacketDistributor;
 
 public final class ControlledBlueManager {
 
@@ -28,6 +31,10 @@ public final class ControlledBlueManager {
     public static final int ANCHORED = 2;
 
     private static final double MAX_DISTANCE = 24.0D;
+    private static final double MIN_DISTANCE = 2.0D;
+    private static final double SCROLL_STEP = 1.0D;
+    private static final String BLUE_DISTANCE =
+            "abyss_blue_control_distance";
     private static final double CE_PER_TICK = 1.0D;
     private static final int ANCHOR_DURATION = 200;
 
@@ -68,6 +75,7 @@ public final class ControlledBlueManager {
 
         if (data.hasUUID(ENTITY_ID)) {
             data.remove(ENTITY_ID);
+            syncCamera(player, false);
         }
 
         if (skill != 206 || !holding) {
@@ -84,7 +92,10 @@ public final class ControlledBlueManager {
     private static void spawn(ServerPlayer player) {
         BlueEntity blue = JujutsucraftModEntities.BLUE.get()
                 .create(player.serverLevel());
-
+        player.getPersistentData().putDouble(
+                BLUE_DISTANCE,
+                MAX_DISTANCE
+        );
         if (blue == null) {
             return;
         }
@@ -107,8 +118,8 @@ public final class ControlledBlueManager {
 
         var health = blue.getAttribute(Attributes.MAX_HEALTH);
         if (health != null) {
-            health.setBaseValue(40.0D);
-            blue.setHealth(40.0F);
+            health.setBaseValue(200.0D);
+            blue.setHealth(200.0F);
         }
 
         var size = blue.getAttribute(
@@ -121,13 +132,28 @@ public final class ControlledBlueManager {
         if (player.serverLevel().addFreshEntity(blue)) {
             player.getPersistentData()
                     .putUUID(ENTITY_ID, blue.getUUID());
+
+            syncCamera(player, true);
         }
     }
 
+
     private static Vec3 getCrosshairPosition(ServerPlayer player) {
+        CompoundTag data = player.getPersistentData();
+
+        double distance = data.contains(BLUE_DISTANCE)
+                ? data.getDouble(BLUE_DISTANCE)
+                : MAX_DISTANCE;
+
+        distance = Math.max(
+                MIN_DISTANCE,
+                Math.min(MAX_DISTANCE, distance)
+        );
+
         Vec3 start = player.getEyePosition();
+
         Vec3 end = start.add(
-                player.getLookAngle().scale(MAX_DISTANCE)
+                player.getLookAngle().scale(distance)
         );
 
         var hit = player.level().clip(new ClipContext(
@@ -142,6 +168,7 @@ public final class ControlledBlueManager {
                 ? end
                 : hit.getLocation();
     }
+
 
     private static void moveToCrosshair(
             ServerPlayer player,
@@ -202,6 +229,8 @@ public final class ControlledBlueManager {
         data.putInt(ANCHOR_TICKS, ANCHOR_DURATION);
 
         blue.setDeltaMovement(Vec3.ZERO);
+        player.getPersistentData().remove(BLUE_DISTANCE);
+        syncCamera(player, false);
         clearSkill(player);
     }
 
@@ -219,6 +248,7 @@ public final class ControlledBlueManager {
         if (remaining <= 0) {
             blue.discard();
             player.getPersistentData().remove(ENTITY_ID);
+            player.getPersistentData().remove(BLUE_DISTANCE);
         }
     }
 
@@ -228,7 +258,9 @@ public final class ControlledBlueManager {
     ) {
         blue.discard();
         player.getPersistentData().remove(ENTITY_ID);
+        syncCamera(player, false);
         clearSkill(player);
+        player.getPersistentData().remove(BLUE_DISTANCE);
     }
 
     private static void clearSkill(ServerPlayer player) {
@@ -267,7 +299,65 @@ public final class ControlledBlueManager {
         }
 
         player.getPersistentData().remove(ENTITY_ID);
+        player.getPersistentData().remove(BLUE_DISTANCE);
+        syncCamera(player, false);
         clearSkill(player);
+    }
+    private static void syncCamera(
+            ServerPlayer player,
+            boolean controlling
+    ) {
+        ModNetwork.CHANNEL.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new PacketBlueControlState(controlling)
+        );
+    }
+
+    public static void scrollDistance(
+            ServerPlayer player,
+            int direction
+    ) {
+        if (direction != 1 && direction != -1) {
+            return;
+        }
+
+        if (!GojoProgression.hasSixEyes(player)) {
+            return;
+        }
+
+        if (!player.getPersistentData()
+                .getBoolean("PRESS_Z")) {
+            return;
+        }
+
+        if ((int) player.getPersistentData()
+                .getDouble("skill") != 206) {
+            return;
+        }
+
+        BlueEntity blue = getBlue(player);
+
+        if (blue == null || blue.getPersistentData()
+                .getInt(MODE) != CONTROLLED) {
+            return;
+        }
+
+        CompoundTag data = player.getPersistentData();
+
+        double distance = data.contains(BLUE_DISTANCE)
+                ? data.getDouble(BLUE_DISTANCE)
+                : MAX_DISTANCE;
+
+// Scroll up (+1) = farther.
+// Scroll down (-1) = closer.
+        distance += direction * SCROLL_STEP;
+
+        distance = Math.max(
+                MIN_DISTANCE,
+                Math.min(MAX_DISTANCE, distance)
+        );
+
+        data.putDouble(BLUE_DISTANCE, distance);
     }
 
 }

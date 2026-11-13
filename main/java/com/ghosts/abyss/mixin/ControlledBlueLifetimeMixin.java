@@ -44,15 +44,20 @@ public abstract class ControlledBlueLifetimeMixin {
             return;
         }
 
-        // Prevent Jujutsucraft's normal lifetime from expiring.
-        blue.getPersistentData().putDouble("cnt1", 0.0D);
+        // JC increments cnt1 during AIBlueProcedure.
+        // Starting at 2 makes it reach 3, allowing
+        // block destruction without normal expiration.
+        blue.getPersistentData().putDouble("cnt1", 2.0D);
 
-        // Keep the original Blue AI active.
         blue.getEntityData().set(
                 BlueEntity.DATA_flag_start,
                 true
         );
 
-        blue.getPersistentData().putBoolean("circle", false);
+        // Stationary attraction, not moving Blue's
+        // normal "circle" flight behavior.
+        blue.getPersistentData().putBoolean(
+                "circle", false
+        );
     }
 }

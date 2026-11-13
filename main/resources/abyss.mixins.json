@@ -111,7 +111,8 @@
     "ProximityChatMixin",
     "ProximityDeathMixin",
     "ControlledBlueLifetimeMixin",
-    "ControlledBlueTechniqueMixin"
+    "ControlledBlueTechniqueMixin",
+    "ControlledBlueBlockMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",
