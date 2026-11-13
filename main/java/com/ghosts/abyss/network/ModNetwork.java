@@ -154,6 +154,12 @@ public class ModNetwork {
               PacketFlightToggle::encode,
               PacketFlightToggle::new,
               PacketFlightToggle::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketAnchorBlue.class,
+              PacketAnchorBlue::encode,
+              PacketAnchorBlue::new,
+              PacketAnchorBlue::handle);
 
    }
 }

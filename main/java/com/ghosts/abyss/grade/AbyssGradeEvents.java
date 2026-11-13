@@ -45,6 +45,7 @@ public final class AbyssGradeEvents {
     }
 
     // Restore the grade after logging in.
+
     @SubscribeEvent
     public static void onLogin(
             PlayerEvent.PlayerLoggedInEvent event) {
@@ -52,7 +53,14 @@ public final class AbyssGradeEvents {
         if (!(event.getEntity() instanceof ServerPlayer player))
             return;
 
-        if (AbyssGradeManager.hasGrade(player)) {
+        // First login: assign Abyss's default grade.
+        if (!AbyssGradeManager.hasGrade(player)) {
+            AbyssGradeManager.setGrade(
+                    player,
+                    AbyssGrade.UNGRADED
+            );
+        } else {
+            // Returning player: preserve their existing grade.
             AbyssGradeManager.syncJujutsucraft(player);
         }
     }

@@ -107,7 +107,11 @@
     "FlightElytraMixin",
     "BlockJujutsuFlightMixin",
     "AbyssGradeAdvancementMixin",
-    "PlayerPhysicalAbilityHealthMixin"
+    "PlayerPhysicalAbilityHealthMixin",
+    "ProximityChatMixin",
+    "ProximityDeathMixin",
+    "ControlledBlueLifetimeMixin",
+    "ControlledBlueTechniqueMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",
