@@ -51,7 +51,6 @@ public class Abyss {
       AbyssGamerules.init();
       ModItems.ITEMS.register(modBus);
       RikaMenuTypes.MENU_TYPES.register(modBus);
-
       // ===== Abyss =====
       ABYSS_ITEMS.register(modBus);
       JujutsuSlopEntities.ENTITY_TYPES.register(modBus);

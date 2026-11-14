@@ -171,5 +171,8 @@
   "key.abyss.phone": "Open Phone",
   "key.abyss.black_flash": "Black Flash",
   "effect.abyss.blood_poisoning": "Blood Poisoning",
-  "death.attack.blood_poisoning": "%1$s rotted"
+  "death.attack.blood_poisoning": "%1$s rotted",
+  "item.abyss.blindfold": "Blindfold",
+  "item.abyss.blindfold_bandages": "Bandages",
+  "item.abyss.sunglasses": "Sunglasses"
 }
