@@ -100,6 +100,9 @@ public final class SixEyesVisionHandler {
             case "jujutsucraft:sunglasses_helmet":
             case "jujutsucraft:blindfold_bandage_helmet":
             case "jujutsucraft:uniform_gojo_helmet":
+            case "abyss:blindfold":
+            case "abyss:blindfold_bandages":
+            case "abyss:sunglasses":
                 return false;
 
             case "jujutsucraft:mahoraga_wheel_helmet":

@@ -2,7 +2,7 @@
 	"format_version": "26.3",
 	"credit": "Made with Blockbench",
 	"textures": {
-		"1": "abyss:armor/gojo_blindfold"
+		"1": "abyss:item/gojo_blindfold"
 	},
 	"elements": [
 		{

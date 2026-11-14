@@ -2,7 +2,7 @@
 	"format_version": "26.3",
 	"credit": "Made with Blockbench",
 	"textures": {
-		"1": "abyss:armor/gojo_bandages"
+		"1": "abyss:item/gojo_bandages"
 	},
 	"elements": [
 		{
@@ -15,8 +15,8 @@
 				"east": {"uv": [0, 0, 16, 16], "texture": "#1"},
 				"south": {"uv": [0, 0, 16, 16], "texture": "#1"},
 				"west": {"uv": [0, 0, 16, 16], "texture": "#1"},
-				"up": {"uv": [0, 0, 1, 1], "texture": "#1"},
-				"down": {"uv": [0, 0, 1, 1], "texture": "#1"}
+				"up": {"uv": [0, 0, 2, 2], "texture": "#1"},
+				"down": {"uv": [0, 0, 2, 2], "texture": "#1"}
 			}
 		}
 	],
