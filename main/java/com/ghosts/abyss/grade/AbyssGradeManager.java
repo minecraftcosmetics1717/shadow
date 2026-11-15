@@ -2,6 +2,9 @@
 package com.ghosts.abyss.grade;
 
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementProgress;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 public final class AbyssGradeManager {
@@ -44,6 +47,67 @@ public final class AbyssGradeManager {
         });
 
         GradeCursedEnergy.update(player);
+    }
+
+    public static void syncRikaControl(ServerPlayer player) {
+        AbyssGrade grade = getGrade(player);
+
+        // Require Abyss Semi-Grade 1 or higher.
+        if (grade.ordinal() < AbyssGrade.SEMI_GRADE_1.ordinal()) {
+            return;
+        }
+
+        var vars = player.getCapability(
+                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
+        ).orElse(null);
+
+        if (vars == null) return;
+
+        // Yuta's cursed technique ID is 5.
+        boolean isYuta =
+                vars.PlayerCurseTechnique == 5.0D
+                        || vars.PlayerCurseTechnique2 == 5.0D;
+
+        if (!isYuta) return;
+
+        Advancement copy = player.server
+                .getAdvancements()
+                .getAdvancement(
+                        new ResourceLocation(
+                                "jujutsucraft",
+                                "skill_copy"
+                        )
+                );
+
+        Advancement rikaControl = player.server
+                .getAdvancements()
+                .getAdvancement(
+                        new ResourceLocation(
+                                "jujutsucraft",
+                                "skill_rika_control"
+                        )
+                );
+
+        if (copy == null || rikaControl == null) return;
+
+        // Preserve the Copy prerequisite.
+        if (!player.getAdvancements()
+                .getOrStartProgress(copy).isDone()) {
+            return;
+        }
+
+        AdvancementProgress progress = player
+                .getAdvancements()
+                .getOrStartProgress(rikaControl);
+
+        if (progress.isDone()) return;
+
+        for (String criterion : progress.getRemainingCriteria()) {
+            player.getAdvancements().award(
+                    rikaControl,
+                    criterion
+            );
+        }
     }
 
 }

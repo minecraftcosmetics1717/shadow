@@ -49,7 +49,8 @@ public final class PerfectBodyEvents {
     private static final Map<UUID, Boolean> lastKnownPerfectBody =
             new HashMap<>();
 
-    private PerfectBodyEvents() {}
+    private PerfectBodyEvents() {
+    }
 
     /**
      * Called once per server player tick after activation.
@@ -60,6 +61,7 @@ public final class PerfectBodyEvents {
         boostChantIfPerfectBody(player);
         checkPerfectBodyChanged(player);
     }
+
     public static void initializePlayer(ServerPlayer player) {
 
         boolean state = player.getPersistentData()
@@ -69,6 +71,7 @@ public final class PerfectBodyEvents {
 
         broadcastPerfectBodyToAll(player, state);
     }
+
     private static void applyPerfectBodyStats(ServerPlayer player) {
         boolean perfectBody =
                 player.getPersistentData().getBoolean("perfect_body");
@@ -83,53 +86,34 @@ public final class PerfectBodyEvents {
                 Attributes.ARMOR,
                 Attributes.ARMOR_TOUGHNESS
         )) {
-
             AttributeInstance inst = player.getAttribute(attribute);
 
-            if (inst != null) {
-                AttributeModifier existing =
-                        inst.getModifier(PERFECT_BODY_MODIFIER_UUID);
+            if (inst == null) continue;
 
-                if (shouldApply && existing == null) {
-                    inst.addPermanentModifier(
-                            new AttributeModifier(
-                                    PERFECT_BODY_MODIFIER_UUID,
-                                    PERFECT_BODY_MODIFIER_NAME,
-                                    0.25D,
-                                    AttributeModifier.Operation.MULTIPLY_TOTAL
-                            )
-                    );
+            AttributeModifier existing =
+                    inst.getModifier(PERFECT_BODY_MODIFIER_UUID);
 
-                    if (attribute == Attributes.MAX_HEALTH) {
-                        double currentMax = player.getMaxHealth();
+            if (shouldApply && existing == null) {
+                inst.addPermanentModifier(
+                        new AttributeModifier(
+                                PERFECT_BODY_MODIFIER_UUID,
+                                PERFECT_BODY_MODIFIER_NAME,
+                                0.25D,
+                                AttributeModifier.Operation.MULTIPLY_TOTAL
+                        )
+                );
 
-                        double roundedMax =
-                                Math.ceil(currentMax / 2.0D) * 2.0D;
+            } else if (!shouldApply && existing != null) {
+                inst.removeModifier(PERFECT_BODY_MODIFIER_UUID);
+            }
 
-                        inst.setBaseValue(roundedMax / 1.25D);
-
-                        player.setHealth(
-                                Math.min(
-                                        player.getHealth(),
-                                        player.getMaxHealth()
-                                )
-                        );
-                    }
-
-                } else if (!shouldApply && existing != null) {
-                    inst.removeModifier(PERFECT_BODY_MODIFIER_UUID);
-
-                    if (attribute == Attributes.MAX_HEALTH) {
-                        inst.setBaseValue(20.0D);
-
-                        player.setHealth(
-                                Math.min(
-                                        player.getHealth(),
-                                        player.getMaxHealth()
-                                )
-                        );
-                    }
-                }
+            if (attribute == Attributes.MAX_HEALTH) {
+                player.setHealth(
+                        Math.min(
+                                player.getHealth(),
+                                player.getMaxHealth()
+                        )
+                );
             }
         }
 
@@ -156,50 +140,30 @@ public final class PerfectBodyEvents {
         }
     }
 
+
     private static void applyPerfectBodyEffects(ServerPlayer player) {
-        if (isPerfectBodyActive(player)) {
+        if (!isPerfectBodyActive(player)) return;
 
-            MobEffect resistance =
-                    MobEffects.DAMAGE_RESISTANCE;
+        MobEffect resistance = MobEffects.DAMAGE_RESISTANCE;
 
-            MobEffectInstance existingRes =
-                    player.getEffect(resistance);
+        MobEffectInstance existingRes =
+                player.getEffect(resistance);
 
-            if (existingRes == null
-                    || existingRes.getAmplifier() < 3) {
+        if (existingRes == null
+                || existingRes.getAmplifier() < 3) {
 
-                player.addEffect(
-                        new MobEffectInstance(
-                                resistance,
-                                Integer.MAX_VALUE,
-                                3,
-                                false,
-                                false
-                        )
-                );
-            }
-
-            MobEffect healthBoost =
-                    MobEffects.HEALTH_BOOST;
-
-            MobEffectInstance existingHb =
-                    player.getEffect(healthBoost);
-
-            if (existingHb == null
-                    || existingHb.getAmplifier() < 9) {
-
-                player.addEffect(
-                        new MobEffectInstance(
-                                healthBoost,
-                                Integer.MAX_VALUE,
-                                9,
-                                false,
-                                false
-                        )
-                );
-            }
+            player.addEffect(
+                    new MobEffectInstance(
+                            resistance,
+                            Integer.MAX_VALUE,
+                            3,
+                            false,
+                            false
+                    )
+            );
         }
     }
+
 
     private static void boostChantIfPerfectBody(ServerPlayer player) {
         if (isPerfectBodyActive(player)) {

@@ -233,6 +233,9 @@ public class PhoneScreen extends Screen {
         }
 
 // Copy / CSM moves one slot to the right.
+
+        // Open the Copy phone screen for Yuta.
+        // Keep the existing advanced menu for CSM.
         boolean isYuta = YutaTab.isLocalPlayerYuta();
         boolean isCsm = ClientSetup.isLocalPlayerCsm(
                 Minecraft.getInstance()
@@ -242,14 +245,20 @@ public class PhoneScreen extends Screen {
             if (isInside(mouseX, mouseY,
                     secondX, secondY, ICON_SIZE)) {
 
-                Minecraft.getInstance().setScreen(
-                        new AdvancedJujutsuScreen(
-                                isYuta ? -1 : -2
-                        )
-                );
+                if (isYuta) {
+                    Minecraft.getInstance().setScreen(
+                            new PhoneCopyScreen()
+                    );
+                } else {
+                    Minecraft.getInstance().setScreen(
+                            new AdvancedJujutsuScreen(-2)
+                    );
+                }
+
                 return true;
             }
         }
+
 
         int dockY = top + PHONE_H - 31;
         int dockTotalW = 3 * DOCK_ICON_SIZE + 2 * DOCK_GAP;

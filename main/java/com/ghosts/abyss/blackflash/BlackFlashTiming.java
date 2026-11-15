@@ -45,7 +45,7 @@ public final class BlackFlashTiming {
     private static final int EARLY_BUFFER = 3;
     private static final int LATE_RECOVERY = 3;
 
-    private static final float BLACK_FLASH_MULTIPLIER = 2.5F;
+    private static final float BLACK_FLASH_MULTIPLIER = 4F;
 
     private static final class Attempt {
         long attackTick;

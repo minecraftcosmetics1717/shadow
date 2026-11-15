@@ -269,7 +269,7 @@ public class PhoneSoulScreen extends Screen {
         );
 
         String buttonText =
-                awareness >= 50 ? "MAXED" : "Upgrade";
+                awareness >= 50 ? "" : "Upgrade";
 
         g.drawCenteredString(
                 font,

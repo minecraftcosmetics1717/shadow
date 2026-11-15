@@ -91,7 +91,7 @@ public final class AbyssGradeEvents {
 
         // Check once per second instead of every tick.
         if (player.tickCount % 20 != 0) return;
-
+        AbyssGradeManager.syncRikaControl(player);
         int expectedLevel =
                 AbyssGradeManager.getGrade(player).getJcLevel();
 

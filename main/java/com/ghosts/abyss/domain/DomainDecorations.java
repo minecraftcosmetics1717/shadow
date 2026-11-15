@@ -255,13 +255,25 @@ public final class DomainDecorations {
      * Removes decorations belonging to this arena,
      * without affecting players, mobs, or other arenas.
      */
+
     public static void clear(ServerLevel level, DomainInstance inst) {
         if (level == null || inst == null) return;
-        for (Entity entity : level.getEntities((Entity) null, arenaBox(inst), e ->
-                e.getPersistentData().getBoolean("abyss_domain_decoration"))) {
+
+        // Remove all existing decorations in this arena.
+        for (Entity entity : level.getEntities(
+                (Entity) null,
+                arenaBox(inst),
+                e -> e.getPersistentData()
+                        .getBoolean("abyss_domain_decoration")
+        )) {
             entity.discard();
         }
+
+        // Allow Yuta's decorations to be generated again
+        // after the arena is rebuilt following a clash.
+        inst.yutaDecorationsSpawned.clear();
     }
+
 
     private static void spawnDecoration(
             ServerLevel level,
