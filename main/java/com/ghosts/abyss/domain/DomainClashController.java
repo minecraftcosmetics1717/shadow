@@ -7,7 +7,11 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraftforge.registries.ForgeRegistries;
+import com.ghosts.abyss.network.ModNetwork;
+import com.ghosts.abyss.network.PacketBoostDomainSky;
 
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.PacketDistributor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,6 +23,34 @@ import java.util.UUID;
 public final class DomainClashController {
 
     private DomainClashController() {}
+
+    public static void boostSkyForArena(
+            ServerLevel level,
+            DomainInstance inst
+    ) {
+        if (level == null || inst == null) {
+            return;
+        }
+
+        // Only notify players close to this arena.
+        double radius = DomainDimension.OUTER_RADIUS + 32.0D;
+        double radiusSq = radius * radius;
+
+        double cx = inst.arenaCenter.getX() + 0.5D;
+        double cy = inst.arenaCenter.getY();
+        double cz = inst.arenaCenter.getZ() + 0.5D;
+
+        for (ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(cx, cy, cz) > radiusSq) {
+                continue;
+            }
+
+            ModNetwork.CHANNEL.send(
+                    PacketDistributor.PLAYER.with(() -> player),
+                    new PacketBoostDomainSky()
+            );
+        }
+    }
 
     // Maximum influence advantage from domain strength.
     // Small enough that equally matched domains fight
@@ -148,10 +180,17 @@ public final class DomainClashController {
                 continue;
             }
 
+            ClashState state = STATES.get(slot);
 
-            ClashState state = STATES.computeIfAbsent(
-                    slot, key -> new ClashState()
-            );
+            if (state == null) {
+                // First tick of this clash.
+                state = new ClashState();
+                STATES.put(slot, state);
+
+                // Accelerate sky scanning for nearby players.
+                boostSkyForArena(level, inst);
+            }
+
 
             Set<UUID> activeIds = new HashSet<>();
             double totalPower = 0.0;

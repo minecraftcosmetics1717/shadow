@@ -35,8 +35,10 @@ public final class DomainSkyMaskRenderer {
     // Number of chunk sections to search around the player.
     private static final int HORIZONTAL_RANGE = 8;
     private static final int VERTICAL_RANGE = 8;
+
     private static final int INITIAL_CHECKS_PER_TICK = 24;
     private static final int NORMAL_CHECKS_PER_TICK = 8;
+
 
     private record SectionKey(int x, int y, int z) {}
 
@@ -75,8 +77,37 @@ public final class DomainSkyMaskRenderer {
     private static ClientLevel lastLevel;
     private static SectionKey lastCenter;
     private static boolean initialScan = true;
+    private static boolean boostedScan = false;
 
     private DomainSkyMaskRenderer() {}
+
+    public static void requestBoost() {
+        Minecraft mc = Minecraft.getInstance();
+
+        if (mc.level == null || mc.player == null) {
+            return;
+        }
+
+        if (!mc.level.dimension().equals(DomainDimension.ID)) {
+            return;
+        }
+
+        BlockPos playerPos = mc.player.blockPosition();
+
+        SectionKey center = new SectionKey(
+                playerPos.getX() >> 4,
+                playerPos.getY() >> 4,
+                playerPos.getZ() >> 4
+        );
+
+        lastCenter = center;
+
+        // Restart the scan from nearby sections.
+        // This does NOT delete existing sky masks.
+        rebuildQueue(center);
+
+        boostedScan = true;
+    }
 
     private static boolean abyss$applySkyFog(Minecraft mc) {
         if (mc.level == null || mc.player == null) {
@@ -168,24 +199,106 @@ public final class DomainSkyMaskRenderer {
             removeDistantSections(center);
         }
 
-// Restart a background scan after the previous pass finishes.
+        // Start another background pass if the queue is empty.
         if (QUEUE.isEmpty()) {
             initialScan = false;
+            boostedScan = false;
             rebuildQueue(center);
         }
 
-        int checks = initialScan
+        // Accelerate during initial loading or a clash transition.
+        int checks = (initialScan || boostedScan)
                 ? INITIAL_CHECKS_PER_TICK
                 : NORMAL_CHECKS_PER_TICK;
 
         for (int i = 0; i < checks; i++) {
             SectionKey key = QUEUE.poll();
 
-            if (key == null) break;
+            if (key == null) {
+                break;
+            }
 
             checkSection(level, key);
         }
 
+        // Return to normal speed after finishing the pass.
+        if (QUEUE.isEmpty()) {
+            initialScan = false;
+            boostedScan = false;
+        }
+    }
+
+    private static boolean shouldScanSection(
+            SectionKey key,
+            SectionKey playerCenter
+    ) {
+        Minecraft mc = Minecraft.getInstance();
+
+        if (mc.level == null ||
+                !mc.level.dimension().equals(DomainDimension.ID)) {
+            return true;
+        }
+
+        // Find the nearest arena slot.
+        int playerX = playerCenter.x() * 16;
+        int playerZ = playerCenter.z() * 16;
+
+        int slot = (int) Math.round(
+                (double) playerX / DomainDimension.SLOT_SPACING
+        );
+
+        if (slot < 0 || slot >= DomainDimension.MAX_SLOTS) {
+            return true;
+        }
+
+        int arenaX = slot * DomainDimension.SLOT_SPACING;
+        int arenaY = DomainDimension.CENTER_Y;
+        int arenaZ = 0;
+
+        // Only optimize when the player is near the arena.
+        int safeRange = DomainDimension.OUTER_RADIUS + 32;
+
+        if (Math.abs(playerX - arenaX) > safeRange ||
+                Math.abs(playerZ - arenaZ) > safeRange) {
+            return true;
+        }
+
+        // World-space bounds of this chunk section.
+        int minX = key.x() * 16;
+        int minY = key.y() * 16;
+        int minZ = key.z() * 16;
+
+        int maxX = minX + 15;
+        int maxY = minY + 15;
+        int maxZ = minZ + 15;
+
+        // Domain skies occupy the upper hemisphere.
+        // Include the floor and a small safety margin.
+        if (maxY < arenaY - 1) {
+            return false;
+        }
+
+        int dx = Math.max(
+                0,
+                Math.max(minX - arenaX, arenaX - maxX)
+        );
+
+        int dy = Math.max(
+                0,
+                Math.max(minY - arenaY, arenaY - maxY)
+        );
+
+        int dz = Math.max(
+                0,
+                Math.max(minZ - arenaZ, arenaZ - maxZ)
+        );
+
+        double radius = DomainDimension.OUTER_RADIUS + 1.0;
+
+        return (double) dx * dx
+                + (double) dy * dy
+                + (double) dz * dz
+                <= radius * radius;
     }
 
     private static void updateQueue(SectionKey center) {
@@ -212,9 +325,12 @@ public final class DomainSkyMaskRenderer {
                     );
 
                     // Only add sections not already scanned or queued.
-                    if (!queued.contains(key) && !CACHE.containsKey(key)) {
+                    if (!queued.contains(key)
+                            && !CACHE.containsKey(key)
+                            && shouldScanSection(key, center)) {
                         additions.add(key);
                     }
+
                 }
             }
         }
@@ -248,11 +364,16 @@ public final class DomainSkyMaskRenderer {
                 for (int z = -HORIZONTAL_RANGE;
                      z <= HORIZONTAL_RANGE; z++) {
 
-                    keys.add(new SectionKey(
+                    SectionKey key = new SectionKey(
                             center.x() + x,
                             center.y() + y,
                             center.z() + z
-                    ));
+                    );
+
+                    if (shouldScanSection(key, center)) {
+                        keys.add(key);
+                    }
+
                 }
             }
         }
@@ -998,5 +1119,6 @@ public final class DomainSkyMaskRenderer {
         lastLevel = null;
         lastCenter = null;
         initialScan = true;
+        boostedScan = false;
     }
 }

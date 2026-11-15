@@ -1,5 +1,6 @@
 package com.ghosts.abyss.util;
 
+import com.ghosts.abyss.network.PacketSyncPerfectBodyInventory;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -11,16 +12,28 @@ public final class InventoryRestrictionHelper {
 
     private InventoryRestrictionHelper() {}
 
+
     public static int getAllowedHotbarSlots(Player player) {
         if (player == null) {
             return NORMAL_SLOTS;
         }
 
-        return player.getPersistentData()
-                .getBoolean("perfect_body")
+        boolean perfectBody;
+
+        if (player.level().isClientSide) {
+            perfectBody =
+                    PacketSyncPerfectBodyInventory.CLIENT_STATES
+                            .getOrDefault(player.getUUID(), false);
+        } else {
+            perfectBody = player.getPersistentData()
+                    .getBoolean("perfect_body");
+        }
+
+        return perfectBody
                 ? PERFECT_BODY_SLOTS
                 : NORMAL_SLOTS;
     }
+
 
     public static boolean isSlotAllowed(
             Player player,

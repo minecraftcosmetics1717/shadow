@@ -186,6 +186,18 @@ public class ModNetwork {
               PacketRedControlState::encode,
               PacketRedControlState::new,
               PacketRedControlState::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketBoostDomainSky.class,
+              PacketBoostDomainSky::encode,
+              PacketBoostDomainSky::new,
+              PacketBoostDomainSky::handle);
+      CHANNEL.registerMessage(
+              id++,
+              PacketSyncPerfectBodyInventory.class,
+              PacketSyncPerfectBodyInventory::encode,
+              PacketSyncPerfectBodyInventory::new,
+              PacketSyncPerfectBodyInventory::handle);
 
    }
 }

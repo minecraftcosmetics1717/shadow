@@ -43,7 +43,7 @@ public final class ControlledRedManager {
     // Called AFTER Jujutsucraft's key-pressed procedure selects the skill.
     public static void onPressed(ServerPlayer player) {
         CompoundTag data = player.getPersistentData();
-        if (!GojoProgression.hasSixEyes(player)
+        if (!GojoProgression.hasSixEyesFlag(player)
                 || (int) data.getDouble("skill") != 207
                 || !data.getBoolean("PRESS_Z")
                 || data.getBoolean(ACTIVE)) {
@@ -68,7 +68,7 @@ public final class ControlledRedManager {
 
         if (red == null && heldTicks < HOLD_TICKS
                 && (int) data.getDouble("skill") == 207
-                && GojoProgression.hasSixEyes(player)) {
+                && GojoProgression.hasSixEyesFlag(player)) {
             // A short tap uses the actual Jujutsucraft procedure.
             data.putBoolean(ALLOW_ORIGINAL, true);
             try {
@@ -103,7 +103,7 @@ public final class ControlledRedManager {
         }
 
         if ((int) data.getDouble("skill") != 207
-                || !GojoProgression.hasSixEyes(player)) {
+                || !GojoProgression.hasSixEyesFlag(player)) {
             cancel(player);
             return;
         }
@@ -234,7 +234,7 @@ public final class ControlledRedManager {
         return data.getBoolean(ACTIVE)
                 && data.getBoolean("PRESS_Z")
                 && (int) data.getDouble("skill") == 207
-                && GojoProgression.hasSixEyes(player)
+                && GojoProgression.hasSixEyesFlag(player)
                 && getControlledRed(player) != null;
     }
 

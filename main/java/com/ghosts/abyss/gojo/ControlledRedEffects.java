@@ -107,13 +107,13 @@ public final class ControlledRedEffects {
     private static void destroyBlocks(RedEntity red) {
         CompoundTag data = red.getPersistentData();
 
-        // Use Blue-style block interactions.
-        // Negative knockback draws debris inward.
+        // Blue-style inward block interactions.
         data.putDouble("knockback", -1.0D);
-        data.putDouble("BlockDamage", 4.0D);
         data.putBoolean("noParticle", true);
 
+        // First pass: stronger destruction close to Red.
         data.putDouble("BlockRange", 1.5D);
+        data.putDouble("BlockDamage", 4.0D);
 
         BlockDestroyAllDirectionProcedure.execute(
                 red.level(),
@@ -123,7 +123,11 @@ public final class ControlledRedEffects {
                 red
         );
 
+        // Jujutsucraft resets both values after each call.
+        // Set them again for the wider second pass.
         data.putDouble("BlockRange", 3.0D);
+        data.putDouble("BlockDamage", 4.0D);
+        data.putBoolean("noParticle", true);
 
         BlockDestroyAllDirectionProcedure.execute(
                 red.level(),

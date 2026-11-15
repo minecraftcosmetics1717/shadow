@@ -33,7 +33,7 @@ public abstract class ControlledBlueTechniqueMixin {
             CallbackInfo ci
     ) {
         if (entity instanceof ServerPlayer player
-                && GojoProgression.hasSixEyes(player)) {
+                && GojoProgression.hasSixEyesFlag(player)) {
             // Abyss handles this Blue through its tick manager.
             ci.cancel();
         }

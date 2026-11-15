@@ -58,7 +58,7 @@ public final class ControlledBlueManager {
 
             if (mode == CONTROLLED) {
                 if (!holding || skill != 206
-                        || !GojoProgression.hasSixEyes(player)) {
+                        || !GojoProgression.hasSixEyesFlag(player)) {
                     stop(player, blue);
                     return;
                 }
@@ -82,7 +82,7 @@ public final class ControlledBlueManager {
             return;
         }
 
-        if (!GojoProgression.hasSixEyes(player)) {
+        if (!GojoProgression.hasSixEyesFlag(player)) {
             return;
         }
 
@@ -202,7 +202,7 @@ public final class ControlledBlueManager {
     }
 
     public static void anchor(ServerPlayer player) {
-        if (!GojoProgression.hasSixEyes(player)) {
+        if (!GojoProgression.hasSixEyesFlag(player)) {
             return;
         }
 
@@ -321,7 +321,7 @@ public final class ControlledBlueManager {
             return;
         }
 
-        if (!GojoProgression.hasSixEyes(player)) {
+        if (!GojoProgression.hasSixEyesFlag(player)) {
             return;
         }
 

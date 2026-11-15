@@ -50,7 +50,12 @@ public final class GojoProgression {
     public static boolean hasSixEyes(ServerPlayer player) {
         return hasAdvancement(player, SIX_EYES);
     }
-
+    public static boolean hasSixEyesFlag(ServerPlayer player) {
+        return player.getCapability(
+                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY,
+                (Direction) null
+        ).map(vars -> vars.FlagSixEyes).orElse(false);
+    }
     public static boolean isGojo(ServerPlayer player) {
         return player.getCapability(
                 JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY,

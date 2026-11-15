@@ -182,6 +182,7 @@ public class DomainArenaBuilder {
                 }
             }
 
+
             // Rebuild the winning domain's complete
             // sphere and floor.
             build(level, center, winningSkill);
@@ -189,7 +190,31 @@ public class DomainArenaBuilder {
         } finally {
             DomainDimBlockGuard.close();
         }
+
+        // The winning domain has been rebuilt.
+        // Accelerate sky scanning for players in this arena.
+        for (int slot = 0; slot < DomainDimension.MAX_SLOTS; slot++) {
+
+            DomainInstance inst =
+                    DomainInstanceManager.getBySlot(slot);
+
+            if (inst == null) {
+                continue;
+            }
+
+            if (!inst.arenaCenter.equals(center)) {
+                continue;
+            }
+
+            DomainClashController.boostSkyForArena(
+                    level,
+                    inst
+            );
+
+            break;
+        }
     }
+
 
     public static void build(ServerLevel level, BlockPos center, double skillDomain) {
         DomainDimBlockGuard.open();

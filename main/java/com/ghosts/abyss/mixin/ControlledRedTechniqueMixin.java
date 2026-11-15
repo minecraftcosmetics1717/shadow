@@ -18,7 +18,7 @@ public abstract class ControlledRedTechniqueMixin {
     private static void abyss$overrideSixEyesRed(LevelAccessor world,
             double x, double y, double z, Entity entity, CallbackInfo ci) {
         if (entity instanceof ServerPlayer player
-                && GojoProgression.hasSixEyes(player)
+                && GojoProgression.hasSixEyesFlag(player)
                 && !ControlledRedManager.allowOriginal(player)) {
             ci.cancel();
         }
