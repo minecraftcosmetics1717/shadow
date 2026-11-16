@@ -222,6 +222,12 @@ public class ModNetwork {
               PhoneMessagePackets.Signal::encode,
               PhoneMessagePackets.Signal::new,
               PhoneMessagePackets.Signal::handle);
+      CHANNEL.registerMessage(
+              id++,
+              RequestTeleportSyncPacket.class,
+              RequestTeleportSyncPacket::encode,
+              RequestTeleportSyncPacket::new,
+              RequestTeleportSyncPacket::handle);
 
    }
 }

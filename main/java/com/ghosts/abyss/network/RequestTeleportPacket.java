@@ -57,12 +57,6 @@ public class RequestTeleportPacket {
             // The recipient's signal is deliberately NOT checked here.
             // Their connection status must remain private.
             PhoneTeleportRequests.create(sender, target);
-
-            // Identical feedback regardless of recipient signal.
-            sender.displayClientMessage(
-                    Component.literal("Teleport request submitted."),
-                    true
-            );
         });
 
         ctx.setPacketHandled(true);

@@ -42,11 +42,14 @@ public final class PhoneSignal {
         boolean now = blocked(player);
         if (!LAST.containsKey(player.getUUID()) || LAST.get(player.getUUID()) != now) {
             sync(player);
-// Synchronize all stored messages when the player's
-// phone connection is restored.
+
             if (!now) {
                 PhoneMessages.sync(player);
             }
+
+            // Hide incoming requests when disconnected,
+            // restore valid ones when connection returns.
+            PhoneTeleportRequests.sync(player);
         }
     }
 
