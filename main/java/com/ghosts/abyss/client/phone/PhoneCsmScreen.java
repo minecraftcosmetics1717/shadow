@@ -132,7 +132,7 @@ public class PhoneCsmScreen extends Screen {
                 PHONE_W,
                 PHONE_H
         );
-
+        PhoneMessageUi.signal(g, left, top);
         g.drawString(
                 font,
                 getTime(),
@@ -791,14 +791,7 @@ public class PhoneCsmScreen extends Screen {
                 dockX, dockY,
                 DOCK_SIZE, DOCK_SIZE
         )) {
-
-            Minecraft.getInstance().setScreen(
-                    new PhonePlaceholderScreen(
-                            "Messages",
-                            "Quests & messages coming soon."
-                    )
-            );
-
+            Minecraft.getInstance().setScreen(new PhoneMessagesScreen());
             return true;
         }
 

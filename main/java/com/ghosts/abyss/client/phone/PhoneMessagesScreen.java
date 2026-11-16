@@ -32,7 +32,27 @@ public class PhoneMessagesScreen extends Screen {
 
     private void updateThreads() {
         threads.clear();
-        threads.addAll(PhoneMessageClient.threads());
+
+        Minecraft connectionCheck = Minecraft.getInstance();
+
+        if (connectionCheck.getConnection() != null) {
+            for (PhoneMessageClient.Thread thread : PhoneMessageClient.threads()) {
+
+                if (thread.quest()) {
+                    threads.add(thread);
+                    continue;
+                }
+
+                try {
+                    UUID playerId = UUID.fromString(thread.id());
+
+                    if (connectionCheck.getConnection().getPlayerInfo(playerId) != null) {
+                        threads.add(thread);
+                    }
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+        }
         Minecraft mc = Minecraft.getInstance();
         if (mc.getConnection() == null || mc.player == null) return;
         UUID self = mc.player.getUUID();

@@ -70,6 +70,7 @@ public class PhoneCopyScreen extends Screen {
         renderBackground(g);
         g.blit(PHONE_BG, left, top, 0, 0,
                 PHONE_W, PHONE_H, PHONE_W, PHONE_H);
+        PhoneMessageUi.signal(g, left, top);
         g.drawString(font, getTime(), left + 8, top + 10, TEXT, false);
         g.drawCenteredString(font, "Copy", left + PHONE_W / 2, top + 28, TEXT);
 
@@ -299,8 +300,7 @@ public class PhoneCopyScreen extends Screen {
         int dockY = top + PHONE_H - 31;
         int dockX = left + (PHONE_W - (3 * DOCK_SIZE + 2 * DOCK_GAP)) / 2;
         if (inside(mx, my, dockX, dockY, DOCK_SIZE, DOCK_SIZE)) {
-            Minecraft.getInstance().setScreen(new PhonePlaceholderScreen(
-                    "Messages", "Quests & messages coming soon."));
+            Minecraft.getInstance().setScreen(new PhoneMessagesScreen());
             return true;
         }
         if (inside(mx, my, dockX + DOCK_SIZE + DOCK_GAP,

@@ -1,5 +1,6 @@
 package com.ghosts.abyss.network;
 
+import com.ghosts.abyss.phone.PhoneSignal;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,6 +39,26 @@ public class RespondTeleportPacket {
 
             if (requester == null) {
                 target.displayClientMessage(Component.literal("Player is no longer online."), true);
+                return;
+            }
+
+            if (PhoneSignal.blocked(target)
+                    || PhoneSignal.blocked(requester)) {
+
+                target.displayClientMessage(
+                        Component.literal(
+                                "Teleport failed: no phone connection."
+                        ),
+                        true
+                );
+
+                requester.displayClientMessage(
+                        Component.literal(
+                                "Teleport failed: no phone connection."
+                        ),
+                        true
+                );
+
                 return;
             }
 

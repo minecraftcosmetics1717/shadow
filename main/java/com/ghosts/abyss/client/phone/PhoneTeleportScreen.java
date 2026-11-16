@@ -53,7 +53,7 @@ public class PhoneTeleportScreen extends Screen {
 
         // Same phone background
         g.blit(PHONE_BG, left, top, 0, 0, PHONE_W, PHONE_H, PHONE_W, PHONE_H);
-
+        PhoneMessageUi.signal(g, left, top);
         // In-game time
         g.drawString(font, getInGameTimeString(), left + 8, top + 10, 0xFFE6EDF3, false);
 
@@ -88,8 +88,9 @@ public class PhoneTeleportScreen extends Screen {
             }
         }
 
-        // Back hint
-        g.drawCenteredString(font, "", left + PHONE_W / 2, top + PHONE_H - 22, 0xFF555555);
+// Bottom phone dock
+// Bottom phone dock
+        PhoneMessageUi.dock(g, left, top);
 
         super.render(g, mouseX, mouseY, partialTick);
     }
@@ -107,11 +108,37 @@ public class PhoneTeleportScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != 0 || playerNames.isEmpty()) {
+        if (button != 0) {
             return super.mouseClicked(mouseX, mouseY, button);
         }
+        if (button == 0) {
+            int dockX = left + 26;
+            int dockY = top + 209;
 
-        int listTop = top + 68;
+            if (PhoneMessageUi.inside(mouseX, mouseY,
+                    dockX, dockY, 24, 24)) {
+
+                minecraft.setScreen(new PhoneMessagesScreen());
+                return true;
+            }
+
+            if (PhoneMessageUi.inside(mouseX, mouseY,
+                    dockX + 32, dockY, 24, 24)) {
+
+                minecraft.setScreen(new PhoneMapScreen());
+                return true;
+            }
+
+            if (PhoneMessageUi.inside(mouseX, mouseY,
+                    dockX + 64, dockY, 24, 24)) {
+
+                return true; // Already on Teleport
+            }
+        }
+        if (playerNames.isEmpty()) {
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
+        int listTop = top + 54;
         int listBottom = top + PHONE_H - 36;
         int rowH = 16;
         int maxVisible = (listBottom - listTop) / rowH;
@@ -141,7 +168,7 @@ public class PhoneTeleportScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        int listTop = top + 68;
+        int listTop = top + 54;
         int listBottom = top + PHONE_H - 36;
         int rowH = 16;
         int maxVisible = (listBottom - listTop) / rowH;

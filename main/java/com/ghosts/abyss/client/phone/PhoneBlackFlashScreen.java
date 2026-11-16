@@ -80,7 +80,7 @@ public class PhoneBlackFlashScreen extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(g);
         g.blit(PHONE_BG, left, top, 0, 0, PHONE_W, PHONE_H, PHONE_W, PHONE_H);
-
+        PhoneMessageUi.signal(g, left, top);
         // Fixed: time + title
         g.drawString(font, getInGameTimeString(), left + 8, top + 10, COL_TITLE, false);
         g.drawCenteredString(font, "Black Flash", left + PHONE_W / 2, top + 28, COL_TITLE);
@@ -430,7 +430,7 @@ public class PhoneBlackFlashScreen extends Screen {
         int tpX  = dockStartX + 2 * (DOCK_ICON_SIZE + DOCK_GAP);
 
         if (isInside(mouseX, mouseY, msgX, dockY, DOCK_ICON_SIZE, DOCK_ICON_SIZE)) {
-            Minecraft.getInstance().setScreen(new PhonePlaceholderScreen("Messages", "Quests & messages coming soon."));
+            Minecraft.getInstance().setScreen(new PhoneMessagesScreen());
             return true;
         }
         if (isInside(mouseX, mouseY, mapX, dockY, DOCK_ICON_SIZE, DOCK_ICON_SIZE)) {

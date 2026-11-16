@@ -25,7 +25,7 @@ final class PhoneMessageUi {
         signal(g, left, top);
     }
 
-    static void signal(GuiGraphics g, int left, int top) {
+    public static void signal(GuiGraphics g, int left, int top) {
         boolean blocked = PhoneMessageClient.blocked();
         int color = blocked ? 0xFFFF2020 : 0xFFFFFFFF;
         int x = left + W - 23, y = top + 9;

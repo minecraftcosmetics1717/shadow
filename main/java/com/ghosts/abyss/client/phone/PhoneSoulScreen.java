@@ -85,7 +85,7 @@ public class PhoneSoulScreen extends Screen {
                 PHONE_W,
                 PHONE_H
         );
-
+        PhoneMessageUi.signal(g, left, top);
         g.drawString(
                 font,
                 getInGameTimeString(),
@@ -378,12 +378,7 @@ public class PhoneSoulScreen extends Screen {
                 dockStartX, dockY,
                 DOCK_ICON_SIZE, DOCK_ICON_SIZE
         )) {
-            Minecraft.getInstance().setScreen(
-                    new PhonePlaceholderScreen(
-                            "Messages",
-                            "Quests & messages coming soon."
-                    )
-            );
+            Minecraft.getInstance().setScreen(new PhoneMessagesScreen());
             return true;
         }
 
