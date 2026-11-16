@@ -46,24 +46,48 @@ public final class GradeHealthHandler {
         AttributeModifier existing =
                 attribute.getModifier(HEALTH_UUID);
 
-        if (existing != null && existing.getAmount() != bonus) {
-            attribute.removeModifier(HEALTH_UUID);
-            existing = null;
-        }
+        // Only change our modifier if the calculated bonus
+        // is actually different.
+        boolean needsUpdate =
+                (existing == null && bonus > 0.0)
+                        || (existing != null
+                        && Double.compare(existing.getAmount(), bonus) != 0);
 
-        if (bonus > 0.0 && existing == null) {
-            attribute.addPermanentModifier(
-                    new AttributeModifier(
-                            HEALTH_UUID,
-                            "Abyss Grade Health",
-                            bonus,
-                            AttributeModifier.Operation.ADDITION
-                    )
+        if (needsUpdate) {
+
+            // Remember the player's current health before
+            // changing their maximum-health attribute.
+            float previousHealth = player.getHealth();
+
+            // Remove the old Abyss modifier if present.
+            if (existing != null) {
+                attribute.removeModifier(HEALTH_UUID);
+            }
+
+            // Apply the newly calculated Abyss modifier.
+            if (bonus > 0.0) {
+                attribute.addPermanentModifier(
+                        new AttributeModifier(
+                                HEALTH_UUID,
+                                "Abyss Grade Health",
+                                bonus,
+                                AttributeModifier.Operation.ADDITION
+                        )
+                );
+            }
+
+            // Restore the previous health if the modifier
+            // replacement temporarily clamped it.
+            //
+            // Never exceed the new maximum health.
+            float restoredHealth = Math.min(
+                    previousHealth,
+                    player.getMaxHealth()
             );
-        }
 
-        if (bonus <= 0.0 && existing != null) {
-            attribute.removeModifier(HEALTH_UUID);
+            if (player.getHealth() < restoredHealth) {
+                player.setHealth(restoredHealth);
+            }
         }
 
         // Remove legacy infinite Health Boost from JC.

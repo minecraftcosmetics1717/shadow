@@ -1,6 +1,7 @@
 
 package com.ghosts.abyss.client.sixeyes;
 
+import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -8,6 +9,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public final class SixEyesGlowRules {
@@ -62,7 +64,20 @@ public final class SixEyesGlowRules {
                 == SixEyesEntityColors.ThermalType.REVERSE_CURSED_TECHNIQUE) {
             return 0xFFFFFF;
         }
+// Players with Okkotsu's Copy technique glow pink.
+        if (entity instanceof Player player) {
 
+            boolean hasOkkotsu = player.getCapability(
+                    JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
+            ).map(data ->
+                    data.PlayerCurseTechnique == 5.0
+                            || data.PlayerCurseTechnique2 == 5.0
+            ).orElse(false);
+
+            if (hasOkkotsu) {
+                return 0xFF67BC;
+            }
+        }
         if (id != null && "jujutsucraft".equals(id.getNamespace())) {
             switch (id.getPath()) {
 

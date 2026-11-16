@@ -17,7 +17,9 @@ public final class GradeHealthCalculator {
 
         if (vars == null) return 0.0;
 
-        double level = vars.PlayerLevel;
+// Abyss's stored grade controls the health calculation.
+// JC's PlayerLevel can no longer temporarily change our health.
+        double level = AbyssGradeManager.getGrade(player).getJcLevel();
         double ct1 = vars.PlayerCurseTechnique;
         double ct2 = vars.PlayerCurseTechnique2;
         double sukunaLevel = 0.0;
