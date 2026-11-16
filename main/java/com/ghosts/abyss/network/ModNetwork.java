@@ -199,5 +199,29 @@ public class ModNetwork {
               PacketSyncPerfectBodyInventory::new,
               PacketSyncPerfectBodyInventory::handle);
 
+      CHANNEL.registerMessage(id++,
+              PhoneMessagePackets.Request.class,
+              PhoneMessagePackets.Request::encode,
+              PhoneMessagePackets.Request::new,
+              PhoneMessagePackets.Request::handle);
+
+      CHANNEL.registerMessage(id++,
+              PhoneMessagePackets.Send.class,
+              PhoneMessagePackets.Send::encode,
+              PhoneMessagePackets.Send::new,
+              PhoneMessagePackets.Send::handle);
+
+      CHANNEL.registerMessage(id++,
+              PhoneMessagePackets.Sync.class,
+              PhoneMessagePackets.Sync::encode,
+              PhoneMessagePackets.Sync::new,
+              PhoneMessagePackets.Sync::handle);
+
+      CHANNEL.registerMessage(id++,
+              PhoneMessagePackets.Signal.class,
+              PhoneMessagePackets.Signal::encode,
+              PhoneMessagePackets.Signal::new,
+              PhoneMessagePackets.Signal::handle);
+
    }
 }

@@ -65,7 +65,7 @@ public class PhoneScreen extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(g);
         g.blit(PHONE_BG, left, top, 0, 0, PHONE_W, PHONE_H, PHONE_W, PHONE_H);
-
+        PhoneMessageUi.signal(g, left, top);
         // Time
         g.drawString(font, getInGameTimeString(), left + 8, top + 10, 0xFFE6EDF3, false);
 
@@ -245,13 +245,14 @@ public class PhoneScreen extends Screen {
             if (isInside(mouseX, mouseY,
                     secondX, secondY, ICON_SIZE)) {
 
+
                 if (isYuta) {
                     Minecraft.getInstance().setScreen(
                             new PhoneCopyScreen()
                     );
                 } else {
                     Minecraft.getInstance().setScreen(
-                            new AdvancedJujutsuScreen(-2)
+                            new PhoneCsmScreen()
                     );
                 }
 
@@ -268,7 +269,9 @@ public class PhoneScreen extends Screen {
         int tpX  = dockStartX + 2 * (DOCK_ICON_SIZE + DOCK_GAP);
 
         if (isInside(mouseX, mouseY, msgX, dockY, DOCK_ICON_SIZE)) {
-            Minecraft.getInstance().setScreen(new PhonePlaceholderScreen("Messages", "Quests & messages coming soon."));
+            Minecraft.getInstance().setScreen(
+                    new PhoneMessagesScreen()
+            );
             return true;
         }
         if (isInside(mouseX, mouseY, mapX, dockY, DOCK_ICON_SIZE)) {

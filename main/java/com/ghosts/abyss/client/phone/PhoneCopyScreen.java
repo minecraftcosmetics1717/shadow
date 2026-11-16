@@ -175,7 +175,7 @@ public class PhoneCopyScreen extends Screen {
                             27, 12, " Edit", true,
                             () -> startRename(index, entry.name()));
                     drawButton(g, mx, my, x + 95, rowY + 16,
-                            21, 12, " x", true, () -> {
+                            21, 12, " X", true, () -> {
                                 cancelRename();
                                 ModNetwork.CHANNEL.sendToServer(
                                         new PacketRemoveYutaTechnique(index));

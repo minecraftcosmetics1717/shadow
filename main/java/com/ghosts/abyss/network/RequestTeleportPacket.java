@@ -1,4 +1,7 @@
+
 package com.ghosts.abyss.network;
+
+import com.ghosts.abyss.phone.PhoneSignal;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -9,6 +12,7 @@ import net.minecraftforge.network.PacketDistributor;
 import java.util.function.Supplier;
 
 public class RequestTeleportPacket {
+
     private final String targetName;
 
     public RequestTeleportPacket(String targetName) {
@@ -24,35 +28,90 @@ public class RequestTeleportPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
+
         ctx.get().enqueueWork(() -> {
+
             ServerPlayer sender = ctx.get().getSender();
-            if (sender == null) return;
 
-            // Later: block teleport under specific circumstances
-            if (sender.getPersistentData().getBoolean("jreborn_teleport_disabled")) {
-                sender.displayClientMessage(Component.literal("Teleport is currently disabled."), true);
+            if (sender == null) {
                 return;
             }
 
-            ServerPlayer target = sender.server.getPlayerList().getPlayerByName(targetName);
+            // ===================================
+            // CHECK SENDER'S PHONE CONNECTION
+            // ===================================
+
+            if (PhoneSignal.blocked(sender)) {
+
+                sender.displayClientMessage(
+                        Component.literal(
+                                "No phone connection."
+                        ),
+                        true
+                );
+
+                return;
+            }
+
+            // ===================================
+            // FIND TARGET PLAYER
+            // ===================================
+
+            ServerPlayer target = sender.server
+                    .getPlayerList()
+                    .getPlayerByName(targetName);
+
             if (target == null) {
-                sender.displayClientMessage(Component.literal("Player not found."), true);
+
+                sender.displayClientMessage(
+                        Component.literal(
+                                "Player not found."
+                        ),
+                        true
+                );
+
                 return;
             }
 
-            if (target.getPersistentData().getBoolean("jreborn_teleport_disabled")) {
-                sender.displayClientMessage(Component.literal(targetName + " cannot receive teleports right now."), true);
+            // ===================================
+            // CHECK TARGET'S PHONE CONNECTION
+            // ===================================
+
+            if (PhoneSignal.blocked(target)) {
+
+                sender.displayClientMessage(
+                        Component.literal(
+                                targetName
+                                        + " has no phone connection."
+                        ),
+                        true
+                );
+
                 return;
             }
 
-            // Send request to target
+            // ===================================
+            // SEND TELEPORT REQUEST
+            // ===================================
+
             ModNetwork.CHANNEL.send(
-                    PacketDistributor.PLAYER.with(() -> target),
-                    new TeleportRequestNotifyPacket(sender.getGameProfile().getName())
+                    PacketDistributor.PLAYER.with(
+                            () -> target
+                    ),
+                    new TeleportRequestNotifyPacket(
+                            sender.getGameProfile().getName()
+                    )
             );
 
-            sender.displayClientMessage(Component.literal("Request sent to " + targetName), true);
+            sender.displayClientMessage(
+                    Component.literal(
+                            "Request sent to " + targetName
+                    ),
+                    true
+            );
+
         });
+
         ctx.get().setPacketHandled(true);
     }
 }
