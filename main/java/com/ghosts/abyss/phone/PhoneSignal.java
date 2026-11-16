@@ -54,6 +54,18 @@ public final class PhoneSignal {
     }
 
     @SubscribeEvent
+    public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        PhoneSignal.sync(player);
+        PhoneTeleportRequests.sync(player);
+
+        if (!PhoneSignal.blocked(player)) {
+            PhoneMessages.sync(player);
+        }
+    }
+
+    @SubscribeEvent
     public static void logout(PlayerEvent.PlayerLoggedOutEvent event) {
         LAST.remove(event.getEntity().getUUID());
     }
