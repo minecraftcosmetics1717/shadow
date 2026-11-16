@@ -14,6 +14,7 @@ import java.util.UUID;
 public final class PhoneMessages {
     public static final int MAX_TEXT = 180;
     private static final int MAX_STORED = 250;
+    private static final int MAX_PER_CONVERSATION = 15;
     private static final String KEY = "abyss_phone_messages";
     private static final String RATE_KEY = "abyss_phone_last_send";
 
@@ -33,8 +34,36 @@ public final class PhoneMessages {
     private static void append(ServerPlayer player, CompoundTag message) {
         CompoundTag persistent = data(player);
         ListTag messages = stored(player);
+
+        String thread = message.getString("thread");
+        boolean quest = message.getBoolean("quest");
+
         messages.add(message);
-        while (messages.size() > MAX_STORED) messages.remove(0);
+
+        // Limit each player conversation to its 15 newest messages.
+        if (!quest) {
+            int count = 0;
+
+            for (int i = messages.size() - 1; i >= 0; i--) {
+                CompoundTag existing = messages.getCompound(i);
+
+                if (!existing.getBoolean("quest")
+                        && existing.getString("thread").equals(thread)) {
+
+                    count++;
+
+                    if (count > MAX_PER_CONVERSATION) {
+                        messages.remove(i);
+                    }
+                }
+            }
+        }
+
+        // Keep an overall safety limit for stored phone messages.
+        while (messages.size() > MAX_STORED) {
+            messages.remove(0);
+        }
+
         persistent.put(KEY, messages);
     }
 
@@ -67,9 +96,14 @@ public final class PhoneMessages {
         String body = raw.strip();
         if (body.isEmpty() || body.length() > MAX_TEXT) return;
         ServerPlayer target = sender.server.getPlayerList().getPlayer(recipientId);
-        if (target == null || target == sender || PhoneSignal.blocked(target)) {
-            sender.displayClientMessage(net.minecraft.network.chat.Component.literal(
-                    "That player is offline or has no connection."), true);
+
+        if (target == null || target == sender) {
+            sender.displayClientMessage(
+                    net.minecraft.network.chat.Component.literal(
+                            "Unable to send message."
+                    ),
+                    true
+            );
             return;
         }
         long now = sender.serverLevel().getGameTime();
@@ -79,10 +113,33 @@ public final class PhoneMessages {
 
         String senderName = sender.getGameProfile().getName();
         String targetName = target.getGameProfile().getName();
-        append(sender, entry(target.getUUID().toString(), targetName, body, true, false, now));
-        append(target, entry(sender.getUUID().toString(), senderName, body, false, false, now));
+// Save the message to both players' conversation histories.
+        append(sender, entry(
+                target.getUUID().toString(),
+                targetName,
+                body,
+                true,
+                false,
+                now
+        ));
+
+        append(target, entry(
+                sender.getUUID().toString(),
+                senderName,
+                body,
+                false,
+                false,
+                now
+        ));
+
+// Update the sender's conversation immediately.
         sync(sender);
-        sync(target);
+
+// Only synchronize the recipient if they have a connection.
+// Otherwise, their message remains stored until reconnection.
+        if (!PhoneSignal.blocked(target)) {
+            sync(target);
+        }
     }
 
     // Quest integration: call from SERVER quest code. Read-only thread beginning with "quest:".

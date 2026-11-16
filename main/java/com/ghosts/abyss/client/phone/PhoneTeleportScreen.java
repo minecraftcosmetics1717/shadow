@@ -153,11 +153,7 @@ public class PhoneTeleportScreen extends Screen {
 
                 String target = playerNames.get(idx);
                 ModNetwork.CHANNEL.sendToServer(new RequestTeleportPacket(target));
-
-                if (minecraft != null && minecraft.player != null) {
-                    minecraft.player.displayClientMessage(
-                            Component.literal("Teleport request sent to " + target), true);
-                }
+                
                 // Go back to main phone after sending
                 minecraft.setScreen(new PhoneScreen());
                 return true;

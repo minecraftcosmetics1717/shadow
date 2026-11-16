@@ -2,12 +2,12 @@
 package com.ghosts.abyss.network;
 
 import com.ghosts.abyss.phone.PhoneSignal;
+import com.ghosts.abyss.phone.PhoneTeleportRequests;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
 
 import java.util.function.Supplier;
 
@@ -27,91 +27,44 @@ public class RequestTeleportPacket {
         buf.writeUtf(targetName, 32);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkEvent.Context> supplier) {
+        NetworkEvent.Context ctx = supplier.get();
 
-        ctx.get().enqueueWork(() -> {
-
-            ServerPlayer sender = ctx.get().getSender();
-
-            if (sender == null) {
-                return;
-            }
-
-            // ===================================
-            // CHECK SENDER'S PHONE CONNECTION
-            // ===================================
+        ctx.enqueueWork(() -> {
+            ServerPlayer sender = ctx.getSender();
+            if (sender == null) return;
 
             if (PhoneSignal.blocked(sender)) {
-
                 sender.displayClientMessage(
-                        Component.literal(
-                                "No phone connection."
-                        ),
+                        Component.literal("No phone connection."),
                         true
                 );
-
                 return;
             }
-
-            // ===================================
-            // FIND TARGET PLAYER
-            // ===================================
 
             ServerPlayer target = sender.server
                     .getPlayerList()
                     .getPlayerByName(targetName);
 
-            if (target == null) {
-
+            if (target == null || target == sender) {
                 sender.displayClientMessage(
-                        Component.literal(
-                                "Player not found."
-                        ),
+                        Component.literal("Unable to send teleport request."),
                         true
                 );
-
                 return;
             }
 
-            // ===================================
-            // CHECK TARGET'S PHONE CONNECTION
-            // ===================================
+            // The recipient's signal is deliberately NOT checked here.
+            // Their connection status must remain private.
+            PhoneTeleportRequests.create(sender, target);
 
-            if (PhoneSignal.blocked(target)) {
-
-                sender.displayClientMessage(
-                        Component.literal(
-                                targetName
-                                        + " has no phone connection."
-                        ),
-                        true
-                );
-
-                return;
-            }
-
-            // ===================================
-            // SEND TELEPORT REQUEST
-            // ===================================
-
-            ModNetwork.CHANNEL.send(
-                    PacketDistributor.PLAYER.with(
-                            () -> target
-                    ),
-                    new TeleportRequestNotifyPacket(
-                            sender.getGameProfile().getName()
-                    )
-            );
-
+            // Identical feedback regardless of recipient signal.
             sender.displayClientMessage(
-                    Component.literal(
-                            "Request sent to " + targetName
-                    ),
+                    Component.literal("Teleport request submitted."),
                     true
             );
-
         });
 
-        ctx.get().setPacketHandled(true);
+        ctx.setPacketHandled(true);
     }
 }

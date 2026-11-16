@@ -42,8 +42,11 @@ public final class PhoneSignal {
         boolean now = blocked(player);
         if (!LAST.containsKey(player.getUUID()) || LAST.get(player.getUUID()) != now) {
             sync(player);
-            // Deliver quest messages queued during signal loss when reconnecting.
-            if (!now) com.ghosts.abyss.phone.PhoneMessages.sync(player);
+// Synchronize all stored messages when the player's
+// phone connection is restored.
+            if (!now) {
+                PhoneMessages.sync(player);
+            }
         }
     }
 
