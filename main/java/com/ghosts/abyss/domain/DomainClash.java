@@ -66,6 +66,8 @@ public final class DomainClash {
             abortFailedDomainStart(challenger);
             return;
         }
+        // Remember this caster's palette even if they later lose.
+        inst.territorySkills.add(skillDomain);
         DomainDecorations.spawnParticipant(
                 domainLevel,
                 inst,
@@ -174,7 +176,8 @@ public final class DomainClash {
             abortFailedDomainStart(challenger);
             return;
         }
-
+// Remember this caster's palette even if they later lose.
+        inst.territorySkills.add(skillDomain);
         double cx = inst.arenaCenter.getX() + 0.5;
         double cy = inst.arenaCenter.getY();
         double cz = inst.arenaCenter.getZ() + 0.5;

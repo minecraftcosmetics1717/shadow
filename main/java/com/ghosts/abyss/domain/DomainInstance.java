@@ -17,6 +17,9 @@ public class DomainInstance {
     public final Map<UUID, Vec3> returnPositions = new HashMap<>();
     public final DomainClashParticipants participants;
     public final Set<UUID> yutaDecorationsSpawned = new HashSet<>();
+    // Remember every domain palette used in this arena,
+// including domains whose casters have already lost.
+    public final Set<Double> territorySkills = new HashSet<>();
     public DomainInstance(
             int slot,
             UUID ownerId,
@@ -37,6 +40,8 @@ public class DomainInstance {
                 ownerId,
                 skillDomain
         );
+        // Remember the original owner's block palette.
+        this.territorySkills.add(skillDomain);
     }
 
 }

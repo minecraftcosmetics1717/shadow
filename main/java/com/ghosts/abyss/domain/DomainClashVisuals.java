@@ -18,7 +18,7 @@ public final class DomainClashVisuals {
     private DomainClashVisuals() {}
 
     // Number of positions inspected per tick, per arena.
-    private static final int UPDATES_PER_TICK = 768;
+    private static final int UPDATES_PER_TICK = 1536;
 
     private record Surface(BlockPos offset, boolean floor) {}
 
@@ -79,20 +79,18 @@ public final class DomainClashVisuals {
 
                 if (current.equals(desired)) continue;
 
-                // Only replace blocks belonging to the
-                // registered domains, not arbitrary blocks.
+// Recognize palettes belonging to every domain
+// that has participated in this arena.
+//
+// A defeated caster no longer controls territory,
+// but their old blocks must still be replaceable.
                 boolean paletteBlock = false;
 
-                for (DomainClashParticipants.Participant p
-                        : inst.participants.all()) {
+                for (double knownSkill : inst.territorySkills) {
 
                     BlockState palette = surface.floor()
-                            ? DomainArenaBuilder.floorState(
-                            p.skillDomain
-                    )
-                            : DomainArenaBuilder.interiorState(
-                            p.skillDomain
-                    );
+                            ? DomainArenaBuilder.floorState(knownSkill)
+                            : DomainArenaBuilder.interiorState(knownSkill);
 
                     if (current.equals(palette)) {
                         paletteBlock = true;
