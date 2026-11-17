@@ -23,7 +23,10 @@ import java.util.UUID;
 public final class DomainArenaService {
 
     private static final TicketType<ChunkPos> DOMAIN_TICKET =
-            TicketType.create("abyss:domain", Comparator.comparingLong(ChunkPos::toLong), 300);
+            TicketType.create(
+                    "abyss:domain",
+                    Comparator.comparingLong(ChunkPos::toLong)
+            );
     private static final int TICKET_RADIUS = 5;
 
     private DomainArenaService() {}

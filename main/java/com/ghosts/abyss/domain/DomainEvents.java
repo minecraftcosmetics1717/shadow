@@ -52,7 +52,12 @@ public class DomainEvents {
 
         server.tell(new TickTask(server.getTickCount() + DEATH_END_DELAY, () -> {
             DomainInstance still = DomainInstanceManager.getByOwner(ownerId);
-            if (still == null) return;
+
+// Ignore cleanup from a previous domain expansion.
+// The owner must still own the exact same domain instance.
+            if (still != inst) {
+                return;
+            }
 
             ServerLevel domainLevel = server.getLevel(DomainDimension.ID);
             ServerLevel over = server.getLevel(still.returnDim);

@@ -187,6 +187,19 @@ public class DomainLifecycle {
                 return;
             }
 
+            com.ghosts.abyss.Abyss.LOGGER.error(
+                    "[Abyss Domain Debug] Teleport verification failed! " +
+                            "Owner={}, Slot={}, Attempt={}, " +
+                            "ArenaCenter={}, Dimension={}",
+                    ownerId,
+                    inst.slot,
+                    attempt,
+                    inst.arenaCenter,
+                    domainLevel == null
+                            ? "NULL"
+                            : domainLevel.dimension().location()
+            );
+
             softAbort(inst, domainLevel, overworld, ownerId);
             return;
         }
@@ -222,6 +235,34 @@ public class DomainLifecycle {
 
     private static void softAbort(DomainInstance inst, ServerLevel domainLevel,
                                   ServerLevel overworld, UUID ownerId) {
+        // Prevent an old startup failure from deleting an arena
+// that now belongs to a different domain session.
+        if (DomainInstanceManager.getBySlot(inst.slot) != inst
+                || DomainInstanceManager.getByOwner(ownerId) != inst) {
+
+            com.ghosts.abyss.Abyss.LOGGER.warn(
+                    "[Abyss Domain Debug] Ignored stale softAbort " +
+                            "owner={} slot={}",
+                    ownerId,
+                    inst.slot
+            );
+            return;
+        }
+
+        com.ghosts.abyss.Abyss.LOGGER.error(
+                "[Abyss Domain Debug] SOFT ABORT! " +
+                        "Owner={}, Slot={}, ArenaCenter={}, " +
+                        "OwnerInDomain={}, OwnerInOverworld={}",
+                ownerId,
+                inst.slot,
+                inst.arenaCenter,
+                domainLevel != null
+                        && DomainArenaService.findLivingIn(
+                        domainLevel, ownerId) != null,
+                overworld != null
+                        && DomainArenaService.findLivingIn(
+                        overworld, ownerId) != null
+        );
         if (domainLevel != null) {
             // Find the owner if they were successfully transferred into the domain.
             LivingEntity inDim = DomainArenaService.findLivingIn(domainLevel, ownerId);
