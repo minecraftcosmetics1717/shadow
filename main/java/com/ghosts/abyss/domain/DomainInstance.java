@@ -10,6 +10,7 @@ import java.util.*;
 public class DomainInstance {
     public final int slot;
     public UUID ownerId;
+    public boolean ownerEntryConfirmed = false;
     public double skillDomain;
     public final BlockPos arenaCenter;          // in domain dim
     public final ResourceKey<Level> returnDim;  // usually overworld

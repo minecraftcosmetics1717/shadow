@@ -365,6 +365,33 @@ public class DomainLifecycle {
         ownerInDim.getPersistentData().putDouble("skill_domain", inst.skillDomain);
         ownerInDim.getPersistentData().putBoolean("abyss_domain_handled", true);
         ownerInDim.getPersistentData().putBoolean("abyss_domain_transferring", false);
+        ownerInDim.getPersistentData().putDouble(
+                "skill_domain", inst.skillDomain);
+        ownerInDim.getPersistentData().putBoolean(
+                "abyss_domain_handled", true);
+        inst.ownerEntryConfirmed = true;
+        ownerInDim.getPersistentData().putBoolean(
+                "abyss_domain_transferring", false);
+        var ownerData = ownerInDim.getPersistentData();
+
+        if (ownerData.getBoolean("abyss_domain_committed")
+                && ownerData.getLong("abyss_domain_end_tick") <= 0L) {
+
+            long endTick =
+                    server.getTickCount()
+                            + AbyssDomainCast.DURATION_TICKS;
+
+            ownerData.putLong(
+                    "abyss_domain_end_tick",
+                    endTick);
+
+            com.ghosts.abyss.Abyss.LOGGER.info(
+                    "[Abyss Domain] Arrival confirmed. " +
+                            "Started domain duration for owner={} slot={}",
+                    ownerId,
+                    inst.slot
+            );
+        }
         var jcDomain = ForgeRegistries.MOB_EFFECTS.getValue(
                 DomainEvents.DOMAIN_EFFECT_ID
         );

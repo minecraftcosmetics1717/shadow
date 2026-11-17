@@ -345,11 +345,37 @@ public class DomainEvents {
             return;
         }
 
-        boolean hadAbyssDomain =
-                DomainInstanceManager.getByOwner(entity.getUUID()) != null;
+        DomainInstance startupInstance =
+                DomainInstanceManager.getByOwner(entity.getUUID());
 
-        entity.getPersistentData().putBoolean("abyss_domain_handled", false);
-        entity.getPersistentData().putBoolean("abyss_domain_pending", false);
+// An active domain session exists, but its owner
+// has not finished entering the domain dimension.
+//
+// Ignore this effect removal during initialization.
+// finishEnter() will restore the domain effect
+// if necessary after confirming arrival.
+        if (startupInstance != null
+                && !startupInstance.ownerEntryConfirmed) {
+
+            com.ghosts.abyss.Abyss.LOGGER.warn(
+                    "[Abyss Domain] Ignoring domain effect removal " +
+                            "during startup. Owner={} Slot={}",
+                    entity.getUUID(),
+                    startupInstance.slot
+            );
+
+            return;
+        }
+
+        boolean hadAbyssDomain = startupInstance != null;
+
+        entity.getPersistentData().putBoolean(
+                "abyss_domain_handled", false
+        );
+
+        entity.getPersistentData().putBoolean(
+                "abyss_domain_pending", false
+        );
 
         DomainLifecycle.end(entity);
 
@@ -380,11 +406,34 @@ public class DomainEvents {
             return;
         }
 
-        boolean hadAbyssDomain =
-                DomainInstanceManager.getByOwner(entity.getUUID()) != null;
+        DomainInstance startupInstance =
+                DomainInstanceManager.getByOwner(entity.getUUID());
 
-        entity.getPersistentData().putBoolean("abyss_domain_handled", false);
-        entity.getPersistentData().putBoolean("abyss_domain_pending", false);
+// Prevent a domain effect expiring during the
+// initial dimension transfer from destroying
+// the arena before entry is confirmed.
+        if (startupInstance != null
+                && !startupInstance.ownerEntryConfirmed) {
+
+            com.ghosts.abyss.Abyss.LOGGER.warn(
+                    "[Abyss Domain] Ignoring domain effect expiration " +
+                            "during startup. Owner={} Slot={}",
+                    entity.getUUID(),
+                    startupInstance.slot
+            );
+
+            return;
+        }
+
+        boolean hadAbyssDomain = startupInstance != null;
+
+        entity.getPersistentData().putBoolean(
+                "abyss_domain_handled", false
+        );
+
+        entity.getPersistentData().putBoolean(
+                "abyss_domain_pending", false
+        );
 
         DomainLifecycle.end(entity);
 

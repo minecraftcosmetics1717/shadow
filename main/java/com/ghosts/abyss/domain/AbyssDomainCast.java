@@ -189,10 +189,9 @@ public final class AbyssDomainCast {
         data.putDouble("z_pos_doma", center.z);
 
 
-        long endTick =
-                level.getServer().getTickCount() + DURATION_TICKS;
-
-        data.putLong(NBT_END_TICK, endTick);
+// The domain is starting, but its duration
+// does not begin until entry is confirmed.
+        data.putLong(NBT_END_TICK, 0L);
         data.putBoolean(NBT_ACTIVE, true);
 
         DomainLifecycle.startAbyssDomain(
@@ -238,7 +237,13 @@ public final class AbyssDomainCast {
 
         long end = entity.getPersistentData().getLong(NBT_END_TICK);
 
-        if (end > 0 && level.getServer().getTickCount() >= end) {
+// The caster is still entering the domain.
+// Don't start duration checks or CE drain yet.
+        if (end <= 0L) {
+            return;
+        }
+
+        if (level.getServer().getTickCount() >= end) {
             DomainLifecycle.end(entity);
 
             entity.getPersistentData().putBoolean(NBT_ACTIVE, false);
