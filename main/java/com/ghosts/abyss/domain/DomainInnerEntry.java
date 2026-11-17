@@ -19,12 +19,12 @@ import net.minecraftforge.fml.common.Mod;
 )
 public final class DomainInnerEntry {
 
-    // Crossing inward through this radius triggers entry.
+    // Radius of the intangible overworld sphere.
     private static final double ENTRY_RADIUS =
             DomainOverworldShell.INNER_SPHERE_RADIUS + 0.5;
 
-    // Arrival distance from the domain arena center.
-    // Leaves more than 20 blocks of space before the wall.
+    // How far from the arena center an entering
+    // entity will appear.
     private static final double ARENA_ENTRY_RADIUS = 40.0;
 
     private DomainInnerEntry() {}
@@ -35,6 +35,7 @@ public final class DomainInnerEntry {
     ) {
         LivingEntity entity = event.getEntity();
 
+        // Only execute on the server.
         if (!(entity.level() instanceof ServerLevel level)) {
             return;
         }
@@ -48,12 +49,12 @@ public final class DomainInnerEntry {
             return;
         }
 
-        // Already in a domain dimension.
+        // Already inside the domain dimension.
         if (level.dimension().equals(DomainDimension.ID)) {
             return;
         }
 
-        // Ignore entities in an existing dimension transfer.
+        // Don't interfere with another ongoing transfer.
         if (entity.getPersistentData().getBoolean(
                 "abyss_domain_transferring")) {
             return;
@@ -66,24 +67,16 @@ public final class DomainInnerEntry {
             return;
         }
 
-        double entityHalfHeight =
-                entity.getBbHeight() * 0.5;
-
+        // Use the middle of the entity's hitbox.
         Vec3 current = entity.position().add(
                 0.0,
-                entityHalfHeight,
+                entity.getBbHeight() * 0.5,
                 0.0
         );
 
-        Vec3 previous = new Vec3(
-                entity.xo,
-                entity.yo + entityHalfHeight,
-                entity.zo
-        );
+        double radiusSq = ENTRY_RADIUS * ENTRY_RADIUS;
 
-        double entryRadiusSq =
-                ENTRY_RADIUS * ENTRY_RADIUS;
-
+        // Check all existing domain sessions.
         for (int slot = 0;
              slot < DomainDimension.MAX_SLOTS;
              slot++) {
@@ -91,42 +84,35 @@ public final class DomainInnerEntry {
             DomainInstance inst =
                     DomainInstanceManager.getBySlot(slot);
 
-            if (inst == null) continue;
+            if (inst == null) {
+                continue;
+            }
 
-            // This sphere must belong to this dimension.
+            // Only match spheres in this dimension.
             if (!inst.returnDim.equals(level.dimension())) {
                 continue;
             }
 
-            // The barrier's block placement uses
-            // integer block coordinates as its center.
-            BlockPos centerBlock =
+            // Match the block-aligned sphere created
+            // by DomainOverworldShell.
+            BlockPos blockCenter =
                     BlockPos.containing(inst.overworldCenter);
 
             Vec3 sphereCenter = new Vec3(
-                    centerBlock.getX() + 0.5,
-                    centerBlock.getY() + 0.5,
-                    centerBlock.getZ() + 0.5
+                    blockCenter.getX() + 0.5,
+                    blockCenter.getY() + 0.5,
+                    blockCenter.getZ() + 0.5
             );
 
-            double currentDistanceSq =
+            // Check whether the entity is inside.
+            double distanceSq =
                     current.distanceToSqr(sphereCenter);
 
-            if (currentDistanceSq > entryRadiusSq) {
+            if (distanceSq > radiusSq) {
                 continue;
             }
 
-            double previousDistanceSq =
-                    previous.distanceToSqr(sphereCenter);
-
-            // Only trigger when crossing inward,
-            // not when moving around inside the sphere.
-            if (previousDistanceSq <= entryRadiusSq) {
-                continue;
-            }
-
-            // Prevent entry during sphere destruction
-            // or before the sphere has been created.
+            // Only enter if the sphere still exists.
             if (!DomainOverworldShell.isActive(
                     level,
                     inst.overworldCenter,
@@ -135,18 +121,8 @@ public final class DomainInnerEntry {
                 continue;
             }
 
-            // Confirm that the owner has arrived in
-            // the destination domain dimension.
-            LivingEntity owner =
-                    DomainArenaService.findLivingIn(
-                            domainLevel,
-                            inst.ownerId
-                    );
-
-            if (owner == null) {
-                continue;
-            }
-
+            // The entity is inside an active
+            // overworld domain. Transfer it.
             enterDomain(
                     entity,
                     domainLevel,
@@ -166,8 +142,7 @@ public final class DomainInnerEntry {
     ) {
         Vec3 original = entity.position();
 
-        // Save the overworld position as a fallback
-        // for when the domain ends.
+        // Remember its original overworld position.
         inst.returnPositions.putIfAbsent(
                 entity.getUUID(),
                 original
@@ -179,17 +154,18 @@ public final class DomainInnerEntry {
         double horizontalDistance =
                 Math.sqrt(dx * dx + dz * dz);
 
-        // Preserve the direction from which the
-        // entity entered the sphere.
         if (horizontalDistance < 0.001) {
-            dx = 0;
-            dz = 1;
-            horizontalDistance = 1;
+            dx = 0.0;
+            dz = 1.0;
+            horizontalDistance = 1.0;
         }
 
+        // Normalize the entry direction.
         dx /= horizontalDistance;
         dz /= horizontalDistance;
 
+        // Preserve the side from which the entity
+        // entered the overworld sphere.
         double destinationX =
                 inst.arenaCenter.getX() + 0.5
                         + dx * ARENA_ENTRY_RADIUS;
@@ -213,17 +189,18 @@ public final class DomainInnerEntry {
                 || arrived.level() != domainLevel) {
 
             Abyss.LOGGER.warn(
-                    "[Abyss Domain Entry] Failed to enter " +
-                            "domain slot={} entity={}",
-                    inst.slot,
-                    entity.getName().getString()
+                    "[Abyss Domain Entry] Teleport failed: " +
+                            "entity={} slot={}",
+                    entity.getName().getString(),
+                    inst.slot
             );
 
             return;
         }
 
         Abyss.LOGGER.info(
-                "[Abyss Domain Entry] {} entered slot={} at {}",
+                "[Abyss Domain Entry] {} entered domain " +
+                        "slot={} position={}",
                 arrived.getName().getString(),
                 inst.slot,
                 arrived.position()
