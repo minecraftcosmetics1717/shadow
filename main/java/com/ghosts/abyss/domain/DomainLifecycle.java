@@ -96,7 +96,7 @@ public class DomainLifecycle {
         owner.getPersistentData().putBoolean("abyss_domain_transferring", true);
         DomainTeleport.teleport(owner, domainLevel, cx, floorY, cz);
 
-        scheduleFinishEnter(server, owner.getUUID(), inst.slot, overCenter, catchRadius, 0);
+        scheduleFinishEnter(server, owner.getUUID(), inst, overCenter, catchRadius, 0);
     }
     public static void startAbyssDomain(LivingEntity owner, double skillDomain,
                                         Vec3 overCenter, double catchRadius) {
@@ -144,19 +144,53 @@ public class DomainLifecycle {
         owner.getPersistentData().putBoolean("abyss_domain_transferring", true);
         DomainTeleport.teleport(owner, domainLevel, cx, floorY, cz);
 
-        scheduleFinishEnter(server, owner.getUUID(), inst.slot, overCenter, catchRadius, 0);
+        scheduleFinishEnter(server, owner.getUUID(), inst, overCenter, catchRadius, 0);
     }
-    private static void scheduleFinishEnter(MinecraftServer server, UUID ownerId, int slot,
-                                            Vec3 overCenter, double catchRadius, int attempt) {
+    private static void scheduleFinishEnter(
+            MinecraftServer server,
+            UUID ownerId,
+            DomainInstance expectedInstance,
+            Vec3 overCenter,
+            double catchRadius,
+            int attempt
+    ) {
         int when = server.getTickCount() + OWNER_VERIFY_DELAY;
+
         server.tell(new TickTask(when, () ->
-                finishEnter(ownerId, slot, overCenter, catchRadius, attempt)));
+                finishEnter(
+                        ownerId,
+                        expectedInstance,
+                        overCenter,
+                        catchRadius,
+                        attempt
+                )
+        ));
     }
 
-    private static void finishEnter(UUID ownerId, int slot, Vec3 overCenter,
-                                    double catchRadius, int attempt) {
-        DomainInstance inst = DomainInstanceManager.getBySlot(slot);
-        if (inst == null) return;
+    private static void finishEnter(
+            UUID ownerId,
+            DomainInstance expectedInstance,
+            Vec3 overCenter,
+            double catchRadius,
+            int attempt
+    ) {
+        if (expectedInstance == null) return;
+
+        DomainInstance inst =
+                DomainInstanceManager.getBySlot(expectedInstance.slot);
+
+        // Ignore scheduled checks from an older expansion.
+        if (inst != expectedInstance) {
+            com.ghosts.abyss.Abyss.LOGGER.warn(
+                    "[Abyss Domain Debug] Ignored stale finishEnter " +
+                            "owner={} slot={}",
+                    ownerId,
+                    expectedInstance.slot
+            );
+            return;
+        }
+
+        if (DomainInstanceManager.getByOwner(ownerId) != inst) return;
         if (!ownerId.equals(inst.ownerId)) return;
 
         MinecraftServer server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
@@ -183,7 +217,7 @@ public class DomainLifecycle {
 
                 ownerOver.getPersistentData().putBoolean("abyss_domain_transferring", true);
                 DomainTeleport.teleport(ownerOver, domainLevel, cx, floorY, cz);
-                scheduleFinishEnter(server, ownerId, slot, overCenter, catchRadius, attempt + 1);
+                scheduleFinishEnter(server, ownerId, inst, overCenter, catchRadius, attempt + 1);
                 return;
             }
 
@@ -437,6 +471,9 @@ public class DomainLifecycle {
         data.putBoolean("abyss_domain_active", false);
         data.putBoolean("abyss_domain_committed", false);
         data.putBoolean("abyss_domain_handled", false);
+        // Allow a future expansion to schedule its own death cleanup.
+        data.putBoolean("abyss_domain_end_scheduled", false);
+        data.putBoolean("abyss_domain_owner_dead", false);
         data.putBoolean("abyss_domain_pending", false);
         data.putBoolean("abyss_domain_clashing", false);
         data.putBoolean("abyss_domain_transferring", false);
