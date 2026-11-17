@@ -362,9 +362,6 @@ public class DomainLifecycle {
         ownerInDim.getPersistentData().putDouble("x_pos_doma", cx);
         ownerInDim.getPersistentData().putDouble("y_pos_doma", inst.arenaCenter.getY());
         ownerInDim.getPersistentData().putDouble("z_pos_doma", cz);
-        ownerInDim.getPersistentData().putDouble("skill_domain", inst.skillDomain);
-        ownerInDim.getPersistentData().putBoolean("abyss_domain_handled", true);
-        ownerInDim.getPersistentData().putBoolean("abyss_domain_transferring", false);
         ownerInDim.getPersistentData().putDouble(
                 "skill_domain", inst.skillDomain);
         ownerInDim.getPersistentData().putBoolean(

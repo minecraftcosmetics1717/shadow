@@ -184,8 +184,12 @@ public final class DomainOverworldShell {
                     BlockState original =
                             level.getBlockState(pos);
 
-                    // Chests are intentionally left alone.
-                    if (isChest(original)) continue;
+
+                    // Only replace air blocks.
+                    // Never destroy or overwrite existing terrain.
+                    if (!original.isAir()) {
+                        continue;
+                    }
 
                     boolean onOuterShell =
                             distanceSq >= shellMinSq;
@@ -197,19 +201,22 @@ public final class DomainOverworldShell {
                     BlockState replacement;
 
                     if (onOuterShell) {
-                        // Original breakable Jujutsucraft barrier.
+                        // Breakable black domain barrier.
                         replacement = outer;
+
                     } else if (onInnerShell) {
-                        // Glowing, non-solid, unbreakable inner layer.
+                        // Intangible inner domain layer.
                         replacement = inner;
+
                     } else {
-                        // Hollow interior and any space between layers.
-                        replacement = Blocks.AIR.defaultBlockState();
+                        // Leave the sphere's interior untouched.
+                        continue;
                     }
 
                     if (original.equals(replacement)) {
                         continue;
                     }
+
 
                     // Save the complete original block state.
                     CompoundTag entry = new CompoundTag();
