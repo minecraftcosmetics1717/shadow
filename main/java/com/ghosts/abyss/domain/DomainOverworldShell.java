@@ -3,6 +3,7 @@ package com.ghosts.abyss.domain;
 
 import com.ghosts.abyss.Abyss;
 
+import com.ghosts.abyss.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -40,7 +41,28 @@ public final class DomainOverworldShell {
     // cleanup pass for three seconds.
     private static final Map<String, Long> RECENTLY_RESTORED =
             new HashMap<>();
+    public static final int INNER_SPHERE_RADIUS = 21;
 
+    // Allows Abyss to place/remove domain_int while
+// preventing external attacks from replacing it.
+    private static final ThreadLocal<Boolean> EDITING =
+            ThreadLocal.withInitial(() -> false);
+
+    public static boolean isEditing() {
+        return EDITING.get();
+    }
+
+    public static boolean isActive(
+            ServerLevel level,
+            Vec3 center,
+            int radius
+    ) {
+        if (level == null || center == null) return false;
+
+        return ShellData.get(level).snapshots.containsKey(
+                sphereKey(center, radius)
+        );
+    }
     private DomainOverworldShell() {}
 
     private static BlockState barrier() {
@@ -122,14 +144,26 @@ public final class DomainOverworldShell {
         int cy = (int) Math.floor(center.y);
         int cz = (int) Math.floor(center.z);
 
+// Outer breakable black sphere.
         double shellMinSq = (radius - 0.5)
                 * (radius - 0.5);
 
         double shellMaxSq = (radius + 0.5)
                 * (radius + 0.5);
 
-        int changed = 0;
+// Inner glowing, intangible sphere.
+        double innerMinSq = (INNER_SPHERE_RADIUS - 0.5)
+                * (INNER_SPHERE_RADIUS - 0.5);
 
+        double innerMaxSq = (INNER_SPHERE_RADIUS + 0.5)
+                * (INNER_SPHERE_RADIUS + 0.5);
+
+        BlockState inner = ModBlocks.DOMAIN_INT.get()
+                .defaultBlockState();
+
+        int changed = 0;
+        EDITING.set(true);
+        try {
         for (int x = -radius - 1; x <= radius + 1; x++) {
             for (int y = -radius - 1; y <= radius + 1; y++) {
                 for (int z = -radius - 1; z <= radius + 1; z++) {
@@ -153,12 +187,25 @@ public final class DomainOverworldShell {
                     // Chests are intentionally left alone.
                     if (isChest(original)) continue;
 
-                    boolean onShell =
+                    boolean onOuterShell =
                             distanceSq >= shellMinSq;
 
-                    BlockState replacement = onShell
-                            ? outer
-                            : Blocks.AIR.defaultBlockState();
+                    boolean onInnerShell =
+                            distanceSq >= innerMinSq
+                                    && distanceSq < innerMaxSq;
+
+                    BlockState replacement;
+
+                    if (onOuterShell) {
+                        // Original breakable Jujutsucraft barrier.
+                        replacement = outer;
+                    } else if (onInnerShell) {
+                        // Glowing, non-solid, unbreakable inner layer.
+                        replacement = inner;
+                    } else {
+                        // Hollow interior and any space between layers.
+                        replacement = Blocks.AIR.defaultBlockState();
+                    }
 
                     if (original.equals(replacement)) {
                         continue;
@@ -210,6 +257,9 @@ public final class DomainOverworldShell {
                 radius,
                 changed
         );
+        } finally {
+            EDITING.remove();
+        }
     }
 
     public static void clear(
@@ -240,7 +290,8 @@ public final class DomainOverworldShell {
 
         int restored = 0;
         ListTag failures = new ListTag();
-
+        EDITING.set(true);
+        try {
         // Reverse order helps keep restoration predictable.
         for (int i = savedBlocks.size() - 1; i >= 0; i--) {
             CompoundTag entry = savedBlocks.getCompound(i);
@@ -252,7 +303,7 @@ public final class DomainOverworldShell {
             try {
                 BlockState original = NbtUtils.readBlockState(
                         level.registryAccess()
-                                .registryOrThrow(Registries.BLOCK),
+                                .lookupOrThrow(Registries.BLOCK),
                         entry.getCompound("State")
                 );
 
@@ -313,6 +364,9 @@ public final class DomainOverworldShell {
                 restored,
                 failures.size()
         );
+        } finally {
+            EDITING.remove();
+        }
     }
 
     // Domain instances are not meant to survive a

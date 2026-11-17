@@ -1,7 +1,9 @@
 package com.ghosts.abyss.mixin;
 
+import com.ghosts.abyss.block.ModBlocks;
 import com.ghosts.abyss.domain.DomainDimBlockGuard;
 import com.ghosts.abyss.domain.DomainDimension;
+import com.ghosts.abyss.domain.DomainOverworldShell;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -33,8 +35,26 @@ public class DomainDimSetBlockMixin {
             BlockPos pos, BlockState state, int flags, int recursionLeft,
             CallbackInfoReturnable<Boolean> cir) {
         Level self = (Level) (Object) this;
-        if (!(self instanceof ServerLevel serverLevel)) return;
-        if (!serverLevel.dimension().equals(DomainDimension.ID)) return;
+
+        if (!(self instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+// Protect the inner overworld sphere from attacks
+// that directly replace or delete blocks.
+        if (serverLevel.getBlockState(pos)
+                .is(ModBlocks.DOMAIN_INT.get())) {
+
+            if (!DomainOverworldShell.isEditing()) {
+                cir.setReturnValue(false);
+                return;
+            }
+        }
+
+// Keep the existing domain dimension protection.
+        if (!serverLevel.dimension().equals(DomainDimension.ID)) {
+            return;
+        }
 
         // Our builder/clearArena may edit
         if (DomainDimBlockGuard.isOpen()) return;
