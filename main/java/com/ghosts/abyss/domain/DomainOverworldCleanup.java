@@ -32,7 +32,19 @@ public final class DomainOverworldCleanup {
             e.getPersistentData().putBoolean("Break", true);
         }
 
-        forceRestoreBarriers(overworld, center, DomainDimension.OUTER_RADIUS + 2);
+// The Abyss sphere already restored its saved terrain.
+// Don't let the older JC cleanup erase those blocks.
+        if (!DomainOverworldShell.recentlyRestored(
+                overworld,
+                center,
+                AbyssDomainCast.OVERWORLD_RADIUS
+        )) {
+            forceRestoreBarriers(
+                    overworld,
+                    center,
+                    DomainDimension.OUTER_RADIUS + 2
+            );
+        }
     }
 
     public static void forceRestoreBarriers(ServerLevel level, Vec3 center, int radius) {

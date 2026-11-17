@@ -54,15 +54,26 @@ public final class DomainArenaService {
         return null;
     }
 
-    public static void evacuateArena(ServerLevel domainLevel, ServerLevel returnLevel,
-                                     DomainInstance inst) {
-        if (domainLevel == null || returnLevel == null) return;
+
+    public static void evacuateArena(
+            ServerLevel domainLevel,
+            ServerLevel returnLevel,
+            DomainInstance inst
+    ) {
+        if (domainLevel == null || returnLevel == null || inst == null) {
+            return;
+        }
 
         int r = DomainDimension.OUTER_RADIUS + 4;
         BlockPos c = inst.arenaCenter;
+
         AABB box = new AABB(
-                c.getX() - r, c.getY() - r, c.getZ() - r,
-                c.getX() + r, c.getY() + r, c.getZ() + r
+                c.getX() - r,
+                c.getY() - r,
+                c.getZ() - r,
+                c.getX() + r,
+                c.getY() + r,
+                c.getZ() + r
         );
 
         List<LivingEntity> toSend = new ArrayList<>(
@@ -77,17 +88,43 @@ public final class DomainArenaService {
         for (LivingEntity living : toSend) {
             if (living.isDeadOrDying()) continue;
 
-            Vec3 back = inst.returnPositions.get(living.getUUID());
-            if (back == null) back = inst.overworldCenter;
+            // Calculate the return location from where
+            // the entity currently stands in the domain.
+            Vec3 back = DomainSpawnPositions.returnPosition(
+                    returnLevel,
+                    inst,
+                    living
+            );
 
-            living.getPersistentData().putBoolean("abyss_domain_transferring", true);
-            DomainTeleport.sendBack(living, returnLevel, back);
-            living.getPersistentData().putBoolean("abyss_domain_transferring", false);
+            living.getPersistentData().putBoolean(
+                    "abyss_domain_transferring",
+                    true
+            );
 
-            // Full arena end: no one should still be "in domain" in the overworld
-            stripDomainFrom(living);
+            LivingEntity returned = DomainTeleport.sendBack(
+                    living,
+                    returnLevel,
+                    back
+            );
+
+            if (returned != null) {
+                returned.getPersistentData().putBoolean(
+                        "abyss_domain_transferring",
+                        false
+                );
+
+                // Apply cleanup to the actual returned entity,
+                // not an old instance from the previous dimension.
+                stripDomainFrom(returned);
+            } else {
+                living.getPersistentData().putBoolean(
+                        "abyss_domain_transferring",
+                        false
+                );
+            }
         }
     }
+
     public static void stripDomainFrom(LivingEntity living) {
         if (living == null || living.isDeadOrDying()) return;
 

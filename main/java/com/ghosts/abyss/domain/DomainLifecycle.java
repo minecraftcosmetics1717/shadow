@@ -82,6 +82,14 @@ public class DomainLifecycle {
         DomainArenaBuilder.build(domainLevel, inst.arenaCenter, skillDomain);
         DomainDecorations.spawn(domainLevel, inst);
 
+// Construct the overworld sphere only after this
+// domain has successfully claimed its own arena.
+        DomainOverworldShell.place(
+                overworld,
+                overCenter,
+                AbyssDomainCast.OVERWORLD_RADIUS
+        );
+
         if (owner instanceof Mob mob) {
             mob.setTarget(null);
             mob.getNavigation().stop();
@@ -89,12 +97,19 @@ public class DomainLifecycle {
 
         inst.returnPositions.put(owner.getUUID(), owner.position());
 
-        double floorY = inst.arenaCenter.getY() + 1.1;
-        double cx = inst.arenaCenter.getX() + 0.5;
-        double cz = inst.arenaCenter.getZ() + 0.5;
+        Vec3 spawn = DomainSpawnPositions.casterSpawn(inst);
 
-        owner.getPersistentData().putBoolean("abyss_domain_transferring", true);
-        DomainTeleport.teleport(owner, domainLevel, cx, floorY, cz);
+        owner.getPersistentData().putBoolean(
+                "abyss_domain_transferring", true
+        );
+
+        DomainTeleport.teleport(
+                owner,
+                domainLevel,
+                spawn.x,
+                spawn.y,
+                spawn.z
+        );
 
         scheduleFinishEnter(server, owner.getUUID(), inst, overCenter, catchRadius, 0);
     }
@@ -135,14 +150,29 @@ public class DomainLifecycle {
         DomainArenaBuilder.build(domainLevel, inst.arenaCenter, skillDomain);
         DomainDecorations.spawn(domainLevel, inst);
 
+// Construct the overworld sphere only after this
+// domain has successfully claimed its own arena.
+        DomainOverworldShell.place(
+                overworld,
+                overCenter,
+                AbyssDomainCast.OVERWORLD_RADIUS
+        );
+
         inst.returnPositions.put(owner.getUUID(), owner.position());
 
-        double floorY = inst.arenaCenter.getY() + 1.1;
-        double cx = inst.arenaCenter.getX() + 0.5;
-        double cz = inst.arenaCenter.getZ() + 0.5;
+        Vec3 spawn = DomainSpawnPositions.casterSpawn(inst);
 
-        owner.getPersistentData().putBoolean("abyss_domain_transferring", true);
-        DomainTeleport.teleport(owner, domainLevel, cx, floorY, cz);
+        owner.getPersistentData().putBoolean(
+                "abyss_domain_transferring", true
+        );
+
+        DomainTeleport.teleport(
+                owner,
+                domainLevel,
+                spawn.x,
+                spawn.y,
+                spawn.z
+        );
 
         scheduleFinishEnter(server, owner.getUUID(), inst, overCenter, catchRadius, 0);
     }
@@ -206,9 +236,7 @@ public class DomainLifecycle {
         if (ownerInDim == null) {
             LivingEntity ownerOver = DomainArenaService.findLivingIn(overworld, ownerId);
             if (ownerOver != null && attempt < MAX_ENTER_RETRIES) {
-                double floorY = inst.arenaCenter.getY() + 1.1;
-                double cx = inst.arenaCenter.getX() + 0.5;
-                double cz = inst.arenaCenter.getZ() + 0.5;
+                Vec3 spawn = DomainSpawnPositions.casterSpawn(inst);
 
                 if (ownerOver instanceof Mob mob) {
                     mob.setTarget(null);
@@ -216,7 +244,13 @@ public class DomainLifecycle {
                 }
 
                 ownerOver.getPersistentData().putBoolean("abyss_domain_transferring", true);
-                DomainTeleport.teleport(ownerOver, domainLevel, cx, floorY, cz);
+                DomainTeleport.teleport(
+                        ownerOver,
+                        domainLevel,
+                        spawn.x,
+                        spawn.y,
+                        spawn.z
+                );
                 scheduleFinishEnter(server, ownerId, inst, overCenter, catchRadius, attempt + 1);
                 return;
             }
@@ -323,7 +357,14 @@ public class DomainLifecycle {
             DomainInstanceManager.clearArena(domainLevel, inst);
             DomainArenaService.unloadArena(domainLevel, inst);
         }
-
+// Restore terrain if this domain failed during startup.
+        if (overworld != null) {
+            DomainOverworldShell.clear(
+                    overworld,
+                    inst.overworldCenter,
+                    AbyssDomainCast.OVERWORLD_RADIUS
+            );
+        }
         // Release the owner's reserved domain slot.
         DomainInstanceManager.release(ownerId);
 
@@ -366,12 +407,22 @@ public class DomainLifecycle {
         return null;
     }
 
-    private static void pullOthers(ServerLevel overworld, ServerLevel domainLevel,
-                                   DomainInstance inst, Vec3 center, double radius,
-                                   LivingEntity ownerInDim) {
+
+    private static void pullOthers(
+            ServerLevel overworld,
+            ServerLevel domainLevel,
+            DomainInstance inst,
+            Vec3 center,
+            double radius,
+            LivingEntity ownerInDim
+    ) {
         AABB box = new AABB(
-                center.x - radius, center.y - radius, center.z - radius,
-                center.x + radius, center.y + radius, center.z + radius
+                center.x - radius,
+                center.y - radius,
+                center.z - radius,
+                center.x + radius,
+                center.y + radius,
+                center.z + radius
         );
 
         List<LivingEntity> list = overworld.getEntitiesOfClass(
@@ -379,48 +430,61 @@ public class DomainLifecycle {
                 box,
                 e -> e.isAlive()
                         && !e.getUUID().equals(ownerInDim.getUUID())
+                        && e.distanceToSqr(center) <= radius * radius
         );
 
-        Vec3 ownerReturn = inst.returnPositions.getOrDefault(ownerInDim.getUUID(), center);
-        double maxSpawnR = DomainDimension.INNER_RADIUS - 3;
-        double floorY = inst.arenaCenter.getY() + 1.1;
-        double cx = inst.arenaCenter.getX() + 0.5;
-        double cz = inst.arenaCenter.getZ() + 0.5;
+        Vec3 ownerReturn = inst.returnPositions.getOrDefault(
+                ownerInDim.getUUID(),
+                center
+        );
+
         com.ghosts.abyss.Abyss.LOGGER.info(
-                "[Abyss Domain] Owner: {}, capture center: {}, radius: {}, participants found: {}",
+                "[Abyss Domain] Owner: {}, capture center: {}, " +
+                        "radius: {}, participants found: {}",
                 ownerInDim.getName().getString(),
                 center,
                 radius,
                 list.size()
         );
+
         for (LivingEntity e : list) {
             UUID id = e.getUUID();
-            inst.returnPositions.putIfAbsent(id, e.position());
 
-            double ox = e.getX() - ownerReturn.x;
-            double oz = e.getZ() - ownerReturn.z;
-            double horiz = Math.sqrt(ox * ox + oz * oz);
-            if (horiz > maxSpawnR && horiz > 0.001) {
-                double scale = maxSpawnR / horiz;
-                ox *= scale;
-                oz *= scale;
-            }
+            Vec3 originalPosition = e.position();
+
+            // Save the actual overworld location in case
+            // we ever need to return this entity there.
+            inst.returnPositions.putIfAbsent(
+                    id,
+                    originalPosition
+            );
+
+            Vec3 spawn = DomainSpawnPositions.capturedSpawn(
+                    inst,
+                    ownerReturn,
+                    originalPosition
+            );
+
             LivingEntity arrived = DomainTeleport.teleport(
                     e,
                     domainLevel,
-                    cx + ox,
-                    floorY,
-                    cz + oz
+                    spawn.x,
+                    spawn.y,
+                    spawn.z
             );
 
             com.ghosts.abyss.Abyss.LOGGER.info(
-                    "[Abyss Domain] Participant: {}, teleport result: {}, destination: {}",
+                    "[Abyss Domain] Participant: {}, result: {}, " +
+                            "destination: {}",
                     e.getName().getString(),
                     arrived == null ? "FAILED" : "SUCCESS",
-                    arrived == null ? "none" : arrived.level().dimension().location()
+                    arrived == null
+                            ? "none"
+                            : arrived.level().dimension().location()
             );
         }
     }
+
 
     public static void endByOwnerId(UUID ownerId) {
         DomainInstance inst = DomainInstanceManager.getByOwner(ownerId);

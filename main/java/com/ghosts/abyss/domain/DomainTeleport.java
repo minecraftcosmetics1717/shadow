@@ -4,11 +4,7 @@ package com.ghosts.abyss.domain;
 import com.ghosts.abyss.client.XaeroMinimapBridge;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
-import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
@@ -53,7 +49,7 @@ public class DomainTeleport {
         teleport(entity, domainLevel, x, y, z);
     }
 
-    public static void sendBack(
+    public static LivingEntity sendBack(
             LivingEntity entity,
             ServerLevel returnLevel,
             Vec3 pos
@@ -92,6 +88,8 @@ public class DomainTeleport {
                 );
             });
         }
+
+        return returned;
     }
 
     public static LivingEntity teleport(
@@ -134,7 +132,8 @@ public class DomainTeleport {
                     player.getXRot()
             );
 
-// Synchronize player positions after dimension transfer.
+// Schedule Minecraft's movement-tracking reset
+// after the dimension transfer.
             DomainPlayerSync.schedule(player, dest);
             player.getPersistentData()
                     .putDouble(RefinementPoints.KEY_SPENT, refinement);

@@ -188,7 +188,6 @@ public final class AbyssDomainCast {
         data.putDouble("y_pos_doma", center.y);
         data.putDouble("z_pos_doma", center.z);
 
-        DomainOverworldShell.place(level, center, OVERWORLD_RADIUS);
 
         long endTick =
                 level.getServer().getTickCount() + DURATION_TICKS;
