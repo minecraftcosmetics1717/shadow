@@ -3,6 +3,8 @@ package com.ghosts.abyss.network;
 import com.ghosts.abyss.Abyss;
 import java.lang.reflect.Field;
 import java.util.function.Supplier;
+
+import net.mcreator.jujutsucraft.procedures.ChangeTechniqueTestProcedure;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -211,6 +213,30 @@ public class PacketActivateAbilitySlot {
                      effectiveSelect = 12;
                   }
 
+                  // Ten Shadows (CT 6):
+                  // Never substitute another shikigami when
+                  // the assigned one is unavailable.
+                  if (this.press
+                          && this.targetCT == 6
+                          && effectiveSelect >= 5
+                          && effectiveSelect <= 18) {
+
+                     boolean unavailable =
+                             ChangeTechniqueTestProcedure.execute(
+                                     player.level(),
+                                     player.getX(),
+                                     player.getY(),
+                                     player.getZ(),
+                                     player,
+                                     6.0D,
+                                     (double) effectiveSelect
+                             );
+
+                     if (unavailable) {
+                        return;
+                     }
+                  }
+
                   boolean needsForward = false;
                   boolean needsSpace = false;
 
@@ -291,6 +317,21 @@ public class PacketActivateAbilitySlot {
                      Class<?> changeClass = Class.forName("net.mcreator.jujutsucraft.procedures.KeyChangeTechniqueOnKeyPressedProcedure");
                      changeClass.getMethod("execute", LevelAccessor.class, double.class, double.class, double.class, Entity.class)
                              .invoke(null, world, x, y, z, player);
+
+                     // Safety check:
+                     // Ten Shadows hotkeys must never execute
+                     // a different selection than assigned.
+                     if (this.targetCT == 6) {
+
+                        int actualSelect = (int) (double)
+                                (Double) selectField.get(vars);
+
+                        if (actualSelect != effectiveSelect) {
+                           player.getPersistentData()
+                                   .putBoolean("PRESS_Z", false);
+                           return;
+                        }
+                     }
 
                      Class<?> startClass = Class.forName("net.mcreator.jujutsucraft.procedures.KeyStartTechniqueOnKeyPressedProcedure");
                      startClass.getMethod("execute", LevelAccessor.class, double.class, double.class, double.class, Entity.class)

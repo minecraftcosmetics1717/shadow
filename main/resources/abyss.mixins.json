@@ -119,7 +119,9 @@
     "ControlledRedSharedAIMixin",
     "ControlledRedFlightMixin",
     "TenShadowsTotalityMixin",
-    "DomainServerEntityMixin"
+    "DomainServerEntityMixin",
+    "MegumiDomainDisplayMixin",
+    "MegumiDomainExecuteMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

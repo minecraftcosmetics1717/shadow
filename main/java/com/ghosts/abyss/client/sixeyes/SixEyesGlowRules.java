@@ -38,6 +38,24 @@ public final class SixEyesGlowRules {
             return false;
         }
 
+        // Full Physical Heavenly Restriction:
+        // No cursed-energy outline for these players.
+        if (entity instanceof Player player) {
+
+            boolean fullPhysicalRestriction =
+                    player.getCapability(
+                            JujutsucraftModVariables
+                                    .PLAYER_VARIABLES_CAPABILITY
+                    ).map(data ->
+                            data.PlayerCurseTechnique != 0.0D
+                                    && data.PlayerCursePowerFormer == 0.0D
+                    ).orElse(false);
+
+            if (fullPhysicalRestriction) {
+                return false;
+            }
+        }
+
         // Some JujutsuCraft living characters appear in this tag.
         // Exclude only ordinary entries for now.
         if (entity.getType().is(NOT_LIVING)) {

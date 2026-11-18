@@ -175,6 +175,107 @@ public final class DomainSpawnPositions {
         return original;
     }
 
+    public static Vec3 heavenlyEscapePosition(
+            ServerLevel returnLevel,
+            DomainInstance inst,
+            LivingEntity entity
+    ) {
+        // Match the actual block-aligned overworld sphere.
+        BlockPos sphereBlock =
+                BlockPos.containing(inst.overworldCenter);
+
+        double centerX = sphereBlock.getX() + 0.5;
+        double centerZ = sphereBlock.getZ() + 0.5;
+
+        // Preserve the direction the player is standing
+        // relative to the center of the domain arena.
+        double dx = entity.getX()
+                - (inst.arenaCenter.getX() + 0.5);
+
+        double dz = entity.getZ()
+                - (inst.arenaCenter.getZ() + 0.5);
+
+        double distance = Math.sqrt(dx * dx + dz * dz);
+
+        if (distance < 0.001) {
+            dx = 0.0;
+            dz = 1.0;
+            distance = 1.0;
+        }
+
+        dx /= distance;
+        dz /= distance;
+
+        Vec3 original = inst.returnPositions.getOrDefault(
+                entity.getUUID(),
+                inst.overworldCenter
+        );
+
+        int baseY = Mth.floor(original.y);
+
+        // Start approximately 3 blocks outside the
+        // black overworld barrier.
+        double startRadius =
+                AbyssDomainCast.OVERWORLD_RADIUS + 3.5;
+
+        // Search progressively farther outward only
+        // if the first location is obstructed.
+        for (int outward = 0; outward <= 9; outward++) {
+
+            double radius = startRadius + outward;
+
+            double targetX = centerX + dx * radius;
+            double targetZ = centerZ + dz * radius;
+
+            // Use block centers for predictable collision.
+            double x = Mth.floor(targetX) + 0.5;
+            double z = Mth.floor(targetZ) + 0.5;
+
+            // Ensure rounding did not move the candidate
+            // back into the sphere.
+            double horizontalDistanceSq =
+                    (x - centerX) * (x - centerX)
+                            + (z - centerZ) * (z - centerZ);
+
+            double minimumRadius =
+                    AbyssDomainCast.OVERWORLD_RADIUS + 2.5;
+
+            if (horizontalDistanceSq
+                    < minimumRadius * minimumRadius) {
+                continue;
+            }
+
+            returnLevel.getChunkAt(
+                    BlockPos.containing(x, baseY, z)
+            );
+
+            // Search for solid ground and enough
+            // empty space to fit the player.
+            for (int offset = 0; offset <= 24; offset++) {
+
+                int above = baseY + offset;
+
+                if (above < returnLevel.getMaxBuildHeight() - 2
+                        && isSafe(returnLevel, entity, x, above, z)) {
+                    return new Vec3(x, above, z);
+                }
+
+                if (offset > 0) {
+                    int below = baseY - offset;
+
+                    if (below > returnLevel.getMinBuildHeight()
+                            && isSafe(returnLevel, entity, x, below, z)) {
+                        return new Vec3(x, below, z);
+                    }
+                }
+            }
+        }
+
+        // No safe escape destination was found.
+        // Never fall back inside the active sphere.
+        return null;
+    }
+
     private static boolean isSafe(
             ServerLevel level,
             LivingEntity entity,
