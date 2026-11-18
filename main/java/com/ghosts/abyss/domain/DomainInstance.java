@@ -12,6 +12,7 @@ public class DomainInstance {
     public UUID ownerId;
     public boolean ownerEntryConfirmed = false;
     public double skillDomain;
+    public long nextChimeraSpawnTick = 0L;
     public final BlockPos arenaCenter;          // in domain dim
     public final ResourceKey<Level> returnDim;  // usually overworld
     public final Vec3 overworldCenter;          // JC sphere center

@@ -5,7 +5,9 @@ import net.mcreator.jujutsucraft.init.JujutsucraftModEntities;
 import net.mcreator.jujutsucraft.init.JujutsucraftModParticleTypes;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -51,6 +53,7 @@ public final class DomainDecorations {
 
         String entityId = switch ((int) participant.skillDomain) {
             case 2 -> "jujutsucraft:entity_unlimited_void";
+            case 6 -> "jujutsucraft:entity_chimera_shadow_garden";
             case 15 -> "jujutsucraft:entity_hands";
             case 19 -> "jujutsucraft:entity_time_cell_moon_palace";
             default -> null;
@@ -59,6 +62,7 @@ public final class DomainDecorations {
 
         double distance = switch ((int) participant.skillDomain) {
             case 2 -> 56.0;
+            case 6 -> 52.0;
             case 15 -> 57.0;
             case 19 -> 43.0;
             default -> 57.0;
@@ -75,6 +79,7 @@ public final class DomainDecorations {
 
         double offsetY = switch ((int) participant.skillDomain) {
             case 2 -> 2.0;  // Gojo (unchanged)
+            case 6 -> 1.0;  // Chimera Shadow Garden
             case 15 -> 1.0; // Mahito (unchanged)
             case 19 -> 3.5; // Naoya (raised by 2 blocks)
             default -> 1.0;
@@ -100,6 +105,7 @@ public final class DomainDecorations {
 
     public static void sync(ServerLevel level, DomainInstance inst) {
         if (level == null || inst == null) return;
+        cleanupDefeatedMegumiSummons(level, inst);
         inst.yutaDecorationsSpawned.removeIf(
                 casterId -> !inst.participants.contains(casterId)
         );
@@ -306,17 +312,20 @@ public final class DomainDecorations {
 
 // Enlarge domain decorations with Pehkui.
 
-        if ("jujutsucraft:entity_hands".equals(entityId)
-                || "jujutsucraft:entity_unlimited_void".equals(entityId)) {
 
-            // Mahito and Gojo remain 3x.
+        if ("jujutsucraft:entity_hands".equals(entityId)
+                || "jujutsucraft:entity_unlimited_void".equals(entityId)
+                || "jujutsucraft:entity_chimera_shadow_garden".equals(entityId)) {
+
+            // Mahito, Gojo, and Megumi decorations are 3x.
             ScaleTypes.BASE.getScaleData(entity).setScale(3.0F);
 
         } else if ("jujutsucraft:ticket_gate".equals(entityId)) {
 
-            // Hakari's ticket gates are 2x.
+            // Hakari's ticket gates remain 2x.
             ScaleTypes.BASE.getScaleData(entity).setScale(2.0F);
         }
+
 
 
 
@@ -623,6 +632,53 @@ public final class DomainDecorations {
 
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private static void cleanupDefeatedMegumiSummons(
+            ServerLevel level,
+            DomainInstance inst
+    ) {
+        TagKey<EntityType<?>> tenShadowsTag = TagKey.create(
+                Registries.ENTITY_TYPE,
+                new ResourceLocation(
+                        "jujutsucraft",
+                        "ten_shadows_technique"
+                )
+        );
+
+        for (Entity summoned : level.getEntities(
+                (Entity) null,
+                arenaBox(inst),
+                e -> e.getPersistentData()
+                        .getBoolean("domain_entity")
+                        && e.getType().is(tenShadowsTag)
+        )) {
+
+            String ownerUuid = summoned.getPersistentData()
+                    .getString("OWNER_UUID");
+
+            if (ownerUuid.isEmpty()) continue;
+
+            boolean ownerStillParticipating = false;
+
+            for (DomainClashParticipants.Participant participant
+                    : inst.participants.all()) {
+
+                if (participant.skillDomain == 6.0D
+                        && participant.entityId.toString()
+                        .equals(ownerUuid)) {
+
+                    ownerStillParticipating = true;
+                    break;
+                }
+            }
+
+            // The Megumi who created this domain summon
+            // is no longer participating in the arena.
+            if (!ownerStillParticipating) {
+                summoned.discard();
+            }
         }
     }
 

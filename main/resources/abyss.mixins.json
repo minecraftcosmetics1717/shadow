@@ -121,7 +121,8 @@
     "TenShadowsTotalityMixin",
     "DomainServerEntityMixin",
     "MegumiDomainDisplayMixin",
-    "MegumiDomainExecuteMixin"
+    "MegumiDomainExecuteMixin",
+    "ChimeraShadowGardenActiveMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

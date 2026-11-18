@@ -44,10 +44,16 @@ public final class DomainSureHit {
             // Suppress sure-hit while another domain is challenging
             // the current owner.
             LivingEntity challenger = DomainClash.findActiveDomainInArena(
-                    domainLevel, inst, inst.ownerId
-            );
+                    domainLevel, inst, inst.ownerId);
 
-            if (challenger != null) continue;
+            if (challenger != null) {
+
+                // Chimera Shadow Garden's domain shikigami
+                // disappear while a domain clash is active.
+                ChimeraShadowGardenSureHit.unsummonForClash(
+                        domainLevel,
+                        inst);
+                continue;}
 
             // Respect JC's failed-domain state.
             if (owner.getPersistentData().getBoolean("Failed")
@@ -108,13 +114,28 @@ public final class DomainSureHit {
             try {
                 mapVars.DomainExpansionRadius = targetRadius;
 
-                DomainActiveProcedure.execute(
-                        domainLevel,
-                        owner.getX(),
-                        owner.getY(),
-                        owner.getZ(),
-                        owner
-                );
+
+                if (skill == 6.0D) {
+
+                    // Chimera Shadow Garden uses Abyss's custom
+                    // unlock-aware, population-limited sure-hit.
+                    ChimeraShadowGardenSureHit.tick(
+                            domainLevel,
+                            inst,
+                            owner);
+
+                } else {
+
+                    // All other domains continue using
+                    // their existing Jujutsucraft behavior.
+                    DomainActiveProcedure.execute(
+                            domainLevel,
+                            owner.getX(),
+                            owner.getY(),
+                            owner.getZ(),
+                            owner);
+                }
+
 
             } finally {
                 // Restore Jujutsucraft's shared setting.
