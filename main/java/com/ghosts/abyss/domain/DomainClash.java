@@ -402,9 +402,22 @@ public final class DomainClash {
 
 // The defeated owner no longer participates.
 // Their old side becomes available.
+
         inst.participants.remove(loser.getUUID());
 
         if (domainLevel != null) {
+
+            // If this transfer leaves one winning caster,
+            // restart that caster's full domain duration.
+            // If other challengers remain, the timer
+            // stays paused until the entire clash ends.
+            DomainClashTimer.resumeAfterClash(
+                    domainLevel,
+                    inst
+            );
+
+            DomainDecorations.sync(domainLevel, inst);
+
 
             DomainDecorations.sync(domainLevel, inst);
 

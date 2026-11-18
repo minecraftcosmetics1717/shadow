@@ -157,7 +157,10 @@ public final class DomainClashController {
 
 
             if (active.size() < 2) {
-
+                DomainClashTimer.resumeAfterClash(
+                        level,
+                        inst
+                );
                 // A clash has finished. Restore the surviving
                 // domain's appearance once, not every tick.
                 if (STATES.containsKey(slot)
@@ -181,7 +184,13 @@ public final class DomainClashController {
             }
 
             ClashState state = STATES.get(slot);
-
+// Two or more active casters are clashing.
+// Prevent either domain from expiring due to time.
+            DomainClashTimer.pauseDuringClash(
+                    level,
+                    inst,
+                    casters
+            );
             if (state == null) {
                 // First tick of this clash.
                 state = new ClashState();

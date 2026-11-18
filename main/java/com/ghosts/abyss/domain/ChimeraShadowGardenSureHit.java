@@ -18,6 +18,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.AABB;
 
 import net.minecraftforge.registries.ForgeRegistries;
+import virtuoel.pehkui.api.ScaleTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +45,7 @@ public final class ChimeraShadowGardenSureHit {
             new Summon("nue", 4, "skill_nue", 3),
             new Summon("great_serpent", 5,
                     "skill_great_serpent", 2),
-            new Summon("toad_2", 6, "skill_toad", 2),
+            new Summon("toad_2", 6, "skill_toad", 5),
             new Summon("max_elephant", 7,
                     "skill_max_elephant", 2),
             new Summon("round_deer", 9,
@@ -134,9 +135,17 @@ public final class ChimeraShadowGardenSureHit {
             active.add(entity);
         }
 
-        if (active.size() >= MAX_SUMMONS) {
-            return;
+
+        int regularSummonCount = 0;
+        EntityType<?> toadType = getEntityType("toad_2");
+        for (LivingEntity summoned : active) {
+            // Toads have their own separate limit.
+            if (summoned.getType() == toadType) {
+                continue;
+            }
+            regularSummonCount++;
         }
+
 
         // Find shikigami that are unlocked and under cap.
         List<Summon> eligible = new ArrayList<>();
@@ -160,9 +169,15 @@ public final class ChimeraShadowGardenSureHit {
                 }
             }
 
-            if (existing < summon.perTypeLimit()) {
+            boolean isToad = summon.entityId().equals("toad_2");
+            boolean canSpawn =
+                    existing < summon.perTypeLimit()
+                            && (isToad || regularSummonCount < MAX_SUMMONS);
+
+            if (canSpawn) {
                 eligible.add(summon);
             }
+
         }
 
         if (eligible.isEmpty()) return;
@@ -281,6 +296,10 @@ public final class ChimeraShadowGardenSureHit {
             ChimeraShadowGardenSetProcedure.execute(
                     owner,
                     summoned);
+
+            if (summon.entityId().equals(
+                    "eight_handled_sword_divergent_sila_divine_general_mahoraga")) {
+                ScaleTypes.BASE.getScaleData(summoned).setScale(2.0F);}
             summoned.getPersistentData().putBoolean(
                     "abyss_chimera_summon",
                     true);

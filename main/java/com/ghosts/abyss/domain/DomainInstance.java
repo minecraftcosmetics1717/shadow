@@ -11,6 +11,7 @@ public class DomainInstance {
     public final int slot;
     public UUID ownerId;
     public boolean ownerEntryConfirmed = false;
+    public boolean clashTimerPaused = false;
     public double skillDomain;
     public long nextChimeraSpawnTick = 0L;
     public final BlockPos arenaCenter;          // in domain dim
