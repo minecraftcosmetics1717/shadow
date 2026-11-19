@@ -118,7 +118,8 @@
     "YorozuDomainExecuteMixin",
     "UraumeDomainExecuteMixin",
     "DomainDisplayMixin",
-    "RyuDomainExecuteMixin"
+    "RyuDomainExecuteMixin",
+    "ChosoDomainExecuteMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

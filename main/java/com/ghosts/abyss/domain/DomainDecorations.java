@@ -68,6 +68,7 @@ public final class DomainDecorations {
         String entityId = switch ((int) participant.skillDomain) {
             case 2 -> "jujutsucraft:entity_unlimited_void";
             case 6 -> "jujutsucraft:entity_chimera_shadow_garden";
+            case 10 -> "jujutsucraft:entity_heart";
             case 15 -> "jujutsucraft:entity_hands";
             case 19 -> "jujutsucraft:entity_time_cell_moon_palace";
             default -> null;
@@ -77,6 +78,7 @@ public final class DomainDecorations {
         double distance = switch ((int) participant.skillDomain) {
             case 2 -> 56.0;
             case 6 -> 52.0;
+            case 10 -> 51.0;
             case 15 -> 57.0;
             case 19 -> 43.0;
             default -> 57.0;
@@ -94,6 +96,7 @@ public final class DomainDecorations {
         double offsetY = switch ((int) participant.skillDomain) {
             case 2 -> 2.0;  // Gojo (unchanged)
             case 6 -> 1.0;  // Chimera Shadow Garden
+            case 10 -> 2.0;
             case 15 -> 1.0; // Mahito (unchanged)
             case 19 -> 3.5; // Naoya (raised by 2 blocks)
             default -> 1.0;
@@ -383,10 +386,11 @@ public final class DomainDecorations {
 
 // Enlarge domain decorations with Pehkui.
 
-
         if ("jujutsucraft:entity_hands".equals(entityId)
                 || "jujutsucraft:entity_unlimited_void".equals(entityId)
-                || "jujutsucraft:entity_chimera_shadow_garden".equals(entityId)) {
+                || "jujutsucraft:entity_chimera_shadow_garden".equals(entityId)
+                || "jujutsucraft:entity_heart".equals(entityId)) {
+
 
             // Mahito, Gojo, and Megumi decorations are 3x.
             ScaleTypes.BASE.getScaleData(entity).setScale(3.0F);

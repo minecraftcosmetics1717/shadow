@@ -44,36 +44,18 @@ public class DomainDisplayMixin {
 
         return switch ((int) playerCT) {
 
-            // Gojo
-            case 2 -> "Infinite Void";
-
-            // Jogo
-            case 4 -> "Coffin of the Iron Mountain";
-
-            // Yuta Okkotsu
-            case 5 -> "Authentic Mutual Love";
-
-            // Megumi Fushiguro
-            case 6 -> "Chimera Shadow Garden";
-
-            // Dagon
-            case 8 -> "Horizon of the Captivating Skandha";
-// Ryu Ishigori
-            case 12 -> "All-Satiating Flavor Festival";
-            // Mahito
-            case 15 -> "Self-Embodiment of Perfection";
-
-            // Naoya Zenin
-            case 19 -> "Time Cell Moon Palace";
-
-            // Uraume
-            case 24 -> "Distant Winds of Commitment";
-
-            // Kinji Hakari
-            case 29 -> "Idle Death Gamble";
-
-            // Yorozu
-            case 39 -> "Threefold Affliction";
+            case 2 -> "Infinite Void"; // Gojo
+            case 4 -> "Coffin of the Iron Mountain"; // Jogo
+            case 5 -> "Authentic Mutual Love"; // Yuta Okkotsu
+            case 6 -> "Chimera Shadow Garden"; // Megumi Fushiguro
+            case 8 -> "Horizon of the Captivating Skandha"; // Dagon
+            case 10 -> "Hearth of the Unblossomed"; // Choso
+            case 12 -> "All-Satiating Flavor Festival"; // Ryu Ishigori
+            case 15 -> "Self-Embodiment of Perfection"; // Mahito
+            case 19 -> "Time Cell Moon Palace"; // Naoya Zenin
+            case 24 -> "Distant Winds of Commitment"; // Uraume
+            case 29 -> "Idle Death Gamble"; // Kinji Hakari
+            case 39 -> "Threefold Affliction"; // Yorozu
 
             // All other cursed techniques
             // keep their original names.
