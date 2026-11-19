@@ -16,13 +16,43 @@ public final class DomainSureHit {
             return;
         }
 
+
         for (int slot = 0; slot < DomainDimension.MAX_SLOTS; slot++) {
             DomainInstance inst = DomainInstanceManager.getBySlot(slot);
             if (inst == null) continue;
 
+            // Ryu's animated domain decorations are visual effects,
+            // not a damaging sure-hit.
+            // Keep them updating even during domain clashes.
+            for (DomainClashParticipants.Participant participant
+                    : inst.participants.all()) {
+
+                if ((int) participant.skillDomain != 12) {
+                    continue;
+                }
+
+                LivingEntity ryu = DomainArenaService.findLivingIn(
+                        domainLevel,
+                        participant.entityId
+                );
+
+                if (ryu == null || !ryu.isAlive()
+                        || ryu.getPersistentData()
+                        .getBoolean("DomainDefeated")) {
+                    continue;
+                }
+
+                RyuDomainDecorations.tick(
+                        domainLevel,
+                        inst,
+                        ryu
+                );
+            }
+
             LivingEntity owner = DomainArenaService.findLivingIn(
                     domainLevel, inst.ownerId
             );
+
 
             if (owner == null || !owner.isAlive()) continue;
 
@@ -124,18 +154,15 @@ public final class DomainSureHit {
                             owner
                     );
 
+
                 } else if (skill == 12.0D) {
 
-                    // Ryu — All-Satiating Flavor Festival.
-                    // Recreate JC's recurring domain decorations
-                    // with a population cap and Abyss cleanup.
-                    RyuDomainDecorations.tick(
-                            domainLevel,
-                            inst,
-                            owner
-                    );
+                    // Ryu's decorations were already updated
+                    // before the sure-hit and clash checks.
+                    // No additional sure-hit behavior yet.
 
                 } else {
+
 
 
                     // All other domains continue using

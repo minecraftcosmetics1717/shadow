@@ -161,9 +161,37 @@ public final class RyuDomainDecorations {
                 ? 7.0D + level.random.nextDouble() * 12.0D
                 : 1.0D);
 
-        float yaw = level.random.nextFloat() * 360.0F;
 
+        // Make the firework structures face the domain center.
+        // Sandstone decorations keep a random rotation.
+        float yaw;
+
+        if (structure) {
+            double centerX = inst.arenaCenter.getX() + 0.5D;
+            double centerZ = inst.arenaCenter.getZ() + 0.5D;
+
+            double dx = centerX - x;
+            double dz = centerZ - z;
+
+            // Minecraft's yaw convention:
+            // 0 = South, 90 = West, 180 = North, 270 = East.
+            yaw = (float) Math.toDegrees(
+                    Math.atan2(-dx, dz)
+            );
+        } else {
+            yaw = level.random.nextFloat() * 360.0F;
+        }
+
+        // Keep vertical rotation level.
         entity.moveTo(x, y, z, yaw, 0.0F);
+
+        if (structure && entity instanceof LivingEntity living) {
+            living.yBodyRot = yaw;
+            living.yBodyRotO = yaw;
+            living.setYHeadRot(yaw);
+            living.yHeadRotO = yaw;
+        }
+
 
         // Domain decorations should not attack,
         // fall, or disappear because of damage.
