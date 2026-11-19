@@ -44,6 +44,16 @@ public final class DomainDecorations {
         }
 
         if (hasDecoration(level, inst, participant.entityId)) return;
+// Ryu Ishigori — All-Satiating Flavor Festival
+        if ((int) participant.skillDomain == 12) {
+            RyuDomainDecorations.spawnInitial(
+                    level,
+                    inst,
+                    participant
+            );
+            return;
+        }
+
 // Yorozu has 12 separate decorations.
         if ((int) participant.skillDomain == 39) {
             spawnYorozuDecorations(level, inst, participant);

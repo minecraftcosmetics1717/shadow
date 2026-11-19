@@ -115,16 +115,28 @@ public final class DomainSureHit {
                 mapVars.DomainExpansionRadius = targetRadius;
 
 
+
                 if (skill == 6.0D) {
 
-                    // Chimera Shadow Garden uses Abyss's custom
-                    // unlock-aware, population-limited sure-hit.
                     ChimeraShadowGardenSureHit.tick(
                             domainLevel,
                             inst,
-                            owner);
+                            owner
+                    );
+
+                } else if (skill == 12.0D) {
+
+                    // Ryu — All-Satiating Flavor Festival.
+                    // Recreate JC's recurring domain decorations
+                    // with a population cap and Abyss cleanup.
+                    RyuDomainDecorations.tick(
+                            domainLevel,
+                            inst,
+                            owner
+                    );
 
                 } else {
+
 
                     // All other domains continue using
                     // their existing Jujutsucraft behavior.

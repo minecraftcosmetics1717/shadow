@@ -117,7 +117,8 @@
     "ChimeraShadowGardenActiveMixin",
     "YorozuDomainExecuteMixin",
     "UraumeDomainExecuteMixin",
-    "DomainDisplayMixin"
+    "DomainDisplayMixin",
+    "RyuDomainExecuteMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

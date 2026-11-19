@@ -26,6 +26,8 @@ public class ModBlocks {
             register("domain_int", DomainIntBlock::new);
     public static final RegistryObject<Block> DOMAIN_SAND =
             register("domain_sand", () -> new DomainBlock(MapColor.SAND, SoundType.SAND,true));
+    public static final RegistryObject<Block> DOMAIN_SAND_BLACK =
+            register("domain_sand_black", () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.SAND, false));
     public static final RegistryObject<Block> DOMAIN_GRAVEL =
             register("domain_gravel", () -> new DomainBlock(MapColor.STONE, SoundType.GRAVEL,false));
     public static final RegistryObject<Block> DOMAIN_RED =
@@ -71,6 +73,9 @@ public class ModBlocks {
     public static final RegistryObject<Block> DOMAIN_SKY_DAY =
             register("domain_sky_day",
                     () -> new DomainSkyBlock(DomainSkyBlock.SkyType.DAY));
+    public static final RegistryObject<Block> DOMAIN_SKY_NIGHT =
+            register("domain_sky_night",
+                    () -> new DomainSkyBlock(DomainSkyBlock.SkyType.NIGHT));
 
     public static final RegistryObject<Block> DOMAIN_SKY_MAHITO =
             register("domain_sky_mahito",
@@ -79,36 +84,30 @@ public class ModBlocks {
     public static final RegistryObject<Block> DOMAIN_SKY_BLACK =
             register("domain_sky_black",
                     () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.BLACK
-                    ));
+                            DomainSkyBlock.SkyType.BLACK));
 
     public static final RegistryObject<Block> DOMAIN_SKY_WHITE =
             register("domain_sky_white",
                     () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.WHITE
-                    ));
+                            DomainSkyBlock.SkyType.WHITE));
 
     public static final RegistryObject<Block> DOMAIN_SKY_INFINITE_VOID =
             register("domain_sky_infinite_void",
                     () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.INFINITE_VOID
-                    ));
+                            DomainSkyBlock.SkyType.INFINITE_VOID));
     public static final RegistryObject<Block> DOMAIN_SKY_WOMB =
             register("domain_sky_womb",
                     () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.WOMB
-                    ));
+                            DomainSkyBlock.SkyType.WOMB));
 
     public static final RegistryObject<Block> DOMAIN_SKY_MOUNTAIN =
             register("domain_sky_mountain",
                     () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.MOUNTAIN
-                    ));
+                            DomainSkyBlock.SkyType.MOUNTAIN));
     public static final RegistryObject<Block> DOMAIN_SKY_GAMBLE =
             register("domain_sky_gamble",
                     () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.GAMBLE
-                    ));
+                            DomainSkyBlock.SkyType.GAMBLE));
 
 
     private static RegistryObject<Block> register(String name, Supplier<Block> block) {

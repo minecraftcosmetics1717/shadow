@@ -793,6 +793,9 @@ public final class DomainSkyMaskRenderer {
         if (type == SkyType.WOMB) {
             addWombStars(builder);
         }
+        if (type == SkyType.NIGHT) {
+            addNightStars(builder);
+        }
         VertexBuffer buffer =
                 new VertexBuffer(VertexBuffer.Usage.STATIC);
 
@@ -801,6 +804,106 @@ public final class DomainSkyMaskRenderer {
         VertexBuffer.unbind();
 
         return buffer;
+    }
+
+    private static void addNightStars(BufferBuilder builder) {
+
+        // Fixed seed: stars never change position.
+        Random random = new Random(24681357L);
+
+        // More stars than Infinite Void,
+        // but smaller and more natural-looking.
+        final int starCount = 850;
+
+        // Slightly closer than the sky's radius
+        // so stars appear in front of the sky.
+        final float radius = 47.5F;
+
+        for (int i = 0; i < starCount; i++) {
+
+            // Random direction on the sky sphere.
+            double y = random.nextDouble() * 2.0D - 1.0D;
+
+            double angle =
+                    random.nextDouble() * Math.PI * 2.0D;
+
+            double horizontal =
+                    Math.sqrt(1.0D - y * y);
+
+            float nx = (float) (
+                    horizontal * Math.cos(angle)
+            );
+
+            float ny = (float) y;
+
+            float nz = (float) (
+                    horizontal * Math.sin(angle)
+            );
+
+            // First tangent vector.
+            float sideX = -nz;
+            float sideZ = nx;
+
+            float length = (float) Math.sqrt(
+                    sideX * sideX + sideZ * sideZ
+            );
+
+            if (length < 0.0001F) continue;
+
+            sideX /= length;
+            sideZ /= length;
+
+            // Second tangent vector.
+            float upX = ny * sideZ;
+            float upY = nz * sideX - nx * sideZ;
+            float upZ = -ny * sideX;
+
+            // Most stars are tiny.
+            float size = 0.035F
+                    + random.nextFloat() * 0.055F;
+
+            // A few slightly larger stars.
+            if (random.nextInt(18) == 0) {
+                size *= 1.6F;
+            }
+
+            // Subtle brightness variation.
+            int brightness =
+                    155 + random.nextInt(101);
+
+            float cx = nx * radius;
+            float cy = ny * radius;
+            float cz = nz * radius;
+
+            // Four vertices forming one star quad.
+            starVertex(
+                    builder, cx, cy, cz,
+                    sideX, 0, sideZ,
+                    upX, upY, upZ,
+                    -size, -size, brightness
+            );
+
+            starVertex(
+                    builder, cx, cy, cz,
+                    sideX, 0, sideZ,
+                    upX, upY, upZ,
+                    -size, size, brightness
+            );
+
+            starVertex(
+                    builder, cx, cy, cz,
+                    sideX, 0, sideZ,
+                    upX, upY, upZ,
+                    size, size, brightness
+            );
+
+            starVertex(
+                    builder, cx, cy, cz,
+                    sideX, 0, sideZ,
+                    upX, upY, upZ,
+                    size, -size, brightness
+            );
+        }
     }
 
     private static void addWombStars(BufferBuilder builder) {
@@ -977,16 +1080,13 @@ public final class DomainSkyMaskRenderer {
             SkyType type,
             float radius,
             double theta,
-            double phi
-    )
+            double phi)
     {
         float x = (float) (
-                Math.sin(theta) * Math.cos(phi) * radius
-        );
+                Math.sin(theta) * Math.cos(phi) * radius);
         float y = (float) (Math.cos(theta) * radius);
         float z = (float) (
-                Math.sin(theta) * Math.sin(phi) * radius
-        );
+                Math.sin(theta) * Math.sin(phi) * radius);
 
         float blend = (1F - y / radius) * 0.5F;
 
@@ -994,13 +1094,31 @@ public final class DomainSkyMaskRenderer {
         int green;
         int blue;
 
-
         switch (type) {
             case DAY -> {
                 // Existing daytime sky.
                 red = (int) (55 + 145 * blend);
                 green = (int) (125 + 95 * blend);
                 blue = 255;
+            }
+
+            case NIGHT -> {
+
+                float height = y / radius;
+
+                // 1 at the horizon, 0 at the top and bottom.
+                float horizon = Math.max(
+                        0.0F,
+                        1.0F - Math.abs(height));
+
+                // Smooth transition toward the horizon.
+                horizon = horizon * horizon
+                        * (3.0F - 2.0F * horizon);
+
+                // Subtle brightness around the horizon.
+                red = Math.round(5.0F + 13.0F * horizon);
+                green = Math.round(9.0F + 20.0F * horizon);
+                blue = Math.round(22.0F + 30.0F * horizon);
             }
 
             case MAHITO -> {

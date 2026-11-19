@@ -58,7 +58,8 @@ public class DomainDisplayMixin {
 
             // Dagon
             case 8 -> "Horizon of the Captivating Skandha";
-
+// Ryu Ishigori
+            case 12 -> "All-Satiating Flavor Festival";
             // Mahito
             case 15 -> "Self-Embodiment of Perfection";
 

@@ -28,6 +28,9 @@ public class DomainArenaBuilder {
     private static BlockState abyssSand() {
         return ModBlocks.DOMAIN_SAND.get().defaultBlockState();
     }
+    private static BlockState abyssSandBlack() {
+        return ModBlocks.DOMAIN_SAND_BLACK.get().defaultBlockState();
+    }
     private static BlockState abyssGravel() {
         return ModBlocks.DOMAIN_GRAVEL.get().defaultBlockState();
     }
@@ -103,6 +106,7 @@ public class DomainArenaBuilder {
             case 6 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Megumi
             case 8 -> abyssSand();          // Dagon
             case 9 -> abyssSand();          // Yuki
+            case 12 -> ModBlocks.DOMAIN_SAND_BLACK.get().defaultBlockState();        // Ryu
             case 14 -> abyssFlower();       // Hanami
             case 15 -> ModBlocks.DOMAIN_SKY_MAHITO.get().defaultBlockState(); // Mahito
             case 19 -> ModBlocks.DOMAIN_SKY_WOMB.get().defaultBlockState();       // Naoya
@@ -126,6 +130,7 @@ public class DomainArenaBuilder {
             case 6 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Megumi
             case 8 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Dagon (no blue_sky block yet)
             case 9 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Yuki
+            case 12 -> ModBlocks.DOMAIN_SKY_NIGHT.get().defaultBlockState();        // Ryu
             case 14 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Hanami (or sand/sky later)
             case 15 -> ModBlocks.DOMAIN_SKY_MAHITO.get().defaultBlockState(); // Mahito
             case 19 -> ModBlocks.DOMAIN_SKY_WOMB.get().defaultBlockState();       // Naoya

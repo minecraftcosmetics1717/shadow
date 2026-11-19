@@ -1,6 +1,11 @@
 
 package com.ghosts.abyss.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SoundType;
@@ -18,7 +23,8 @@ public class DomainSkyBlock extends Block {
         INFINITE_VOID,
         WOMB,
         MOUNTAIN,
-        GAMBLE
+        GAMBLE,
+        NIGHT
     }
 
     private final SkyType skyType;
@@ -34,7 +40,7 @@ public class DomainSkyBlock extends Block {
                 .isRedstoneConductor((state, level, pos) -> false)
                 .isSuffocating((state, level, pos) -> false)
                 .isViewBlocking((state, level, pos) -> false)
-                .lightLevel(state -> 15));
+                .lightLevel(state -> skyType == SkyType.NIGHT ? 0 : 15));
 
         this.skyType = skyType;
     }
@@ -56,4 +62,31 @@ public class DomainSkyBlock extends Block {
     ) {
         return adjacentState.getBlock() instanceof DomainSkyBlock;
     }
+
+    @Override
+    public boolean addLandingEffects(
+            BlockState state1,
+            ServerLevel level,
+            BlockPos pos,
+            BlockState state2,
+            LivingEntity entity,
+            int numberOfParticles
+    ) {
+        // Prevent missing-texture particles
+        // when entities land on domain sky blocks.
+        return true;
+    }
+
+    @Override
+    public boolean addRunningEffects(
+            BlockState state,
+            Level level,
+            BlockPos pos,
+            Entity entity
+    ) {
+        // Prevent missing-texture particles
+        // when players sprint on domain sky blocks.
+        return true;
+    }
+
 }
