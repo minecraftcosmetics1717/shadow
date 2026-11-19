@@ -26,17 +26,22 @@ public final class DomainSpawnPositions {
 
         int skill = (int) Math.round(inst.skillDomain);
 
+
         switch (skill) {
-            case 19 -> {
-                // Time Cell Moon Palace:
-                // Between the center and north/back wall.
+            // Gojo — Infinite Void (2)
+            // Megumi — Chimera Shadow Garden (6)
+            // Choso — Domain Expansion (10)
+            // Mahito — Self-Embodiment of Perfection (15)
+            // Naoya — Time Cell Moon Palace (19)
+            case 2, 6, 10, 15, 19 -> {
                 z -= 30.0;
             }
 
             default -> {
-                // Other domains currently use center.
+                // All other domains spawn at the center.
             }
         }
+
 
         return new Vec3(x, y, z);
     }
