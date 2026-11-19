@@ -29,11 +29,19 @@ public class ModBlocks {
     public static final RegistryObject<Block> DOMAIN_SAND_BLACK =
             register("domain_sand_black", () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.SAND, false));
     public static final RegistryObject<Block> DOMAIN_GRAVEL =
-            register("domain_gravel", () -> new DomainBlock(MapColor.STONE, SoundType.GRAVEL,false));
+            register("domain_gravel", () -> new DomainBlock(MapColor.STONE, SoundType.SAND,false));
     public static final RegistryObject<Block> DOMAIN_RED =
             register("domain_red", () -> new DomainBlock(MapColor.COLOR_RED, SoundType.STONE,false));
     public static final RegistryObject<Block> DOMAIN_FLOWER =
             register("domain_flower", () -> new DomainBlock(MapColor.COLOR_PINK, SoundType.GRASS,false));
+    public static final RegistryObject<Block> DOMAIN_GRASS =
+            register("domain_grass", () -> new DomainBlock(MapColor.GRASS, SoundType.GRASS,true));
+    public static final RegistryObject<Block> DOMAIN_PODZOL =
+            register("domain_podzol", () -> new DomainBlock(MapColor.PODZOL, SoundType.GRASS,false));
+    public static final RegistryObject<Block> DOMAIN_BLOOD =
+            register("domain_blood", () -> new DomainBlock(MapColor.COLOR_RED, SoundType.NYLIUM,false));
+    public static final RegistryObject<Block> DOMAIN_SNOW =
+            register("domain_snow", () -> new DomainBlock(MapColor.SNOW, SoundType.SNOW,false));
     public static final RegistryObject<Block> DOMAIN_BONE =
             register("domain_bone", () -> new DomainBlock(MapColor.WOOL, SoundType.BONE_BLOCK,false));
     public static final RegistryObject<Block> DOMAIN_BIRCH =
@@ -41,73 +49,43 @@ public class ModBlocks {
     public static final RegistryObject<Block> DOMAIN_WHITE =
             register("domain_white", () -> new DomainBlock(MapColor.SNOW, SoundType.STONE,true));
     public static final RegistryObject<Block> DOMAIN_BLACK =
-            register("domain_black",
-                    () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,true));
+            register("domain_black", () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,true));
     public static final RegistryObject<Block> DOMAIN_TILES =
-            register("domain_tiles",
-                    () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
+            register("domain_tiles", () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
     public static final RegistryObject<Block> DOMAIN_WALL_TILES =
-            register("domain_wall_tiles",
-                    () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
+            register("domain_wall_tiles", () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
     public static final RegistryObject<Block> DOMAIN_ROOF_TILES =
-            register("domain_roof_tiles",
-                    () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
+            register("domain_roof_tiles", () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
     public static final RegistryObject<Block> DOMAIN_ROOF_TILESH =
-            register("domain_roof_tilesh",
-                    () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
+            register("domain_roof_tilesh", () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.STONE,false));
     public static final RegistryObject<Block> DOMAIN_ROCK =
             register("domain_rock", () -> new DomainBlock(MapColor.STONE, SoundType.STONE,false));
     public static final RegistryObject<Block> DOMAIN_MOUNTAIN =
-            register("domain_mountain",
-                    () -> new DomainBlock(MapColor.STONE, SoundType.STONE, true));
+            register("domain_mountain", () -> new DomainBlock(MapColor.STONE, SoundType.STONE, true));
     public static final RegistryObject<Block> DOMAIN_MOUNTAIN_MAGMA =
-            register("domain_mountain_magma",
-                    () -> new DomainBlock(MapColor.STONE, SoundType.STONE, true));
+            register("domain_mountain_magma", () -> new DomainBlock(MapColor.STONE, SoundType.STONE, true));
     public static final RegistryObject<Block> DOMAIN_MOUNTAIN_DEEPSLATE =
-            register("domain_mountain_deepslate",
-                    () -> new DomainBlock(MapColor.STONE, SoundType.STONE, true));
-
+            register("domain_mountain_deepslate", () -> new DomainBlock(MapColor.STONE, SoundType.STONE, true));
     public static final RegistryObject<Block> DOMAIN_BLUE_SKY =
             register("domain_blue_sky", () -> new DomainBlock(MapColor.COLOR_LIGHT_BLUE, SoundType.GLASS,true));
-
     public static final RegistryObject<Block> DOMAIN_SKY_DAY =
-            register("domain_sky_day",
-                    () -> new DomainSkyBlock(DomainSkyBlock.SkyType.DAY));
+            register("domain_sky_day", () -> new DomainSkyBlock(DomainSkyBlock.SkyType.DAY));
     public static final RegistryObject<Block> DOMAIN_SKY_NIGHT =
-            register("domain_sky_night",
-                    () -> new DomainSkyBlock(DomainSkyBlock.SkyType.NIGHT));
-
+            register("domain_sky_night", () -> new DomainSkyBlock(DomainSkyBlock.SkyType.NIGHT));
     public static final RegistryObject<Block> DOMAIN_SKY_MAHITO =
-            register("domain_sky_mahito",
-                    () -> new DomainSkyBlock(DomainSkyBlock.SkyType.MAHITO));
-
+            register("domain_sky_mahito", () -> new DomainSkyBlock(DomainSkyBlock.SkyType.MAHITO));
     public static final RegistryObject<Block> DOMAIN_SKY_BLACK =
-            register("domain_sky_black",
-                    () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.BLACK));
-
+            register("domain_sky_black", () -> new DomainSkyBlock(DomainSkyBlock.SkyType.BLACK));
     public static final RegistryObject<Block> DOMAIN_SKY_WHITE =
-            register("domain_sky_white",
-                    () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.WHITE));
-
+            register("domain_sky_white", () -> new DomainSkyBlock(DomainSkyBlock.SkyType.WHITE));
     public static final RegistryObject<Block> DOMAIN_SKY_INFINITE_VOID =
-            register("domain_sky_infinite_void",
-                    () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.INFINITE_VOID));
+            register("domain_sky_infinite_void", () -> new DomainSkyBlock(DomainSkyBlock.SkyType.INFINITE_VOID));
     public static final RegistryObject<Block> DOMAIN_SKY_WOMB =
-            register("domain_sky_womb",
-                    () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.WOMB));
-
+            register("domain_sky_womb", () -> new DomainSkyBlock(DomainSkyBlock.SkyType.WOMB));
     public static final RegistryObject<Block> DOMAIN_SKY_MOUNTAIN =
-            register("domain_sky_mountain",
-                    () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.MOUNTAIN));
+            register("domain_sky_mountain", () -> new DomainSkyBlock(DomainSkyBlock.SkyType.MOUNTAIN));
     public static final RegistryObject<Block> DOMAIN_SKY_GAMBLE =
-            register("domain_sky_gamble",
-                    () -> new DomainSkyBlock(
-                            DomainSkyBlock.SkyType.GAMBLE));
+            register("domain_sky_gamble", () -> new DomainSkyBlock(DomainSkyBlock.SkyType.GAMBLE));
 
 
     private static RegistryObject<Block> register(String name, Supplier<Block> block) {
