@@ -44,7 +44,11 @@ public final class DomainDecorations {
         }
 
         if (hasDecoration(level, inst, participant.entityId)) return;
-
+// Yorozu has 12 separate decorations.
+        if ((int) participant.skillDomain == 39) {
+            spawnYorozuDecorations(level, inst, participant);
+            return;
+        }
         // Hakari — Idle Death Gamble
         if ((int) participant.skillDomain == 29) {
             spawnHakariGates(level, inst, participant);
@@ -93,6 +97,63 @@ public final class DomainDecorations {
         int r = DomainDimension.OUTER_RADIUS + 4;
         return new AABB(c.getX() - r, c.getY() - r, c.getZ() - r,
                 c.getX() + r + 1, c.getY() + r + 1, c.getZ() + r + 1);
+    }
+
+    private static void spawnYorozuDecorations(
+            ServerLevel level,
+            DomainInstance inst,
+            DomainClashParticipants.Participant participant
+    ) {
+        if (level == null || inst == null
+                || participant == null) {
+            return;
+        }
+
+        // Match JC's original quantity.
+        final int decorationCount = 12;
+
+        // Keep the decorations inside the Abyss arena.
+        final double minDistance = 24.0D;
+        final double maxDistance = 53.0D;
+
+        // Position the decorations around the caster's
+        // side of the arena during domain clashes.
+        double sideAngle = switch (participant.side) {
+            case NORTH -> Math.PI;
+            case SOUTH -> 0.0D;
+            case WEST -> Math.PI * 1.5D;
+            case EAST -> Math.PI * 0.5D;
+        };
+
+        for (int i = 0; i < decorationCount; i++) {
+
+            double angle =
+                    sideAngle
+                            + (Math.PI * 2.0D * i / decorationCount)
+                            + (level.random.nextDouble() - 0.5D)
+                            * 0.25D;
+
+            double distance =
+                    minDistance
+                            + level.random.nextDouble()
+                            * (maxDistance - minDistance);
+
+            double offsetX = Math.sin(angle) * distance;
+            double offsetZ = Math.cos(angle) * distance;
+
+            float yaw = level.random.nextFloat() * 360.0F;
+
+            spawnDecoration(
+                    level,
+                    inst,
+                    "jujutsucraft:entity_threefold_affliction",
+                    offsetX,
+                    3.0D,
+                    offsetZ,
+                    yaw,
+                    participant.entityId
+            );
+        }
     }
 
     private static boolean hasDecoration(ServerLevel level, DomainInstance inst, UUID casterId) {

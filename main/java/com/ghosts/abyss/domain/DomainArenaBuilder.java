@@ -106,6 +106,7 @@ public class DomainArenaBuilder {
             case 14 -> abyssFlower();       // Hanami
             case 15 -> ModBlocks.DOMAIN_SKY_MAHITO.get().defaultBlockState(); // Mahito
             case 19 -> ModBlocks.DOMAIN_SKY_WOMB.get().defaultBlockState();       // Naoya
+            case 24 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState(); // Uraume
             case 27 -> abyssBirch();        // Higuruma (base; rim handled in placeFloor)
             case 29 -> ModBlocks.DOMAIN_SKY_GAMBLE.get().defaultBlockState(); // Hakari
             case 39 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState();        // Yorozu
@@ -128,6 +129,7 @@ public class DomainArenaBuilder {
             case 14 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Hanami (or sand/sky later)
             case 15 -> ModBlocks.DOMAIN_SKY_MAHITO.get().defaultBlockState(); // Mahito
             case 19 -> ModBlocks.DOMAIN_SKY_WOMB.get().defaultBlockState();       // Naoya
+            case 24 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState(); // Uraume
             case 27 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();       // Higuruma
             case 29 -> ModBlocks.DOMAIN_SKY_GAMBLE.get().defaultBlockState(); // Hakari
             case 39 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState();        // Yorozu

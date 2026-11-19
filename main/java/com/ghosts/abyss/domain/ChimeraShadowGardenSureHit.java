@@ -190,6 +190,7 @@ public final class ChimeraShadowGardenSureHit {
         spawn(level, inst, owner, selected);
     }
 
+
     private static boolean isUnlocked(
             LivingEntity owner,
             Summon summon
@@ -200,8 +201,11 @@ public final class ChimeraShadowGardenSureHit {
                                 + summon.nbtNumber()
                 );
 
-        // Permanently destroyed: never spawn.
-        if (state <= -2.0D) return false;
+        // Permanently destroyed shikigami
+        // cannot appear in the domain.
+        if (state <= -2.0D) {
+            return false;
+        }
 
         // Starting Divine Dogs are innate to Ten Shadows.
         if (summon.nbtNumber() == 1
@@ -209,12 +213,22 @@ public final class ChimeraShadowGardenSureHit {
             return true;
         }
 
-        // Explicitly unlocked or currently summoned.
-        if (state == 1.0D || state == -1.0D) {
+        // Explicitly tamed/unlocked.
+        if (state == 1.0D) {
             return true;
         }
 
-        // Advancement can also establish the unlock.
+        // -1 means currently summoned.
+        // This can include an untamed shikigami
+        // undergoing its taming ritual.
+        //
+        // Do not treat this as proof of taming.
+        if (state == -1.0D) {
+            return false;
+        }
+
+        // For players, JC's advancement can also
+        // establish that the shikigami was unlocked.
         if (owner instanceof ServerPlayer player) {
 
             Advancement adv = player.getServer()
@@ -234,6 +248,7 @@ public final class ChimeraShadowGardenSureHit {
 
         return false;
     }
+
 
     private static EntityType<?> getEntityType(String name) {
         return ForgeRegistries.ENTITY_TYPES.getValue(

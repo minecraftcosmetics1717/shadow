@@ -122,7 +122,11 @@
     "DomainServerEntityMixin",
     "MegumiDomainDisplayMixin",
     "MegumiDomainExecuteMixin",
-    "ChimeraShadowGardenActiveMixin"
+    "ChimeraShadowGardenActiveMixin",
+    "YorozuDomainDisplayMixin",
+    "YorozuDomainExecuteMixin",
+    "UraumeDomainDisplayMixin",
+    "UraumeDomainExecuteMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",
