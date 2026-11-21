@@ -119,7 +119,8 @@
     "UraumeDomainExecuteMixin",
     "DomainDisplayMixin",
     "RyuDomainExecuteMixin",
-    "ChosoDomainExecuteMixin"
+    "ChosoDomainExecuteMixin",
+    "UroDomainExecuteMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

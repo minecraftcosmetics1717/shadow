@@ -41,7 +41,7 @@ public class ModBlocks {
     public static final RegistryObject<Block> DOMAIN_BLOOD =
             register("domain_blood", () -> new DomainBlock(MapColor.COLOR_RED, SoundType.NYLIUM,false));
     public static final RegistryObject<Block> DOMAIN_SNOW =
-            register("domain_snow", () -> new DomainBlock(MapColor.SNOW, SoundType.SNOW,false));
+            register("domain_snow", () -> new DomainBlock(MapColor.SNOW, SoundType.SNOW,true));
     public static final RegistryObject<Block> DOMAIN_BONE =
             register("domain_bone", () -> new DomainBlock(MapColor.WOOL, SoundType.BONE_BLOCK,false));
     public static final RegistryObject<Block> DOMAIN_BIRCH =

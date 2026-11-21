@@ -115,6 +115,7 @@ public class DomainArenaBuilder {
             case 24 -> ModBlocks.DOMAIN_SNOW.get().defaultBlockState(); // Uraume
             case 27 -> ModBlocks.DOMAIN_BIRCH.get().defaultBlockState();        // Higuruma (base; rim handled in placeFloor)
             case 29 -> ModBlocks.DOMAIN_SKY_GAMBLE.get().defaultBlockState(); // Hakari
+            case 38 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState(); // Uro
             case 39 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState();        // Yorozu
             case 613 -> ModBlocks.DOMAIN_ROCK.get().defaultBlockState();        // Whack-a-Mole
             default -> domainDefault();
@@ -141,6 +142,7 @@ public class DomainArenaBuilder {
             case 24 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState(); // Uraume
             case 27 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();       // Higuruma
             case 29 -> ModBlocks.DOMAIN_SKY_GAMBLE.get().defaultBlockState(); // Hakari
+            case 38 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState(); // Uro
             case 39 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState();        // Yorozu
             case 613 -> ModBlocks.DOMAIN_ROCK.get().defaultBlockState();        // Whack-a-Mole
             default -> domainDefault();
