@@ -49,6 +49,7 @@ public class DomainDisplayMixin {
             case 5 -> "Authentic Mutual Love"; // Yuta Okkotsu
             case 6 -> "Chimera Shadow Garden"; // Megumi Fushiguro
             case 8 -> "Horizon of the Captivating Skandha"; // Dagon
+            case 9 -> "Overwhelming Burden of Atlas"; // Yuki Tsukumo
             case 10 -> "Hearth of the Unblossomed"; // Choso
             case 12 -> "All-Satiating Flavor Festival"; // Ryu Ishigori
             case 15 -> "Self-Embodiment of Perfection"; // Mahito

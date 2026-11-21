@@ -2,6 +2,7 @@
 package com.ghosts.abyss.domain;
 
 import net.mcreator.jujutsucraft.procedures.DomainActiveProcedure;
+import net.mcreator.jujutsucraft.procedures.TsukumoDomainExpansionActiveProcedure;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.LivingEntity;
@@ -64,6 +65,7 @@ public final class DomainSureHit {
 // original domain_expansion effect.
             boolean abyssFastCast = inst.skillDomain == 4.0
                     || inst.skillDomain == 8.0
+                    || inst.skillDomain == 9.0
                     || inst.skillDomain == 15.0;
 
             if (!abyssFastCast
@@ -151,11 +153,28 @@ public final class DomainSureHit {
                     ChimeraShadowGardenSureHit.tick(
                             domainLevel,
                             inst,
+                            owner);
+
+
+                }
+
+            else if (skill == 9.0D) {
+
+                // Yuki Tsukumo's domain.
+                // Run the original JC combat behavior
+                // once every 5 ticks.
+                //
+                // This prevents the effect from activating
+                // every tick if JC's original domain effect
+                // is missing.
+
+                if (domainLevel.getGameTime() % 5L == 0L) {
+                    TsukumoDomainExpansionActiveProcedure.execute(
+                            domainLevel,
                             owner
                     );
-
-
-                } else if (skill == 12.0D) {
+                }}
+                else if (skill == 12.0D) {
 
                     // Ryu's decorations were already updated
                     // before the sure-hit and clash checks.

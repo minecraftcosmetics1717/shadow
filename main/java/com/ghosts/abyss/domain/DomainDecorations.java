@@ -42,7 +42,11 @@ public final class DomainDecorations {
             spawnYutaDecorations(level, inst, participant);
             return;
         }
-
+// Reposition Uro's existing centerpiece when
+// a clash starts or ends.
+        if ((int) participant.skillDomain == 38) {
+            updateUroDecorationPosition(level, inst, participant);
+        }
         if (hasDecoration(level, inst, participant.entityId)) return;
 // Ryu Ishigori — All-Satiating Flavor Festival
         if ((int) participant.skillDomain == 12) {
@@ -68,9 +72,11 @@ public final class DomainDecorations {
         String entityId = switch ((int) participant.skillDomain) {
             case 2 -> "jujutsucraft:entity_unlimited_void";
             case 6 -> "jujutsucraft:entity_chimera_shadow_garden";
+            case 9 -> "jujutsucraft:entity_jupiter";
             case 10 -> "jujutsucraft:entity_heart";
             case 15 -> "jujutsucraft:entity_hands";
             case 19 -> "jujutsucraft:entity_time_cell_moon_palace";
+            case 38 -> "jujutsucraft:entity_domain_uro";
             default -> null;
         };
         if (entityId == null) return;
@@ -78,9 +84,13 @@ public final class DomainDecorations {
         double distance = switch ((int) participant.skillDomain) {
             case 2 -> 56.0;
             case 6 -> 52.0;
+            case 9 -> 42.0;
             case 10 -> 51.0;
             case 15 -> 57.0;
             case 19 -> 43.0;
+            case 38 -> inst.participants.size() > 1
+                    ? DomainDimension.INNER_RADIUS * 0.5D
+                    : 0.0D;
             default -> 57.0;
         };
         double offsetX = 0.0;
@@ -96,6 +106,7 @@ public final class DomainDecorations {
         double offsetY = switch ((int) participant.skillDomain) {
             case 2 -> 2.0;  // Gojo (unchanged)
             case 6 -> 1.0;  // Chimera Shadow Garden
+            case 9 -> 6.0; // Jupiter elevated above the floor
             case 10 -> 2.0;
             case 15 -> 1.0; // Mahito (unchanged)
             case 19 -> 3.5; // Naoya (raised by 2 blocks)
@@ -753,6 +764,48 @@ public final class DomainDecorations {
             // is no longer participating in the arena.
             if (!ownerStillParticipating) {
                 summoned.discard();
+            }
+        }
+    }
+
+    private static void updateUroDecorationPosition(
+            ServerLevel level,
+            DomainInstance inst,
+            DomainClashParticipants.Participant participant
+    ) {
+        // Center when alone, halfway to the wall
+        // on Uro's side during clashes.
+        double distance = inst.participants.size() > 1
+                ? DomainDimension.INNER_RADIUS * 0.5D
+                : 0.0D;
+
+        double x = inst.arenaCenter.getX() + 0.5D;
+        double y = inst.arenaCenter.getY() + 1.0D;
+        double z = inst.arenaCenter.getZ() + 0.5D;
+
+        switch (participant.side) {
+            case NORTH -> z -= distance;
+            case SOUTH -> z += distance;
+            case WEST -> x -= distance;
+            case EAST -> x += distance;
+        }
+
+        for (Entity entity : level.getEntities(
+                (Entity) null,
+                arenaBox(inst),
+                e -> e.getType() ==
+                        JujutsucraftModEntities.ENTITY_DOMAIN_URO.get()
+                        && e.getPersistentData()
+                        .getBoolean("abyss_domain_decoration")
+                        && e.getPersistentData()
+                        .hasUUID("abyss_decoration_owner")
+                        && participant.entityId.equals(
+                        e.getPersistentData()
+                                .getUUID("abyss_decoration_owner"))
+        )) {
+            // Avoid unnecessary position updates.
+            if (entity.distanceToSqr(x, y, z) > 0.01D) {
+                entity.setPos(x, y, z);
             }
         }
     }
