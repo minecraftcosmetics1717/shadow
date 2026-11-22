@@ -53,6 +53,7 @@ public class DomainDisplayMixin {
             case 10 -> "Hearth of the Unblossomed"; // Choso
             case 12 -> "All-Satiating Flavor Festival"; // Ryu Ishigori
             case 15 -> "Self-Embodiment of Perfection"; // Mahito
+            case 18 -> "Womb Profusion"; // Kenjaku
             case 19 -> "Time Cell Moon Palace"; // Naoya Zenin
             case 24 -> "Distant Winds of Commitment"; // Uraume
             case 29 -> "Idle Death Gamble"; // Kinji Hakari

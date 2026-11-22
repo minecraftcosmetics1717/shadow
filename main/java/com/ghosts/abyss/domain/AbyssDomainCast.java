@@ -27,6 +27,7 @@ public final class AbyssDomainCast {
     public static final double URAUME_SKILL_DOMAIN = 24.0;
     public static final double RYU_SKILL_DOMAIN = 12.0;
     public static final double CHOSO_SKILL_DOMAIN = 10.0;
+    public static final double KENJAKU_SKILL_DOMAIN = 18.0;
     public static final double YOROZU_SKILL_DOMAIN = 39.0;
     public static final double URO_SKILL_DOMAIN = 38.0;
     public static final double YUKI_SKILL_DOMAIN = 9.0;
@@ -75,6 +76,8 @@ public final class AbyssDomainCast {
         tickCustomDomain(world, entity, RYU_SKILL_DOMAIN);}
     public static void tickChosoDomain(LevelAccessor world, LivingEntity entity) {
         tickCustomDomain(world, entity, CHOSO_SKILL_DOMAIN);}
+    public static void tickKenjakuDomain(LevelAccessor world, LivingEntity entity) {
+        tickCustomDomain(world, entity, KENJAKU_SKILL_DOMAIN);}
     public static void tickYorozuDomain(LevelAccessor world, LivingEntity entity) {
         tickCustomDomain(world, entity, YOROZU_SKILL_DOMAIN);}
     public static void tickUroDomain(LevelAccessor world, LivingEntity entity) {

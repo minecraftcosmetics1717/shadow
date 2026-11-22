@@ -111,6 +111,7 @@ public class DomainArenaBuilder {
             case 12 -> ModBlocks.DOMAIN_SAND_BLACK.get().defaultBlockState();        // Ryu
             case 14 -> ModBlocks.DOMAIN_FLOWER.get().defaultBlockState();       // Hanami
             case 15 -> ModBlocks.DOMAIN_SKY_MAHITO.get().defaultBlockState(); // Mahito
+            case 18 -> ModBlocks.DOMAIN_SKY_WOMB.get().defaultBlockState(); // Kenjaku
             case 19 -> ModBlocks.DOMAIN_SKY_WOMB.get().defaultBlockState();       // Naoya
             case 24 -> ModBlocks.DOMAIN_SNOW.get().defaultBlockState(); // Uraume
             case 27 -> ModBlocks.DOMAIN_BIRCH.get().defaultBlockState();        // Higuruma (base; rim handled in placeFloor)
@@ -126,7 +127,7 @@ public class DomainArenaBuilder {
     public static BlockState interiorState(double skillDomain) {
         int id = (int) Math.round(skillDomain);
         return switch (id) {
-            case 1 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Sukuna
+            case 1 -> ModBlocks.DOMAIN_SKY_WOMB.get().defaultBlockState();        // Sukuna
             case 2 -> ModBlocks.DOMAIN_SKY_INFINITE_VOID.get().defaultBlockState(); // Gojo
             case 4 -> ModBlocks.DOMAIN_SKY_MOUNTAIN.get().defaultBlockState(); // Jogo
             case 5 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();        // Yuta
@@ -138,6 +139,7 @@ public class DomainArenaBuilder {
             case 12 -> ModBlocks.DOMAIN_SKY_NIGHT.get().defaultBlockState();        // Ryu
             case 14 -> ModBlocks.DOMAIN_SKY_DAY.get().defaultBlockState();       // Hanami (or sand/sky later)
             case 15 -> ModBlocks.DOMAIN_SKY_MAHITO.get().defaultBlockState(); // Mahito
+            case 18 -> ModBlocks.DOMAIN_SKY_WOMB.get().defaultBlockState(); // Kenjaku
             case 19 -> ModBlocks.DOMAIN_SKY_WOMB.get().defaultBlockState();       // Naoya
             case 24 -> ModBlocks.DOMAIN_SKY_WHITE.get().defaultBlockState(); // Uraume
             case 27 -> ModBlocks.DOMAIN_SKY_BLACK.get().defaultBlockState();       // Higuruma

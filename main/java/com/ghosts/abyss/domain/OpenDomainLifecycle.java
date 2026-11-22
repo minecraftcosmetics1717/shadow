@@ -11,9 +11,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -28,6 +30,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import virtuoel.pehkui.api.ScaleTypes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -128,18 +131,53 @@ public final class OpenDomainLifecycle {
         ServerLevel level = player.serverLevel();
         Vec3 center = player.position();
 
+        // Original JC Malevolent Shrine opening sounds.
+        level.playSound(
+                null,
+                player.blockPosition(),
+                ForgeRegistries.SOUND_EVENTS.getValue(
+                        new ResourceLocation("jujutsucraft:wind_chime")
+                ),
+                SoundSource.NEUTRAL,
+                3.0F,
+                1.0F
+        );
+
+        level.playSound(
+                null,
+                player.blockPosition(),
+                ForgeRegistries.SOUND_EVENTS.getValue(
+                        new ResourceLocation("jujutsucraft:slow_motion_end")
+                ),
+                SoundSource.NEUTRAL,
+                3.0F,
+                1.0F
+        );
+
         Entity shrine = JujutsucraftModEntities
                 .ENTITY_MALEVOLENT_SHRINE.get().create(level);
 
         if (shrine == null) return false;
 
-        BlockPos ground = BlockPos.containing(center);
 
+        // Place Malevolent Shrine 3 blocks behind the caster,
+        // based on the direction the player is facing.
+        Vec3 behind = Vec3.directionFromRotation(
+                0.0F,
+                player.getYRot()
+        ).scale(-12.0D);
+
+        BlockPos ground = BlockPos.containing(
+                center.add(behind)
+        );
+
+        // Keep the existing ground-placement behavior.
         for (int i = 0; i < 20; i++) {
             BlockPos below = ground.below();
             if (!level.getBlockState(below).isAir()) break;
             ground = below;
         }
+
 
         shrine.moveTo(
                 ground.getX() + 0.5D,
@@ -151,6 +189,7 @@ public final class OpenDomainLifecycle {
 
         shrine.setInvulnerable(true);
         shrine.setNoGravity(true);
+        ScaleTypes.BASE.getScaleData(shrine).setScale(2.0F);
 
         if (shrine instanceof net.minecraft.world.entity.Mob mob) {
             mob.setNoAi(true);
@@ -169,6 +208,18 @@ public final class OpenDomainLifecycle {
         if (!level.addFreshEntity(shrine)) {
             return false;
         }
+
+        // JC's original sound when Malevolent Shrine appears.
+        level.playSound(
+                null,
+                shrine.blockPosition(),
+                ForgeRegistries.SOUND_EVENTS.getValue(
+                        new ResourceLocation("jujutsucraft:piano_horror")
+                ),
+                SoundSource.NEUTRAL,
+                3.0F,
+                0.75F
+        );
 
         int endTick = level.getServer().getTickCount()
                 + AbyssDomainCast.DURATION_TICKS;

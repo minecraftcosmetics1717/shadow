@@ -88,6 +88,7 @@ public final class DomainDecorations {
             case 9 -> "jujutsucraft:entity_jupiter";
             case 10 -> "jujutsucraft:entity_heart";
             case 15 -> "jujutsucraft:entity_hands";
+            case 18 -> "jujutsucraft:entity_womb_profusion";
             case 19 -> "jujutsucraft:entity_time_cell_moon_palace";
             case 38 -> "jujutsucraft:entity_domain_uro";
             default -> null;
@@ -100,10 +101,9 @@ public final class DomainDecorations {
             case 9 -> 42.0;
             case 10 -> 51.0;
             case 15 -> 57.0;
+            case 18 -> inst.participants.size() > 1 ? 52.0D : 0.0D;
             case 19 -> 43.0;
-            case 38 -> inst.participants.size() > 1
-                    ? DomainDimension.INNER_RADIUS * 0.5D
-                    : 0.0D;
+            case 38 -> inst.participants.size() > 1 ? DomainDimension.INNER_RADIUS * 0.5D : 0.0D;
             default -> 57.0;
         };
         double offsetX = 0.0;
@@ -122,6 +122,7 @@ public final class DomainDecorations {
             case 9 -> 6.0; // Jupiter elevated above the floor
             case 10 -> 2.0;
             case 15 -> 1.0; // Mahito (unchanged)
+            case 18 -> 1.0D;
             case 19 -> 3.5; // Naoya (raised by 2 blocks)
             default -> 1.0;
         };
@@ -1084,6 +1085,7 @@ public final class DomainDecorations {
         }
 
         if (existing != null) {
+            ScaleTypes.BASE.getScaleData(existing).setScale(3.0F);
             // Reposition the same shrine during clashes
             // instead of spawning a new one.
             if (existing.distanceToSqr(x, y, z) > 0.01D) {
@@ -1111,6 +1113,9 @@ public final class DomainDecorations {
         shrine.moveTo(x, y, z, yaw, 0.0F);
         shrine.setInvulnerable(true);
         shrine.setNoGravity(true);
+
+        ScaleTypes.BASE.getScaleData(shrine).setScale(3.0F);
+
 
         if (shrine instanceof net.minecraft.world.entity.Mob mob) {
             mob.setNoAi(true);

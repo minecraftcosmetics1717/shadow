@@ -126,12 +126,14 @@
     "SukunaDomainExecuteMixin",
     "SukunaShrineAIMixin",
     "DomainActivationCostMixin",
-    "AbyssFlameDustMixin"
+    "AbyssFlameDustMixin",
+    "KenjakuDomainExecuteMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",
     "FlightTravelMixin",
-    "BlueRedPurpleRendererMixin"
+    "BlueRedPurpleRendererMixin",
+    "client.MahoragaWheelScaleMixin"
   ],
   "injectors": {
     "defaultRequire": 1

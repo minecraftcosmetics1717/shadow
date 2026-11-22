@@ -27,13 +27,16 @@ public final class DomainSpawnPositions {
         int skill = (int) Math.round(inst.skillDomain);
 
 
+
         switch (skill) {
+            // Sukuna — Malevolent Shrine (1)
             // Gojo — Infinite Void (2)
             // Megumi — Chimera Shadow Garden (6)
             // Choso — Domain Expansion (10)
             // Mahito — Self-Embodiment of Perfection (15)
+            // Kenjaku — Womb Profusion (18)
             // Naoya — Time Cell Moon Palace (19)
-            case 2, 6, 10, 15, 19 -> {
+            case 1, 2, 6, 10, 15, 18, 19 -> {
                 z -= 30.0;
             }
 
@@ -41,6 +44,7 @@ public final class DomainSpawnPositions {
                 // All other domains spawn at the center.
             }
         }
+
 
 
         return new Vec3(x, y, z);
