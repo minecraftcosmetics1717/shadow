@@ -127,7 +127,8 @@
     "SukunaShrineAIMixin",
     "DomainActivationCostMixin",
     "AbyssFlameDustMixin",
-    "KenjakuDomainExecuteMixin"
+    "KenjakuDomainExecuteMixin",
+    "AIWombProfusionMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",
