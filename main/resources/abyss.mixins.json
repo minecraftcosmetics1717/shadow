@@ -122,7 +122,9 @@
     "ChosoDomainExecuteMixin",
     "UroDomainExecuteMixin",
     "YukiDomainExecuteMixin",
-    "DagonDomainFishAIMixin"
+    "DagonDomainFishAIMixin",
+    "SukunaDomainExecuteMixin",
+    "SukunaShrineAIMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

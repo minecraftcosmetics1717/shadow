@@ -78,9 +78,16 @@ public class OpenDomain {
 
       player.getPersistentData().putDouble("refinement_points_available", RefinementPoints.getAvailable(player) - 20);
       player.getPersistentData().putDouble("advtech_points_available", AdvTechPoints.getAvailable(player) - 20);
-      player.getPersistentData().putBoolean("open_domain_unlocked", true);
-      player.getPersistentData().putBoolean("open_domain_toggled", true);
-      player.getPersistentData().putBoolean("open_domain", true);
+// Unlock the ability, but start in Closed mode.
+      player.getPersistentData().putBoolean(
+              "open_domain_unlocked", true
+      );
+      player.getPersistentData().putBoolean(
+              "open_domain_toggled", false
+      );
+      player.getPersistentData().putBoolean(
+              "open_domain", false
+      );
 
       player.displayClientMessage(Component.translatable("message.abyss.open_domain_unlocked"), true);
       Abyss.LOGGER.debug("{} has unlocked Open Domain.", player.getName().getString());

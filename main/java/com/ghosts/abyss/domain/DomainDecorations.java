@@ -34,7 +34,13 @@ public final class DomainDecorations {
 
     public static void spawnParticipant(ServerLevel level, DomainInstance inst, DomainClashParticipants.Participant participant) {
         if (level == null || inst == null || participant == null) return;
-
+// Sukuna — Malevolent Shrine.
+// Centered when alone; moved to the caster's
+// assigned side whenever domains are clashing.
+        if ((int) participant.skillDomain == 1) {
+            syncSukunaShrine(level, inst, participant);
+            return;
+        }
 // Yuta has multiple interactive decorations, so he needs
 // a separate one-time spawning system.
         if ((int) participant.skillDomain == 5) {
@@ -1013,6 +1019,123 @@ public final class DomainDecorations {
 
             level.addFreshEntity(tree);
         }
+    }
+
+    private static void syncSukunaShrine(
+            ServerLevel level,
+            DomainInstance inst,
+            DomainClashParticipants.Participant participant
+    ) {
+        // Put the shrine in the center when there is
+        // only one domain in the arena.
+        //
+        // During a clash, position it toward
+        // its owner's side, close to the wall.
+        double distance = inst.participants.size() > 1
+                ? 54.0D
+                : 0.0D;
+
+        double x = inst.arenaCenter.getX() + 0.5D;
+        double y = inst.arenaCenter.getY() + 1.0D;
+        double z = inst.arenaCenter.getZ() + 0.5D;
+
+        float yaw = 0.0F;
+
+        switch (participant.side) {
+            case NORTH -> {
+                z -= distance;
+                yaw = 0.0F;
+            }
+            case SOUTH -> {
+                z += distance;
+                yaw = 180.0F;
+            }
+            case WEST -> {
+                x -= distance;
+                yaw = 90.0F;
+            }
+            case EAST -> {
+                x += distance;
+                yaw = 270.0F;
+            }
+        }
+
+        // Find an existing Abyss-owned shrine.
+        Entity existing = null;
+
+        for (Entity entity : level.getEntities(
+                (Entity) null,
+                arenaBox(inst),
+                e -> e.getPersistentData()
+                        .getBoolean("abyss_sukuna_shrine")
+                        && e.getPersistentData()
+                        .hasUUID("abyss_decoration_owner")
+                        && participant.entityId.equals(
+                        e.getPersistentData()
+                                .getUUID("abyss_decoration_owner")
+                )
+        )) {
+            if (existing == null) {
+                existing = entity;
+            } else {
+                // Prevent duplicate shrines.
+                entity.discard();
+            }
+        }
+
+        if (existing != null) {
+            // Reposition the same shrine during clashes
+            // instead of spawning a new one.
+            if (existing.distanceToSqr(x, y, z) > 0.01D) {
+                existing.setPos(x, y, z);
+            }
+
+            existing.setYRot(yaw);
+            if (existing instanceof net.minecraft.world.entity.LivingEntity living) {
+                living.setYHeadRot(yaw);
+                living.setYBodyRot(yaw);
+            }
+
+            return;
+        }
+
+        // Create the standard Jujutsucraft shrine.
+        Entity shrine =
+                JujutsucraftModEntities
+                        .ENTITY_MALEVOLENT_SHRINE
+                        .get()
+                        .create(level);
+
+        if (shrine == null) return;
+
+        shrine.moveTo(x, y, z, yaw, 0.0F);
+        shrine.setInvulnerable(true);
+        shrine.setNoGravity(true);
+
+        if (shrine instanceof net.minecraft.world.entity.Mob mob) {
+            mob.setNoAi(true);
+            mob.setYHeadRot(yaw);
+            mob.setYBodyRot(yaw);
+        }
+
+        // Allow Abyss's existing decoration cleanup
+        // to track this shrine.
+        shrine.getPersistentData().putBoolean(
+                "abyss_domain_decoration",
+                true
+        );
+
+        shrine.getPersistentData().putBoolean(
+                "abyss_sukuna_shrine",
+                true
+        );
+
+        shrine.getPersistentData().putUUID(
+                "abyss_decoration_owner",
+                participant.entityId
+        );
+
+        level.addFreshEntity(shrine);
     }
 
 }

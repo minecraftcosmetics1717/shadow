@@ -119,6 +119,13 @@ public class DomainLifecycle {
 
         var data = owner.getPersistentData();
         double skillDomain = data.getDouble("skill_domain");
+
+// JC can still have Sukuna's domain ID stored
+// in "select" during the opening animation.
+        if (skillDomain == 0.0D
+                && data.getDouble("select") == 1.0D) {
+            skillDomain = 1.0D;
+        }
         double ox = data.getDouble("x_pos_doma");
         double oy = data.getDouble("y_pos_doma");
         double oz = data.getDouble("z_pos_doma");
