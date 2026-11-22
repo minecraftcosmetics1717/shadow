@@ -62,8 +62,8 @@ public final class OpenDomainLifecycle {
                     ? vars.PlayerCurseTechnique2
                     : vars.PlayerCurseTechnique;
 
-            // JC's own selection procedure updates the
-            // displayed technique, cost, and client data.
+            // Use Jujutsucraft's original technique selection
+            // procedure to update and synchronize the slot.
             TechniqueDecideProcedure.execute(
                     player,
                     true,
@@ -77,6 +77,27 @@ public final class OpenDomainLifecycle {
             );
         });
     }
+
+
+    private static void ensureCancelDomainSelected(
+            ServerPlayer player
+    ) {
+        if (!isActive(player.getUUID())) {
+            return;
+        }
+
+        player.getCapability(
+                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
+        ).ifPresent(vars -> {
+
+            // If JC has switched the selection back to
+            // Malevolent Shrine, restore Cancel Domain.
+            if (vars.PlayerSelectCurseTechnique == 20.0D) {
+                selectCancelDomain(player);
+            }
+        });
+    }
+
 
     private static void restoreDomainSelection(ServerPlayer player) {
         player.getCapability(
@@ -316,6 +337,11 @@ public final class OpenDomainLifecycle {
 
             ServerLevel level = player.serverLevel();
 
+// Ensure Malevolent Shrine is replaced by
+// Cancel Domain while the domain is active.
+            ensureCancelDomainSelected(player);
+
+// Keep the existing JC attack and destruction behavior.
             tickJcShrineAttacks(level, player, session);
         }
     }
