@@ -271,7 +271,16 @@ public final class AbyssDomainCast {
             drainPlayerCe(player, drain);
         }
     }
+    public static void drainOpenDomain(ServerPlayer player) {
+        if (!OpenDomainLifecycle.isActive(player.getUUID())) {
+            return;
+        }
 
+        double amount = BASE_CE_PER_SECOND
+                * ceMultiplier(player);
+
+        drainPlayerCe(player, amount);
+    }
     private static double ceMultiplier(ServerPlayer player) {
         double multiplier = 1.0;
 
@@ -326,7 +335,8 @@ public final class AbyssDomainCast {
         DomainInstance inst =
                 DomainInstanceManager.getByOwner(entity.getUUID());
 
-        if (inst == null) {
+        if (inst == null
+                && !OpenDomainLifecycle.isActive(entity.getUUID())) {
             resetCancelCharge(entity);
 
             // Not our domain: clear the technique to prevent a soft-lock.

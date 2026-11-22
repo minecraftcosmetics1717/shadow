@@ -136,15 +136,12 @@ public class DomainLifecycle {
             return;
         }
 
-// Sukuna's unlocked open domain stays in the overworld.
-// Let Jujutsucraft manage its existing open-barrier
-// expansion and shrine instead of creating an Abyss arena.
-        if (OpenDomain.shouldUseOpenDomain(
-                owner,
-                skillDomain
-        )) {
+        if (OpenDomain.shouldUseOpenDomain(owner, skillDomain)) {
+            if (owner instanceof net.minecraft.server.level.ServerPlayer player) {
+                OpenDomainLifecycle.start(player);
+            }
+
             data.putBoolean("abyss_domain_pending", false);
-            data.putBoolean("abyss_domain_handled", false);
             return;
         }
 
@@ -220,14 +217,15 @@ public class DomainLifecycle {
         if (DomainInstanceManager.getByOwner(owner.getUUID()) != null) return;
 
 // Open Malevolent Shrine does not create a separate arena.
-        if (OpenDomain.shouldUseOpenDomain(
-                owner,
-                skillDomain
-        )) {
+        if (OpenDomain.shouldUseOpenDomain(owner, skillDomain)) {
+            if (owner instanceof net.minecraft.server.level.ServerPlayer player) {
+                OpenDomainLifecycle.start(player);
+            }
+
             owner.getPersistentData().putBoolean(
-                    "abyss_domain_pending",
-                    false
+                    "abyss_domain_pending", false
             );
+
             return;
         }
 
@@ -720,6 +718,16 @@ public class DomainLifecycle {
 
 
     public static void endByOwnerId(UUID ownerId) {
+        var currentServer =
+                net.minecraftforge.server.ServerLifecycleHooks
+                        .getCurrentServer();
+
+        if (currentServer != null
+                && OpenDomainLifecycle.endByOwnerId(
+                currentServer, ownerId
+        )) {
+            return;
+        }
         DomainInstance inst = DomainInstanceManager.getByOwner(ownerId);
         if (inst == null) return;
 
@@ -837,7 +845,12 @@ public class DomainLifecycle {
     public static void end(LivingEntity entity) {
         if (entity.level().isClientSide) return;
         if (entity.getPersistentData().getBoolean("abyss_domain_transferring")) return;
-
+// End open domains through their own lifecycle.
+// Closed domains continue through the original logic.
+        if (OpenDomainLifecycle.isActive(entity.getUUID())) {
+            OpenDomainLifecycle.end(entity);
+            return;
+        }
         DomainInstance asOwner = DomainInstanceManager.getByOwner(entity.getUUID());
 
         // A challenger can close their domain without

@@ -2,6 +2,7 @@
 package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.domain.DomainInstanceManager;
+import com.ghosts.abyss.domain.OpenDomainLifecycle;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -48,8 +49,8 @@ public class CancelDomainKeyMixin {
             return;
         }
 
-        // Only take over cancellation for a domain owned by this entity.
-        if (DomainInstanceManager.getByOwner(living.getUUID()) == null) {
+        if (DomainInstanceManager.getByOwner(living.getUUID()) == null
+                && !OpenDomainLifecycle.isActive(living.getUUID())) {
             return;
         }
 

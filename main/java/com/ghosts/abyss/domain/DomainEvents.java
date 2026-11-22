@@ -486,7 +486,8 @@ public class DomainEvents {
         }
 
         // Only charge while the player still owns an Abyss domain.
-        if (DomainInstanceManager.getByOwner(player.getUUID()) == null) {
+        if (DomainInstanceManager.getByOwner(player.getUUID()) == null
+                && !OpenDomainLifecycle.isActive(player.getUUID())) {
             data.putBoolean("abyss_domain_cancel_charging", false);
             data.putInt("abyss_domain_cancel_charge", 0);
             data.putBoolean("abyss_cancel_domain_auth", false);
