@@ -125,7 +125,8 @@
     "DagonDomainFishAIMixin",
     "SukunaDomainExecuteMixin",
     "SukunaShrineAIMixin",
-    "DomainActivationCostMixin"
+    "DomainActivationCostMixin",
+    "AbyssFlameDustMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

@@ -14,11 +14,13 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.mcreator.jujutsucraft.procedures.TechniqueDecideProcedure;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -201,7 +203,7 @@ public final class OpenDomainLifecycle {
         );
 
         var data = player.getPersistentData();
-
+        data.putDouble("dust_amount", 0.0D);
         data.putBoolean("abyss_open_domain_session", true);
         data.putBoolean("abyss_domain_active", true);
         data.putBoolean("abyss_domain_committed", true);
@@ -246,8 +248,22 @@ public final class OpenDomainLifecycle {
         );
 
         DomainLifecycle.clearCastState(entity);
-// Open domains do not use the same JC effect lifecycle
-// as closed arenas, so explicitly release the technique.
+
+        // Match JC: remove accumulated DUST on domain expiration.
+        entity.getPersistentData().putDouble("dust_amount", 0.0D);
+
+        if (entity instanceof ServerPlayer player) {
+            player.getCapability(
+                    JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
+            ).ifPresent(vars -> {
+                if ("DUST".equals(vars.OVERLAY1)) {
+                    vars.OVERLAY1 = "";
+                    vars.OVERLAY2 = "";
+                    vars.syncPlayerVariables(player);
+                }
+            });
+        }
+
         var cursedTechnique =
                 ForgeRegistries.MOB_EFFECTS.getValue(
                         new net.minecraft.resources.ResourceLocation(
@@ -337,15 +353,67 @@ public final class OpenDomainLifecycle {
 
             ServerLevel level = player.serverLevel();
 
-// Ensure Malevolent Shrine is replaced by
-// Cancel Domain while the domain is active.
             ensureCancelDomainSelected(player);
 
-// Keep the existing JC attack and destruction behavior.
+// Prepare targets using JC's Neutralization effect.
+            prepareShrineTargets(level, player, session);
+
+// Execute JC's original slash attacks.
             tickJcShrineAttacks(level, player, session);
         }
     }
 
+
+    private static void prepareShrineTargets(
+            ServerLevel level,
+            ServerPlayer owner,
+            Session session
+    ) {
+        Vec3 center = session.center();
+
+        // Match the region covered by the four
+        // original JC RangeAttackProcedure calls.
+        AABB area = new AABB(
+                center.x - RADIUS,
+                center.y - 15.0D,
+                center.z - RADIUS,
+                center.x + RADIUS,
+                center.y + RADIUS - 15.0D,
+                center.z + RADIUS
+        );
+
+        for (LivingEntity target :
+                level.getEntitiesOfClass(
+                        LivingEntity.class,
+                        area,
+                        e -> e.isAlive() && e != owner
+                )) {
+
+            // JC does not neutralize another
+            // entity's active Domain Expansion.
+            if (target.hasEffect(
+                    JujutsucraftModMobEffects.DOMAIN_EXPANSION.get()
+            )) {
+                continue;
+            }
+
+            // Respect JC's domain-selection check.
+            if (target.getPersistentData()
+                    .getDouble("select") != 0.0D) {
+                continue;
+            }
+
+            // JC's original Neutralization effect:
+            // duration 20 ticks, amplifier domainId + 10.
+            target.addEffect(new MobEffectInstance(
+                    JujutsucraftModMobEffects.NEUTRALIZATION.get(),
+                    20,
+                    11,
+                    false,
+                    false
+            ));
+        }
+    }
 
     private static void tickJcShrineAttacks(
             ServerLevel level,
@@ -379,8 +447,18 @@ public final class OpenDomainLifecycle {
         try {
             data.putDouble("y_knockback", -0.1D);
 
-            // Four ranged slash attacks, as in JC.
+
+// Mirror JC's remaining Domain Expansion duration.
+// Abyss keeps its own 160-second domain lifecycle.
+            int remainingTicks = Math.max(
+                    0,
+                    session.endTick() - level.getServer().getTickCount()
+            );
+
+// JC uses the remaining duration to select
+// the slash technique and damage value.
             for (int i = 0; i < 4; i++) {
+
                 double xSign = i % 2 == 0 ? 1.0D : -1.0D;
                 double zSign = i % 4 <= 1 ? 1.0D : -1.0D;
 
@@ -388,9 +466,20 @@ public final class OpenDomainLifecycle {
                 double y = center.y + span * 0.25D - 15.0D;
                 double z = center.z + span * 0.25D * zSign;
 
-                data.putDouble("skill", 106.0D);
-                data.putDouble("COOLDOWN_TICKS", 100.0D);
-                data.putDouble("Damage", 10.5D);
+
+// Exact JC slash selection based on remaining duration.
+                if (remainingTicks % 2 == 1) {
+                    data.putDouble("skill", 105.0D);
+                    data.putDouble("COOLDOWN_TICKS", 50.0D);
+                } else {
+                    data.putDouble("skill", 106.0D);
+                    data.putDouble("COOLDOWN_TICKS", 100.0D);
+                }
+
+// Original JC damage formula.
+                data.putDouble(
+                        "Damage",
+                        10.5D + (remainingTicks % 10) * 0.1D);
                 data.putDouble("Range", span * 0.5D);
 
                 data.putDouble("effect", 1.0D);
@@ -402,9 +491,7 @@ public final class OpenDomainLifecycle {
                 data.putBoolean("DomainAttack", true);
                 data.putBoolean("ExtinctionBlock", true);
 
-                RangeAttackProcedure.execute(
-                        level, x, y, z, owner
-                );
+                RangeAttackProcedure.execute(level, x, y, z, owner);
             }
 
             // JC's destruction sampling.
@@ -465,6 +552,34 @@ public final class OpenDomainLifecycle {
             }
 
             data.putDouble("dust_amount", dust);
+
+            // Jujutsucraft's original 10-square DUST overlay.
+            if (owner.tickCount % 10 == 0) {
+                int filled = (int) Math.round(
+                        dust / 200.0D * 10.0D
+                );
+
+                filled = Math.max(0, Math.min(10, filled));
+
+                StringBuilder meter = new StringBuilder("§l§4");
+
+                for (int i = 0; i < 10; i++) {
+                    if (i == filled) {
+                        meter.append("§r§7");
+                    }
+                    meter.append("■");
+                }
+
+                String dustMeter = meter.toString();
+
+                owner.getCapability(
+                        JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
+                ).ifPresent(vars -> {
+                    vars.OVERLAY1 = "DUST";
+                    vars.OVERLAY2 = dustMeter;
+                    vars.syncPlayerVariables(owner);
+                });
+            }
 
         } finally {
             data.putDouble("skill", oldSkill);
