@@ -124,7 +124,8 @@
     "YukiDomainExecuteMixin",
     "DagonDomainFishAIMixin",
     "SukunaDomainExecuteMixin",
-    "SukunaShrineAIMixin"
+    "SukunaShrineAIMixin",
+    "DomainActivationCostMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",
