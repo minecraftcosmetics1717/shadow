@@ -37,7 +37,7 @@ public class ModBlocks {
     public static final RegistryObject<Block> DOMAIN_FLOWER =
             register("domain_flower", () -> new DomainBlock(MapColor.COLOR_PINK, SoundType.GRASS,false));
     public static final RegistryObject<Block> DOMAIN_GRASS =
-            register("domain_grass", () -> new DomainBlock(MapColor.GRASS, SoundType.GRASS,true));
+            register("domain_grass", DomainGrassBlock::new);
     public static final RegistryObject<Block> DOMAIN_SHORT_GRASS =
             register("domain_short_grass", DomainShortGrassBlock::new);
     public static final RegistryObject<Block> DOMAIN_PODZOL =

@@ -121,7 +121,8 @@
     "RyuDomainExecuteMixin",
     "ChosoDomainExecuteMixin",
     "UroDomainExecuteMixin",
-    "YukiDomainExecuteMixin"
+    "YukiDomainExecuteMixin",
+    "DagonDomainFishAIMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

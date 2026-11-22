@@ -78,14 +78,26 @@ public final class DomainSureHit {
             LivingEntity challenger = DomainClash.findActiveDomainInArena(
                     domainLevel, inst, inst.ownerId);
 
+
             if (challenger != null) {
 
-                // Chimera Shadow Garden's domain shikigami
-                // disappear while a domain clash is active.
+                // Remove Dagon's fish when a domain clash begins.
+                if ((int) inst.skillDomain == 8) {
+                    DagonDomainFish.clear(
+                            domainLevel,
+                            inst
+                    );
+                }
+
+                // Keep Megumi's existing clash cleanup.
                 ChimeraShadowGardenSureHit.unsummonForClash(
                         domainLevel,
-                        inst);
-                continue;}
+                        inst
+                );
+
+                continue;
+            }
+
 
             // Respect JC's failed-domain state.
             if (owner.getPersistentData().getBoolean("Failed")
@@ -148,7 +160,17 @@ public final class DomainSureHit {
 
 
 
-                if (skill == 6.0D) {
+                if (skill == 8.0D) {
+
+                    // Dagon — autonomous Death Swarm.
+                    // Fish spawn in groups and hunt independently.
+                    DagonDomainFish.spawnGroup(
+                            domainLevel,
+                            inst,
+                            owner
+                    );
+
+                } else if (skill == 6.0D) {
 
                     ChimeraShadowGardenSureHit.tick(
                             domainLevel,

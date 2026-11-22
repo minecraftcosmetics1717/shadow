@@ -448,6 +448,24 @@ public final class DomainSkyMaskRenderer {
         CACHE.put(key, replacement);
     }
 
+    private static boolean isSkyFaceExposed(BlockState neighbor) {
+        // Normal air.
+        if (neighbor.isAir()) {
+            return true;
+        }
+
+        // Abyss's decorative short grass.
+        if (neighbor.is(ModBlocks.DOMAIN_SHORT_GRASS.get())) {
+            return true;
+        }
+
+        if (neighbor.getFluidState().is(net.minecraft.tags.FluidTags.WATER)) {
+            return true;
+        }
+
+        return false;
+    }
+
     private static long calculateSignature(
             ClientLevel level,
             SectionKey key
@@ -480,11 +498,14 @@ public final class DomainSkyMaskRenderer {
                             + (x << 8) + (y << 4) + z;
 
                     for (Direction direction : Direction.values()) {
-                        if (level.getBlockState(
-                                pos.relative(direction)).isAir()) {
+
+                        if (isSkyFaceExposed(
+                                level.getBlockState(pos.relative(direction))
+                        )) {
                             value = value * 31L
                                     + direction.ordinal() + 1;
                         }
+
                     }
 
                     hash ^= value;
@@ -536,15 +557,21 @@ public final class DomainSkyMaskRenderer {
 
                     if (sky.getSkyType() != type) continue;
 
+
                     for (Direction direction : Direction.values()) {
-                        if (!level.getBlockState(
-                                pos.relative(direction)).isAir()) {
+
+                        BlockState neighbor = level.getBlockState(
+                                pos.relative(direction)
+                        );
+
+                        if (!isSkyFaceExposed(neighbor)) {
                             continue;
                         }
 
                         addFace(builder, pos, direction);
                         faces++;
                     }
+
                 }
             }
         }
