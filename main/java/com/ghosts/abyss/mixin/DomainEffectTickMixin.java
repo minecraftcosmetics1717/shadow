@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+import com.ghosts.abyss.domain.OpenDomainLifecycle;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;
 
@@ -34,7 +35,10 @@ public class DomainEffectTickMixin {
    )
    private static void onHead(LevelAccessor world, double x, double y, double z, Entity entity, CallbackInfo ci) {
 
-
+      if (entity != null
+              && OpenDomainLifecycle.isActive(entity.getUUID())) {
+         return;
+      }
       if (entity != null
               && entity.getPersistentData().getBoolean("open_domain")
               // Sukuna already has a large open-domain radius
@@ -72,11 +76,14 @@ public class DomainEffectTickMixin {
    @Inject(
            method = {"execute"},
            at = {@At("RETURN")},
-           remap = false
-   )
+           remap = false)
+
    private static void onReturn(LevelAccessor world, double x, double y, double z, Entity entity, CallbackInfo ci) {
       Deque<Double> stack = RADIUS_STACK.get();
-
+      if (entity != null
+              && OpenDomainLifecycle.isActive(entity.getUUID())) {
+         return;
+      }
       if (!stack.isEmpty()) {
          double savedRadius = stack.pop();
 

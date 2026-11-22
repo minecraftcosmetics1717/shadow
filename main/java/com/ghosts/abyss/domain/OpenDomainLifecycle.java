@@ -55,30 +55,32 @@ public final class OpenDomainLifecycle {
         return ACTIVE.containsKey(ownerId);
     }
 
+
     private static void selectCancelDomain(ServerPlayer player) {
         player.getCapability(
                 JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
         ).ifPresent(vars -> {
 
-            double techniqueId = vars.SecondTechnique
-                    ? vars.PlayerCurseTechnique2
-                    : vars.PlayerCurseTechnique;
+            // Slot 21 is JC's original Cancel Domain Expansion.
+            vars.PlayerSelectCurseTechnique = 21.0D;
 
-            // Use Jujutsucraft's original technique selection
-            // procedure to update and synchronize the slot.
-            TechniqueDecideProcedure.execute(
-                    player,
-                    true,
-                    true,
-                    0.0D,
-                    techniqueId,
-                    21.0D,
-                    Component.translatable(
-                            "jujutsu.technique.cancel_domain"
-                    ).getString()
+            // Tell JC to refresh the current slot rather than
+            // advancing to the next technique.
+            vars.noChangeTechnique = true;
+            vars.syncPlayerVariables(player);
+
+            // Let JC validate slot 21, calculate its cost,
+            // and synchronize its original display name.
+            KeyChangeTechniqueOnKeyPressedProcedure.execute(
+                    player.serverLevel(),
+                    player.getX(),
+                    player.getY(),
+                    player.getZ(),
+                    player
             );
         });
     }
+
 
     private static void restoreDomainSelection(ServerPlayer player) {
         player.getCapability(
@@ -199,12 +201,26 @@ public final class OpenDomainLifecycle {
         data.putDouble("skill", 0.0D);
         data.putDouble("cnt3", 0.0D);
 
+
         player.removeEffect(
                 JujutsucraftModMobEffects.CURSED_TECHNIQUE.get()
         );
 
-// Switch Malevolent Shrine to Cancel Domain.
+// Give open Malevolent Shrine JC's real domain effect.
+// 3200 ticks = 160 seconds.
+// Amplifier 1 = JC's enhanced/open domain behavior.
+        player.addEffect(new MobEffectInstance(
+                JujutsucraftModMobEffects.DOMAIN_EXPANSION.get(),
+                AbyssDomainCast.DURATION_TICKS,
+                1,
+                true,
+                false,
+                true
+        ));
+
+// Now JC recognizes slot 21 as a valid technique.
         selectCancelDomain(player);
+
 
         return true;
     }

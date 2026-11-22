@@ -3,6 +3,7 @@ package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.domain.DomainDimension;
 import com.ghosts.abyss.domain.DomainInstanceManager;
+import com.ghosts.abyss.domain.OpenDomainLifecycle;
 import com.ghosts.abyss.effect.ModEffects;
 
 import net.minecraft.world.entity.Entity;
@@ -56,8 +57,13 @@ public abstract class JujutsuDomainExpirationMixin {
         boolean suppressExpiration =
                 living.getPersistentData().getBoolean("abyss_domain_suppress_jc_expire");
 
-        if (registeredOwner || activeAbyssCaster || suppressExpiration) {
+
+        if (registeredOwner
+                || activeAbyssCaster
+                || OpenDomainLifecycle.isActive(living.getUUID())
+                || suppressExpiration) {
             ci.cancel();
         }
+
         }
     }

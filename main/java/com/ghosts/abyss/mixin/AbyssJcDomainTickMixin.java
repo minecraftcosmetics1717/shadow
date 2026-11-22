@@ -2,6 +2,7 @@
 package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.domain.DomainDimension;
+import com.ghosts.abyss.domain.OpenDomainLifecycle;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;
 import org.spongepowered.asm.mixin.Mixin;
@@ -33,16 +34,17 @@ public class AbyssJcDomainTickMixin {
     ) {
         if (entity == null) return;
 
-        if (!entity.level().dimension().equals(DomainDimension.ID)) {
+        // Abyss owns the active open Malevolent Shrine.
+        if (OpenDomainLifecycle.isActive(entity.getUUID())) {
+            ci.cancel();
             return;
         }
 
-        if (!entity.getPersistentData().getBoolean("abyss_domain_handled")) {
-            return;
+        // Preserve existing closed-domain suppression.
+        if (entity.level().dimension().equals(DomainDimension.ID)
+                && entity.getPersistentData()
+                .getBoolean("abyss_domain_handled")) {
+            ci.cancel();
         }
-
-        // Abyss controls this caster's domain lifecycle.
-        // Keep the JC effect, but skip JC's original domain logic.
-        ci.cancel();
     }
 }
