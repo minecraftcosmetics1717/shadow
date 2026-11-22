@@ -36,7 +36,6 @@ public final class AbyssDomainCast {
     public static final double DOMAIN_ACTIVATION_COST = 1250.0D;
     public static final int OVERWORLD_RADIUS = 22;
     public static final int DURATION_TICKS = 20 * 160;
-    public static final double BASE_CE_PER_SECOND = 15.0;
 
     private static final String NBT_ACTIVE = "abyss_domain_active";
     private static final String NBT_END_TICK = "abyss_domain_end_tick";
@@ -306,55 +305,6 @@ public final class AbyssDomainCast {
             entity.getPersistentData().putBoolean(NBT_ACTIVE, false);
             entity.getPersistentData().putBoolean(NBT_COMMITTED, false);
             return;
-        }
-    }
-    public static void drainOpenDomain(ServerPlayer player) {
-        if (!OpenDomainLifecycle.isActive(player.getUUID())) {
-            return;
-        }
-
-        double amount = BASE_CE_PER_SECOND
-                * ceMultiplier(player);
-
-        drainPlayerCe(player, amount);
-    }
-    private static double ceMultiplier(ServerPlayer player) {
-        double multiplier = 1.0;
-
-        var sixEyes = ForgeRegistries.MOB_EFFECTS.getValue(
-                new ResourceLocation("jujutsucraft", "six_eyes")
-        );
-
-        if (sixEyes != null && player.hasEffect(sixEyes)) {
-            multiplier *= 0.1;
-        }
-
-        return multiplier;
-    }
-
-    private static void drainPlayerCe(ServerPlayer player, double amount) {
-        try {
-            player.getCapability(
-                    net.mcreator.jujutsucraft.network
-                            .JujutsucraftModVariables
-                            .PLAYER_VARIABLES_CAPABILITY
-            ).ifPresent(cap -> {
-                cap.PlayerCursePowerChange -= amount;
-
-                if (cap.PlayerCursePower + cap.PlayerCursePowerChange <= 0) {
-                    DomainLifecycle.end(player);
-
-                    player.getPersistentData().putBoolean(
-                            NBT_ACTIVE, false
-                    );
-
-                    player.getPersistentData().putBoolean(
-                            NBT_COMMITTED, false
-                    );
-                }
-            });
-        } catch (Throwable ignored) {
-            // Capability may be unavailable in a development environment.
         }
     }
 
