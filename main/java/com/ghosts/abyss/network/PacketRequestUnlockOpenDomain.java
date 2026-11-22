@@ -26,9 +26,7 @@ public class PacketRequestUnlockOpenDomain {
          ServerPlayer player = ctx.getSender();
          if (player != null) {
             if (AbyssGamerules.isEnabled(player, AbyssGamerules.OPEN_DOMAIN)) {
-               if (!isRestrictedCT(player)) {
-                  OpenDomain.tryUnlock(player);
-               }
+               OpenDomain.tryUnlock(player);
             }
          }
       });

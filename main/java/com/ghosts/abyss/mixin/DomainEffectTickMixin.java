@@ -34,11 +34,18 @@ public class DomainEffectTickMixin {
    )
    private static void onHead(LevelAccessor world, double x, double y, double z, Entity entity, CallbackInfo ci) {
 
+
       if (entity != null
               && entity.getPersistentData().getBoolean("open_domain")
+              // Sukuna already has a large open-domain radius
+              // in the original Jujutsucraft active procedure.
+              && entity.getPersistentData().getDouble("skill_domain") != 1.0D
+              && entity.getPersistentData().getDouble("select") != 1.0D
               && !(entity.level().dimension().equals(
               com.ghosts.abyss.domain.DomainDimension.ID)
-              && entity.getPersistentData().getBoolean("abyss_domain_handled"))) {
+              && entity.getPersistentData()
+              .getBoolean("abyss_domain_handled"))) {
+
 
          try {
             Class<?> cls = Class.forName("net.mcreator.jujutsucraft.network.JujutsucraftModVariables$MapVariables");

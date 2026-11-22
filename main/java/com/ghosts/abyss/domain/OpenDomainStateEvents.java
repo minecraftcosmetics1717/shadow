@@ -91,66 +91,7 @@ public final class OpenDomainStateEvents {
      * when SecondTechnique is active.
      */
     private static boolean isRestrictedCT(ServerPlayer player) {
-
-        try {
-            Class<?> varsClass = Class.forName(
-                    "net.mcreator.jujutsucraft.network."
-                            + "JujutsucraftModVariables"
-            );
-
-            Field capField = varsClass.getDeclaredField(
-                    "PLAYER_VARIABLES_CAPABILITY"
-            );
-
-            capField.setAccessible(true);
-
-            @SuppressWarnings("unchecked")
-            Capability<Object> cap =
-                    (Capability<Object>) capField.get(null);
-
-            Object vars = player.getCapability(cap, null)
-                    .orElse(null);
-
-            if (vars == null) {
-                return false;
-            }
-
-            Field ctField = vars.getClass()
-                    .getDeclaredField("PlayerCurseTechnique");
-
-            ctField.setAccessible(true);
-
-            double ct = (Double) ctField.get(vars);
-
-            // Check primary cursed technique.
-            if (ct == 1.0D || ct == 18.0D || ct == 41.0D) {
-                return true;
-            }
-
-            // Check secondary cursed technique.
-            Field ct2Field = vars.getClass()
-                    .getDeclaredField("PlayerCurseTechnique2");
-
-            ct2Field.setAccessible(true);
-
-            double ct2 = (Double) ct2Field.get(vars);
-
-            Field secondField = vars.getClass()
-                    .getDeclaredField("SecondTechnique");
-
-            secondField.setAccessible(true);
-
-            boolean secondActive =
-                    (Boolean) secondField.get(vars);
-
-            return secondActive
-                    && (ct2 == 1.0D
-                    || ct2 == 18.0D
-                    || ct2 == 41.0D);
-
-        } catch (Exception e) {
-            // Preserve original behavior.
-            return false;
-        }
-    }
-}
+        // Open domains are controlled by Abyss's unlock system.
+        // No cursed technique is automatically excluded.
+        return false;
+    }}

@@ -129,6 +129,18 @@ public class DomainLifecycle {
             return;
         }
 
+// Sukuna's unlocked open domain stays in the overworld.
+// Let Jujutsucraft manage its existing open-barrier
+// expansion and shrine instead of creating an Abyss arena.
+        if (OpenDomain.shouldUseOpenDomain(
+                owner,
+                skillDomain
+        )) {
+            data.putBoolean("abyss_domain_pending", false);
+            data.putBoolean("abyss_domain_handled", false);
+            return;
+        }
+
         owner.getPersistentData().putBoolean("abyss_domain_handled", true);
         owner.getPersistentData().putBoolean("abyss_domain_pending", false);
 
@@ -199,6 +211,18 @@ public class DomainLifecycle {
         if (owner.level().isClientSide) return;
         if (!(owner.level() instanceof ServerLevel overworld)) return;
         if (DomainInstanceManager.getByOwner(owner.getUUID()) != null) return;
+
+// Open Malevolent Shrine does not create a separate arena.
+        if (OpenDomain.shouldUseOpenDomain(
+                owner,
+                skillDomain
+        )) {
+            owner.getPersistentData().putBoolean(
+                    "abyss_domain_pending",
+                    false
+            );
+            return;
+        }
 
         owner.getPersistentData().putBoolean("abyss_domain_handled", true);
         owner.getPersistentData().putBoolean("abyss_domain_pending", false);

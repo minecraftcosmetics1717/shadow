@@ -26,9 +26,7 @@ public class PacketToggleOpenDomain {
          if (player != null) {
             if (AbyssGamerules.isEnabled(player, AbyssGamerules.OPEN_DOMAIN)) {
                if (!this.hasDomainExpansionEffect(player)) {
-                  if (!PacketRequestUnlockOpenDomain.isRestrictedCT(player)) {
-                     OpenDomain.toggle(player);
-                  }
+                  OpenDomain.toggle(player);
                }
             }
          }

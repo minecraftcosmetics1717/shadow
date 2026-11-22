@@ -17,6 +17,40 @@ public class OpenDomain {
    private static final int COST_RP = 20;
    private static final int COST_ATP = 20;
 
+   public static boolean shouldUseOpenDomain(
+           net.minecraft.world.entity.LivingEntity entity,
+           double skillDomain
+   ) {
+      // First implementation: Sukuna only.
+      if (skillDomain != 1.0D) {
+         return false;
+      }
+
+      // Open domains must be manually unlocked by players.
+      if (!(entity instanceof ServerPlayer player)) {
+         return false;
+      }
+
+      if (!com.ghosts.abyss.AbyssGamerules.isEnabled(
+              player,
+              com.ghosts.abyss.AbyssGamerules.OPEN_DOMAIN
+      )) {
+         return false;
+      }
+
+      var data = player.getPersistentData();
+
+      if (!data.getBoolean(KEY_UNLOCKED)
+              || !data.getBoolean(KEY_TOGGLED)) {
+         return false;
+      }
+
+      // Synchronize the active JC flag with the saved choice.
+      data.putBoolean(KEY_ACTIVE, true);
+
+      return true;
+   }
+
    public static boolean canUnlock(ServerPlayer player) {
       if (player.getPersistentData().getBoolean("open_domain_unlocked")) {
          return false;
