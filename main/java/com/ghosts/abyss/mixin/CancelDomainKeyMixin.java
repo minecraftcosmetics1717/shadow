@@ -46,16 +46,11 @@ public class CancelDomainKeyMixin {
         }
 
 
-        boolean openDomainActive =
-                OpenDomainLifecycle.isActive(living.getUUID());
 
-        boolean cancelSelected = isCancelSlotSelected(living);
-
-// Allow cancellation if JC has not yet updated the
-// selected technique during an active open domain.
-        if (!cancelSelected && !openDomainActive) {
+        if (!isCancelSlotSelected(living)) {
             return;
         }
+
 
 
         if (DomainInstanceManager.getByOwner(living.getUUID()) == null

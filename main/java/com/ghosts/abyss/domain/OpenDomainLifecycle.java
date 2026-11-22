@@ -80,27 +80,6 @@ public final class OpenDomainLifecycle {
         });
     }
 
-
-    private static void ensureCancelDomainSelected(
-            ServerPlayer player
-    ) {
-        if (!isActive(player.getUUID())) {
-            return;
-        }
-
-        player.getCapability(
-                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
-        ).ifPresent(vars -> {
-
-            // If JC has switched the selection back to
-            // Malevolent Shrine, restore Cancel Domain.
-            if (vars.PlayerSelectCurseTechnique == 20.0D) {
-                selectCancelDomain(player);
-            }
-        });
-    }
-
-
     private static void restoreDomainSelection(ServerPlayer player) {
         player.getCapability(
                 JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
@@ -352,8 +331,6 @@ public final class OpenDomainLifecycle {
             }
 
             ServerLevel level = player.serverLevel();
-
-            ensureCancelDomainSelected(player);
 
 // Prepare targets using JC's Neutralization effect.
             prepareShrineTargets(level, player, session);
