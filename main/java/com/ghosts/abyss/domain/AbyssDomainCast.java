@@ -257,9 +257,16 @@ public final class AbyssDomainCast {
                 OVERWORLD_RADIUS
         );
 
-        // Clear the JC technique lock so the user isn't stuck in skill 820.
-        data.putDouble("skill", 0.0);
-        data.putDouble("cnt3", 0.0);
+// Clear JC's running skill state.
+        data.putDouble("skill", 0.0D);
+        data.putDouble("cnt3", 0.0D);
+
+// Open domains don't teleport the caster or give them
+// a replacement domain effect. Release JC's technique
+// effect after the open-domain session has started.
+        if (OpenDomainLifecycle.isActive(entity.getUUID())) {
+            removeCursedTechniqueEffect(entity);
+        }
     }
 
     private static void cancelLongPress(LivingEntity entity) {

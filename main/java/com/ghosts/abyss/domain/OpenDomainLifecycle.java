@@ -2,8 +2,14 @@
 package com.ghosts.abyss.domain;
 
 import net.mcreator.jujutsucraft.init.JujutsucraftModEntities;
+import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
+import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
+import net.mcreator.jujutsucraft.procedures.BlockDestroyAllDirectionProcedure;
+import net.mcreator.jujutsucraft.procedures.KeyChangeTechniqueOnKeyPressedProcedure;
+import net.mcreator.jujutsucraft.procedures.RangeAttackProcedure;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -11,13 +17,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.GameRules;
+import net.mcreator.jujutsucraft.procedures.TechniqueDecideProcedure;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -35,10 +37,6 @@ public final class OpenDomainLifecycle {
 
     public static final double RADIUS = 200.0D;
 
-    private static final double RADIUS_SQ = RADIUS * RADIUS;
-    private static final int DAMAGE_INTERVAL = 10;
-    private static final int DESTRUCTION_INTERVAL = 10;
-
     private static final Map<UUID, Session> ACTIVE =
             new HashMap<>();
 
@@ -53,6 +51,57 @@ public final class OpenDomainLifecycle {
 
     public static boolean isActive(UUID ownerId) {
         return ACTIVE.containsKey(ownerId);
+    }
+
+    private static void selectCancelDomain(ServerPlayer player) {
+        player.getCapability(
+                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
+        ).ifPresent(vars -> {
+
+            double techniqueId = vars.SecondTechnique
+                    ? vars.PlayerCurseTechnique2
+                    : vars.PlayerCurseTechnique;
+
+            // JC's own selection procedure updates the
+            // displayed technique, cost, and client data.
+            TechniqueDecideProcedure.execute(
+                    player,
+                    true,
+                    true,
+                    0.0D,
+                    techniqueId,
+                    21.0D,
+                    Component.translatable(
+                            "jujutsu.technique.cancel_domain"
+                    ).getString()
+            );
+        });
+    }
+
+    private static void restoreDomainSelection(ServerPlayer player) {
+        player.getCapability(
+                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
+        ).ifPresent(vars -> {
+
+            // Don't override another technique the player
+            // manually selected while their domain was active.
+            if (vars.PlayerSelectCurseTechnique != 21.0D) {
+                return;
+            }
+
+            // Refresh the original domain-expansion name and
+            // cost using JC's own technique-selection procedure.
+            vars.PlayerSelectCurseTechnique = 20.0D;
+            vars.noChangeTechnique = true;
+
+            KeyChangeTechniqueOnKeyPressedProcedure.execute(
+                    player.serverLevel(),
+                    player.getX(),
+                    player.getY(),
+                    player.getZ(),
+                    player
+            );
+        });
     }
 
     public static boolean start(ServerPlayer player) {
@@ -144,6 +193,17 @@ public final class OpenDomainLifecycle {
         data.putDouble("y_pos_doma", center.y);
         data.putDouble("z_pos_doma", center.z);
 
+// Release JC's running technique lock.
+        data.putDouble("skill", 0.0D);
+        data.putDouble("cnt3", 0.0D);
+
+        player.removeEffect(
+                JujutsucraftModMobEffects.CURSED_TECHNIQUE.get()
+        );
+
+// Switch Malevolent Shrine to Cancel Domain.
+        selectCancelDomain(player);
+
         return true;
     }
 
@@ -176,6 +236,11 @@ public final class OpenDomainLifecycle {
 
         if (cursedTechnique != null) {
             entity.removeEffect(cursedTechnique);
+        }
+        // Return the selected ability to Domain Expansion
+// once the open domain has ended.
+        if (entity instanceof ServerPlayer player) {
+            restoreDomainSelection(player);
         }
         if (entity.isAlive()) {
             DomainCooldown.apply(entity);
@@ -251,175 +316,153 @@ public final class OpenDomainLifecycle {
 
             ServerLevel level = player.serverLevel();
 
-            // Apply sure-hit damage twice per second.
-            if (tick % DAMAGE_INTERVAL == 0) {
-                tickSureHit(level, player, session);
-            }
-
-            // Only open domains destroy terrain.
-            if (tick % DESTRUCTION_INTERVAL == 0) {
-                tickDestruction(level, player, session);
-            }
+            tickJcShrineAttacks(level, player, session);
         }
     }
 
-    private static void tickSureHit(
+
+    private static void tickJcShrineAttacks(
             ServerLevel level,
             ServerPlayer owner,
             Session session
     ) {
+        var data = owner.getPersistentData();
         Vec3 center = session.center();
 
-        // Search horizontal range of 200 blocks, with
-        // 48 blocks vertically in either direction.
-        AABB area = new AABB(
-                center.x - RADIUS,
-                center.y - 48.0D,
-                center.z - RADIUS,
-                center.x + RADIUS,
-                center.y + 48.0D,
-                center.z + RADIUS
-        );
+        double span = RADIUS * 2.0D;
 
-        for (LivingEntity target :
-                level.getEntitiesOfClass(
-                        LivingEntity.class,
-                        area,
-                        e -> e.isAlive() && e != owner
-                )) {
+        // Save existing technique and attack settings.
+        double oldSkill = data.getDouble("skill");
+        double oldCooldown = data.getDouble("COOLDOWN_TICKS");
+        double oldDamage = data.getDouble("Damage");
+        double oldRange = data.getDouble("Range");
+        double oldEffect = data.getDouble("effect");
+        double oldEffectConfirm = data.getDouble("effectConfirm");
+        double oldKnockback = data.getDouble("knockback");
+        double oldYKnockback = data.getDouble("y_knockback");
+        double oldBlockRange = data.getDouble("BlockRange");
+        double oldBlockDamage = data.getDouble("BlockDamage");
 
-            if (target.isAlliedTo(owner)) continue;
+        boolean oldSwing = data.getBoolean("swing");
+        boolean oldAttack = data.getBoolean("attack");
+        boolean oldDomainAttack = data.getBoolean("DomainAttack");
+        boolean oldExtinction = data.getBoolean("ExtinctionBlock");
+        boolean oldNoParticle = data.getBoolean("noParticle");
+        boolean oldNoEffect = data.getBoolean("noEffect");
 
-            if (target instanceof Player other
-                    && (other.isCreative() || other.isSpectator())) {
-                continue;
-            }
+        try {
+            data.putDouble("y_knockback", -0.1D);
 
-            // Exclude shrine decorations.
-            if (target.getType() ==
-                    JujutsucraftModEntities
-                            .ENTITY_MALEVOLENT_SHRINE.get()
-                    || target.getType() ==
-                    JujutsucraftModEntities
-                            .ENTITY_MALEVOLENT_SHRINE_2.get()) {
-                continue;
-            }
+            // Four ranged slash attacks, as in JC.
+            for (int i = 0; i < 4; i++) {
+                double xSign = i % 2 == 0 ? 1.0D : -1.0D;
+                double zSign = i % 4 <= 1 ? 1.0D : -1.0D;
 
-            double dx = target.getX() - center.x;
-            double dz = target.getZ() - center.z;
+                double x = center.x + span * 0.25D * xSign;
+                double y = center.y + span * 0.25D - 15.0D;
+                double z = center.z + span * 0.25D * zSign;
 
-            if (dx * dx + dz * dz > RADIUS_SQ) continue;
+                data.putDouble("skill", 106.0D);
+                data.putDouble("COOLDOWN_TICKS", 100.0D);
+                data.putDouble("Damage", 10.5D);
+                data.putDouble("Range", span * 0.5D);
 
-            // Preliminary sure-hit damage.
-            // Does not break any blocks.
-            target.hurt(
-                    owner.damageSources().playerAttack(owner),
-                    6.0F
-            );
+                data.putDouble("effect", 1.0D);
+                data.putDouble("effectConfirm", 1.0D);
+                data.putDouble("knockback", 0.001D);
 
-            // Light visual feedback, not a particle storm.
-            if (level.random.nextInt(3) == 0) {
-                level.sendParticles(
-                        ParticleTypes.SWEEP_ATTACK,
-                        target.getX(),
-                        target.getY() + target.getBbHeight() * 0.5,
-                        target.getZ(),
-                        1,
-                        0.2D,
-                        0.2D,
-                        0.2D,
-                        0.0D
+                data.putBoolean("swing", false);
+                data.putBoolean("attack", false);
+                data.putBoolean("DomainAttack", true);
+                data.putBoolean("ExtinctionBlock", true);
+
+                RangeAttackProcedure.execute(
+                        level, x, y, z, owner
                 );
             }
-        }
-    }
 
-    private static void tickDestruction(
-            ServerLevel level,
-            ServerPlayer owner,
-            Session session
-    ) {
-        // Respect the world's mob-griefing setting for
-        // this experimental terrain-destruction effect.
-        if (!level.getGameRules().getBoolean(
-                GameRules.RULE_MOBGRIEFING)) {
-            return;
-        }
+            // JC's destruction sampling.
+            double dust = data.getDouble("dust_amount");
+            if (dust <= 0.0D) dust = 1.0D;
 
-        Vec3 center = session.center();
+            double attempts = 0.0D;
 
-        // Attempt only four positions per update.
-        // Never scan hundreds of blocks every tick.
-        for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 512; i++) {
+                double angle = Math.toRadians(
+                        level.random.nextDouble() * 360.0D
+                );
 
-            double angle = level.random.nextDouble()
-                    * Math.PI * 2.0D;
+                double offset = span * 0.5D *
+                        (level.random.nextDouble() * 2.0D - 1.0D);
 
-            double radius = 12.0D
-                    + Math.sqrt(level.random.nextDouble())
-                    * (RADIUS - 16.0D);
+                double x = center.x + Math.sin(angle) * offset;
+                double y = center.y +
+                        level.random.nextDouble() * span * 0.2D;
+                double z = center.z + Math.cos(angle) * offset;
 
-            int x = (int) Math.floor(
-                    center.x + Math.cos(angle) * radius
-            );
-            int z = (int) Math.floor(
-                    center.z + Math.sin(angle) * radius
-            );
+                if (!level.isEmptyBlock(BlockPos.containing(x, y, z))) {
+                    dust = Math.min(dust + 1.0D, 200.0D);
 
-            BlockPos probe = new BlockPos(
-                    x,
-                    (int) center.y,
-                    z
-            );
+                    level.sendParticles(
+                            ParticleTypes.EXPLOSION,
+                            x, y, z,
+                            2, 1.5D, 1.5D, 1.5D, 0.0D
+                    );
 
-            // Never generate new chunks merely to destroy them.
-            if (!level.hasChunkAt(probe)) continue;
+                    level.sendParticles(
+                            ParticleTypes.POOF,
+                            x, y, z,
+                            2, 1.5D, 1.5D, 1.5D, 0.5D
+                    );
 
-            int y = level.getHeight(
-                    Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                    x,
-                    z
-            ) - 1;
+                    data.putBoolean("noParticle", true);
+                    data.putBoolean("ExtinctionBlock", true);
+                    data.putDouble("BlockRange", 16.0D);
+                    data.putDouble("BlockDamage", 99.0D);
 
-            // Keep destruction near the domain's
-            // original vertical position.
-            if (Math.abs(y - center.y) > 32.0D) continue;
+                    BlockDestroyAllDirectionProcedure.execute(
+                            level,
+                            x,
+                            Math.max(y, center.y + 8.0D),
+                            z,
+                            owner
+                    );
 
-            BlockPos pos = new BlockPos(x, y, z);
-            BlockState state = level.getBlockState(pos);
+                    if (attempts < 32.0D
+                            || attempts / 512.0D
+                            < level.random.nextDouble()) {
+                        break;
+                    }
+                }
 
-            if (state.isAir()) continue;
-            if (state.getDestroySpeed(level, pos) < 0.0F) continue;
-
-            // Leave inventories and other block entities alone.
-            if (level.getBlockEntity(pos) != null) continue;
-
-            var blockId = ForgeRegistries.BLOCKS.getKey(
-                    state.getBlock()
-            );
-
-            if (blockId == null) continue;
-
-            // Don't destroy Abyss domain blocks or JC blocks.
-            if (blockId.getNamespace().equals("abyss")
-                    || blockId.getNamespace().equals("jujutsucraft")) {
-                continue;
+                attempts++;
             }
 
-            // Check Forge's block-break protections before
-            // removing anything.
-            int result = ForgeHooks.onBlockBreakEvent(
-                    level,
-                    owner.gameMode.getGameModeForPlayer(),
-                    owner,
-                    pos
-            );
+            data.putDouble("dust_amount", dust);
 
-            if (result < 0) continue;
+        } finally {
+            data.putDouble("skill", oldSkill);
+            data.putDouble("COOLDOWN_TICKS", oldCooldown);
+            data.putDouble("Damage", oldDamage);
+            data.putDouble("Range", oldRange);
+            data.putDouble("effect", oldEffect);
+            data.putDouble("effectConfirm", oldEffectConfirm);
+            data.putDouble("knockback", oldKnockback);
+            data.putDouble("y_knockback", oldYKnockback);
+            data.putDouble("BlockRange", oldBlockRange);
+            data.putDouble("BlockDamage", oldBlockDamage);
 
-            level.destroyBlock(pos, false, owner);
+            data.putBoolean("swing", oldSwing);
+            data.putBoolean("attack", oldAttack);
+            data.putBoolean("DomainAttack", oldDomainAttack);
+            data.putBoolean("ExtinctionBlock", oldExtinction);
+            data.putBoolean("noParticle", oldNoParticle);
+            data.putBoolean("noEffect", oldNoEffect);
         }
     }
+
+
+
 
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
