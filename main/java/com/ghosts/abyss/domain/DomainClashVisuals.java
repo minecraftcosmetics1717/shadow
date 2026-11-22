@@ -32,6 +32,7 @@ public final class DomainClashVisuals {
         CURSORS.remove(slot);
     }
 
+
     public static void update(
             ServerLevel level,
             DomainInstance inst,
@@ -39,9 +40,16 @@ public final class DomainClashVisuals {
             Map<UUID, Double> influence
     ) {
         if (level == null || inst == null
-                || active.size() < 2) return;
+                || active.size() < 2) {
+            return;
+        }
 
         int cursor = CURSORS.getOrDefault(inst.slot, 0);
+
+        // Only run the extra terrain logic in arenas
+        // where Dagon has participated.
+        boolean hasDagon = inst.territorySkills
+                .contains(8.0D);
 
         DomainDimBlockGuard.open();
 
@@ -63,13 +71,37 @@ public final class DomainClashVisuals {
 
                 if (winner == null) continue;
 
-                BlockState desired = surface.floor()
-                        ? DomainArenaBuilder.floorState(
-                        winner.skillDomain
-                )
-                        : DomainArenaBuilder.interiorState(
-                        winner.skillDomain
-                );
+                int x = offset.getX();
+                int z = offset.getZ();
+
+                boolean dagonWinsColumn =
+                        (int) Math.round(winner.skillDomain) == 8;
+
+                BlockState desired;
+
+                if (surface.floor() && dagonWinsColumn) {
+
+                    // Dagon's floor depends on position
+                    // and his assigned clash side.
+                    desired = DagonDomainTerrain.floorAt(
+                            x,
+                            z,
+                            winner.side
+                    );
+
+                } else if (surface.floor()) {
+
+                    desired = DomainArenaBuilder.floorState(
+                            winner.skillDomain
+                    );
+
+                } else {
+
+                    // Sky and shell behavior stays unchanged.
+                    desired = DomainArenaBuilder.interiorState(
+                            winner.skillDomain
+                    );
+                }
 
                 BlockPos worldPos =
                         inst.arenaCenter.offset(offset);
@@ -77,20 +109,20 @@ public final class DomainClashVisuals {
                 BlockState current =
                         level.getBlockState(worldPos);
 
-                if (current.equals(desired)) continue;
-
-// Recognize palettes belonging to every domain
-// that has participated in this arena.
-//
-// A defeated caster no longer controls territory,
-// but their old blocks must still be replaceable.
+                // A floor block is convertible if it belongs
+                // to one of the palettes that participated
+                // in this arena.
                 boolean paletteBlock = false;
 
                 for (double knownSkill : inst.territorySkills) {
 
                     BlockState palette = surface.floor()
-                            ? DomainArenaBuilder.floorState(knownSkill)
-                            : DomainArenaBuilder.interiorState(knownSkill);
+                            ? DomainArenaBuilder.floorState(
+                            knownSkill
+                    )
+                            : DomainArenaBuilder.interiorState(
+                            knownSkill
+                    );
 
                     if (current.equals(palette)) {
                         paletteBlock = true;
@@ -98,9 +130,35 @@ public final class DomainClashVisuals {
                     }
                 }
 
+                // Dagon's water isn't returned by the normal
+                // floorState() method, so recognize it here.
+                if (surface.floor() && hasDagon
+                        && DagonDomainTerrain.isDagonFloor(current)) {
+                    paletteBlock = true;
+                }
+
+                // Preserve unrelated blocks and existing
+                // decoration structures.
                 if (!paletteBlock) continue;
 
-                level.setBlock(worldPos, desired, 2);
+                if (!current.equals(desired)) {
+                    level.setBlock(worldPos, desired, 2);
+                }
+
+                // Handle the foundation and grass even when
+                // the floor already equals the desired block.
+                //
+                // This is important when Dagon and another
+                // domain use the same sand floor block.
+                if (surface.floor() && hasDagon) {
+                    DagonDomainTerrain.updateExtraLayers(
+                            level,
+                            worldPos,
+                            x,
+                            z,
+                            winner
+                    );
+                }
             }
 
         } finally {
@@ -112,6 +170,7 @@ public final class DomainClashVisuals {
                 (cursor + UPDATES_PER_TICK) % SURFACES.size()
         );
     }
+
 
     private static DomainClashParticipants.Participant
     chooseTerritory(

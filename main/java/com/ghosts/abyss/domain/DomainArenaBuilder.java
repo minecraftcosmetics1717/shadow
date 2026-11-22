@@ -285,7 +285,16 @@ public class DomainArenaBuilder {
         for (int x = -floorR; x <= floorR; x++) {
             for (int z = -floorR; z <= floorR; z++) {
                 if (x * x + z * z > floorR * floorR) continue;
-
+// Dagon's domain has its own three-region terrain.
+                if (id == 8) {
+                    DagonDomainTerrain.placeColumn(
+                            level,
+                            center,
+                            x,
+                            z
+                    );
+                    continue;
+                }
                 level.setBlock(new BlockPos(cx + x, cy - 1, cz + z), under, 2);
 
 

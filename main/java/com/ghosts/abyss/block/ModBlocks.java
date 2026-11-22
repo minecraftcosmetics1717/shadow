@@ -26,6 +26,8 @@ public class ModBlocks {
             register("domain_int", DomainIntBlock::new);
     public static final RegistryObject<Block> DOMAIN_SAND =
             register("domain_sand", () -> new DomainBlock(MapColor.SAND, SoundType.SAND,true));
+    public static final RegistryObject<Block> DEEP_BLUE =
+            register("deep_blue", () -> new DomainBlock(MapColor.COLOR_BLUE,SoundType.SAND,false));
     public static final RegistryObject<Block> DOMAIN_SAND_BLACK =
             register("domain_sand_black", () -> new DomainBlock(MapColor.COLOR_BLACK, SoundType.SAND, false));
     public static final RegistryObject<Block> DOMAIN_GRAVEL =
@@ -36,6 +38,8 @@ public class ModBlocks {
             register("domain_flower", () -> new DomainBlock(MapColor.COLOR_PINK, SoundType.GRASS,false));
     public static final RegistryObject<Block> DOMAIN_GRASS =
             register("domain_grass", () -> new DomainBlock(MapColor.GRASS, SoundType.GRASS,true));
+    public static final RegistryObject<Block> DOMAIN_SHORT_GRASS =
+            register("domain_short_grass", DomainShortGrassBlock::new);
     public static final RegistryObject<Block> DOMAIN_PODZOL =
             register("domain_podzol", () -> new DomainBlock(MapColor.PODZOL, SoundType.GRASS,false));
     public static final RegistryObject<Block> DOMAIN_BLOOD =

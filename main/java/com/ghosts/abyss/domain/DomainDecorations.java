@@ -32,8 +32,7 @@ public final class DomainDecorations {
         }
     }
 
-    public static void spawnParticipant(ServerLevel level, DomainInstance inst,
-                                        DomainClashParticipants.Participant participant) {
+    public static void spawnParticipant(ServerLevel level, DomainInstance inst, DomainClashParticipants.Participant participant) {
         if (level == null || inst == null || participant == null) return;
 
 // Yuta has multiple interactive decorations, so he needs
@@ -47,6 +46,14 @@ public final class DomainDecorations {
         if ((int) participant.skillDomain == 38) {
             updateUroDecorationPosition(level, inst, participant);
         }
+
+// Dagon — Horizon of the Captivating Skies.
+// Multiple palm trees on the grassy side.
+        if ((int) participant.skillDomain == 8) {
+            spawnDagonPalmTrees(level, inst, participant);
+            return;
+        }
+
         if (hasDecoration(level, inst, participant.entityId)) return;
 // Ryu Ishigori — All-Satiating Flavor Festival
         if ((int) participant.skillDomain == 12) {
@@ -807,6 +814,204 @@ public final class DomainDecorations {
             if (entity.distanceToSqr(x, y, z) > 0.01D) {
                 entity.setPos(x, y, z);
             }
+        }
+    }
+
+    private static void spawnDagonPalmTrees(
+            ServerLevel level,
+            DomainInstance inst,
+            DomainClashParticipants.Participant participant
+    ) {
+        final int TREE_COUNT = 16;
+        final double MIN_SPACING = 8.0D;
+
+        // Fixed positions so the trees don't randomly
+        // move every time the domain rebuilds.
+        RandomSource random = RandomSource.create(820816L);
+
+        java.util.List<BlockPos> positions =
+                new java.util.ArrayList<>();
+
+        // Generate points on Dagon's grassy side.
+        for (int attempt = 0;
+             attempt < 500 && positions.size() < TREE_COUNT;
+             attempt++) {
+
+            double forward = 29.0D
+                    + random.nextDouble() * 24.0D;
+
+            double lateral = -44.0D
+                    + random.nextDouble() * 88.0D;
+
+            int x;
+            int z;
+
+            switch (participant.side) {
+                case NORTH -> {
+                    x = (int) Math.round(lateral);
+                    z = (int) Math.round(-forward);
+                }
+                case SOUTH -> {
+                    x = (int) Math.round(-lateral);
+                    z = (int) Math.round(forward);
+                }
+                case WEST -> {
+                    x = (int) Math.round(-forward);
+                    z = (int) Math.round(-lateral);
+                }
+                case EAST -> {
+                    x = (int) Math.round(forward);
+                    z = (int) Math.round(lateral);
+                }
+                default -> {
+                    continue;
+                }
+            }
+
+            // Stay away from the spherical wall.
+            if (x * x + z * z > 55 * 55) {
+                continue;
+            }
+
+            // Palm trees only belong in raised grass.
+            if (DagonDomainTerrain.regionAt(
+                    x, z, participant.side
+            ) != DagonDomainTerrain.Region.GRASS) {
+                continue;
+            }
+
+            boolean tooClose = false;
+
+            for (BlockPos other : positions) {
+                double dx = x - other.getX();
+                double dz = z - other.getZ();
+
+                if (dx * dx + dz * dz
+                        < MIN_SPACING * MIN_SPACING) {
+                    tooClose = true;
+                    break;
+                }
+            }
+
+            if (!tooClose) {
+                positions.add(new BlockPos(x, 0, z));
+            }
+        }
+
+        // Find existing trees belonging to Dagon.
+        // This prevents duplicates on the 4-tick sync.
+        java.util.Map<Integer, Entity> existing =
+                new java.util.HashMap<>();
+
+        for (Entity entity : level.getEntities(
+                (Entity) null,
+                arenaBox(inst),
+                e -> e.getPersistentData()
+                        .getBoolean("abyss_domain_decoration")
+                        && e.getType()
+                        == JujutsucraftModEntities.PALM_TREE.get()
+                        && e.getPersistentData()
+                        .hasUUID("abyss_decoration_owner")
+                        && participant.entityId.equals(
+                        e.getPersistentData()
+                                .getUUID("abyss_decoration_owner"))
+        )) {
+            int index = entity.getPersistentData()
+                    .getInt("abyss_dagon_palm_index");
+
+            if (existing.containsKey(index)) {
+                entity.discard();
+            } else {
+                existing.put(index, entity);
+            }
+        }
+
+        for (int i = 0; i < positions.size(); i++) {
+            BlockPos offset = positions.get(i);
+
+            BlockPos grassPos = inst.arenaCenter.offset(
+                    offset.getX(),
+                    1,
+                    offset.getZ()
+            );
+
+            BlockPos sandPos = grassPos.below();
+
+            // Only keep trees while their raised grass
+            // and supporting sand still exist.
+            boolean hasGrass = level.getBlockState(grassPos)
+                    .is(com.ghosts.abyss.block.ModBlocks
+                            .DOMAIN_GRASS.get());
+
+            boolean hasSand = level.getBlockState(sandPos)
+                    .is(com.ghosts.abyss.block.ModBlocks
+                            .DOMAIN_SAND.get());
+
+            boolean validGround = hasGrass && hasSand;
+
+            Entity oldTree = existing.get(i);
+
+            if (!validGround) {
+                if (oldTree != null) {
+                    oldTree.discard();
+                }
+                continue;
+            }
+
+            if (oldTree != null && !oldTree.isRemoved()) {
+                continue;
+            }
+
+            Entity tree = JujutsucraftModEntities
+                    .PALM_TREE.get().create(level);
+
+            if (tree == null) continue;
+
+            double px = inst.arenaCenter.getX()
+                    + 0.5D + offset.getX();
+
+            double py = inst.arenaCenter.getY() + 2.0D;
+
+            double pz = inst.arenaCenter.getZ()
+                    + 0.5D + offset.getZ();
+
+            float yaw = random.nextFloat() * 360.0F;
+
+            tree.moveTo(px, py, pz, yaw, 0.0F);
+            tree.setInvulnerable(true);
+            tree.setNoGravity(true);
+
+            if (tree instanceof Mob mob) {
+                mob.setNoAi(true);
+            }
+
+            if (tree instanceof LivingEntity living) {
+                living.setYHeadRot(yaw);
+            }
+
+            tree.getPersistentData().putBoolean(
+                    "abyss_domain_decoration",
+                    true
+            );
+
+            tree.getPersistentData().putUUID(
+                    "abyss_decoration_owner",
+                    participant.entityId
+            );
+
+            tree.getPersistentData().putInt(
+                    "abyss_dagon_palm_index",
+                    i
+            );
+
+            // Keep compatibility with the owner data
+            // used by Jujutsucraft decorations.
+            tree.getPersistentData().putString(
+                    "OWNER_UUID",
+                    participant.entityId.toString()
+            );
+
+            level.addFreshEntity(tree);
         }
     }
 

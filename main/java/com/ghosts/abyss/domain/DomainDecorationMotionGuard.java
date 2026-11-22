@@ -33,7 +33,8 @@ public final class DomainDecorationMotionGuard {
             id("entity_awaji_knot"),
             id("entity_heart"),
             id("entity_domain_uro"),
-            id("entity_jupiter")
+            id("entity_jupiter"),
+            id("palm_tree")
     );
 
     private static ResourceLocation id(String name) {
