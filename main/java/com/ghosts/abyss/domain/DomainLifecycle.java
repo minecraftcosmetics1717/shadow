@@ -215,7 +215,11 @@ public class DomainLifecycle {
         if (owner.level().isClientSide) return;
         if (!(owner.level() instanceof ServerLevel overworld)) return;
         if (DomainInstanceManager.getByOwner(owner.getUUID()) != null) return;
-
+// Never create a closed arena while this caster
+// already has an open domain active.
+        if (OpenDomainLifecycle.isActive(owner.getUUID())) {
+            return;
+        }
 // Open Malevolent Shrine does not create a separate arena.
         if (OpenDomain.shouldUseOpenDomain(owner, skillDomain)) {
             if (owner instanceof net.minecraft.server.level.ServerPlayer player) {

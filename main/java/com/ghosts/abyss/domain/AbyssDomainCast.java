@@ -33,7 +33,7 @@ public final class AbyssDomainCast {
 
     /** Same as CreateBarrier: long-press finishes when cnt3 reaches 20. */
     public static final int LONG_PRESS_MAX = 20;
-
+    public static final double DOMAIN_ACTIVATION_COST = 1250.0D;
     public static final int OVERWORLD_RADIUS = 22;
     public static final int DURATION_TICKS = 20 * 160;
     public static final double BASE_CE_PER_SECOND = 15.0;
@@ -82,6 +82,40 @@ public final class AbyssDomainCast {
         tickCustomDomain(world, entity, URO_SKILL_DOMAIN);}
     public static void tickYukiDomain(LevelAccessor world, LivingEntity entity) {
         tickCustomDomain(world, entity, YUKI_SKILL_DOMAIN);}
+
+
+    private static boolean payDomainActivationCost(
+            LivingEntity entity) {
+        // JC cursed energy capability is player-specific.
+        if (!(entity instanceof ServerPlayer player)) {
+            return true;
+        }
+
+        var capability = player.getCapability(
+                net.mcreator.jujutsucraft.network
+                        .JujutsucraftModVariables
+                        .PLAYER_VARIABLES_CAPABILITY).resolve();
+
+        if (capability.isEmpty()) {
+            return false;
+        }
+        var cap = capability.get();
+        double available =
+                cap.PlayerCursePower
+                        + cap.PlayerCursePowerChange;
+        if (available < DOMAIN_ACTIVATION_COST) {
+            player.displayClientMessage(
+                    Component.literal(
+                            "Not enough cursed energy"),
+                    true);
+            return false;
+        }
+
+        // Deduct the complete cost once.
+        cap.PlayerCursePowerChange -= DOMAIN_ACTIVATION_COST;
+
+        return true;
+    }
 
     private static void tickCustomDomain(
             LevelAccessor world,
@@ -170,8 +204,16 @@ public final class AbyssDomainCast {
                 // Reached the final tick; continue to activation below.
             }
         }
-
-        // ----- Long press complete: activate the Abyss domain -----
+// Pay once when the long press completes.
+// This runs before the committed flag is set.
+        if (!payDomainActivationCost(entity)) {
+            data.putDouble("cnt3", 0.0D);
+            data.putDouble("skill", 0.0D);
+            data.putBoolean(NBT_COMMITTED, false);
+            data.putBoolean(NBT_ACTIVE, false);
+            removeCursedTechniqueEffect(entity);
+            return;
+        }
         // ----- Long press complete: activate the Abyss domain -----
         data.putBoolean(NBT_COMMITTED, true);
 
@@ -264,11 +306,6 @@ public final class AbyssDomainCast {
             entity.getPersistentData().putBoolean(NBT_ACTIVE, false);
             entity.getPersistentData().putBoolean(NBT_COMMITTED, false);
             return;
-        }
-
-        if (entity instanceof ServerPlayer player) {
-            double drain = BASE_CE_PER_SECOND * ceMultiplier(player);
-            drainPlayerCe(player, drain);
         }
     }
     public static void drainOpenDomain(ServerPlayer player) {
@@ -389,14 +426,29 @@ public final class AbyssDomainCast {
         }
     }
 
+
     public static void commitCancel(LivingEntity entity) {
-        // Fully tear down the Abyss domain.
+        if (entity.level().isClientSide) return;
+
+        var data = entity.getPersistentData();
+
+        // Stop either an open domain or a closed domain.
         DomainLifecycle.end(entity);
+
+        // Ensure the cancellation procedure cannot
+        // leave its authorization or charge active.
+        data.putBoolean("abyss_cancel_domain_auth", false);
+        data.putBoolean(NBT_CANCEL_CHARGING, false);
+        data.putInt(NBT_CANCEL_CHARGE, 0);
+
+        // Release JC's technique state.
+        data.putDouble("skill", 0.0D);
+        data.putDouble("cnt3", 0.0D);
+
         clearCastState(entity);
         removeCursedTechniqueEffect(entity);
-
-        entity.getPersistentData().putDouble("skill", 0);
     }
+
 
     private static void resetCancelCharge(LivingEntity entity) {
         var data = entity.getPersistentData();

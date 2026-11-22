@@ -25,7 +25,12 @@ public class PacketToggleOpenDomain {
          ServerPlayer player = ctx.getSender();
          if (player != null) {
             if (AbyssGamerules.isEnabled(player, AbyssGamerules.OPEN_DOMAIN)) {
-               if (!this.hasDomainExpansionEffect(player)) {
+               if (!this.hasDomainExpansionEffect(player)
+                       && !com.ghosts.abyss.domain.OpenDomainLifecycle
+                       .isActive(player.getUUID())
+                       && com.ghosts.abyss.domain.DomainInstanceManager
+                       .getByOwner(player.getUUID()) == null) {
+
                   OpenDomain.toggle(player);
                }
             }

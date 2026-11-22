@@ -496,6 +496,14 @@ public class DomainEvents {
         }
 
         AbyssDomainCast.tickCancelDomain(player);
+        // A completed cancel must not keep the
+// key authorization active.
+        if (!OpenDomainLifecycle.isActive(player.getUUID())
+                && DomainInstanceManager.getByOwner(player.getUUID()) == null) {
+            data.putBoolean("abyss_cancel_domain_auth", false);
+            data.putBoolean("abyss_domain_cancel_charging", false);
+            data.putInt("abyss_domain_cancel_charge", 0);
+        }
     }
 
 }

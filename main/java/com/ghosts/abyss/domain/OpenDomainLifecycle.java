@@ -165,7 +165,18 @@ public final class OpenDomainLifecycle {
         );
 
         DomainLifecycle.clearCastState(entity);
+// Open domains do not use the same JC effect lifecycle
+// as closed arenas, so explicitly release the technique.
+        var cursedTechnique =
+                ForgeRegistries.MOB_EFFECTS.getValue(
+                        new net.minecraft.resources.ResourceLocation(
+                                "jujutsucraft", "cursed_technique"
+                        )
+                );
 
+        if (cursedTechnique != null) {
+            entity.removeEffect(cursedTechnique);
+        }
         if (entity.isAlive()) {
             DomainCooldown.apply(entity);
         }
@@ -248,11 +259,6 @@ public final class OpenDomainLifecycle {
             // Only open domains destroy terrain.
             if (tick % DESTRUCTION_INTERVAL == 0) {
                 tickDestruction(level, player, session);
-            }
-
-            // Match the existing Abyss CE drain.
-            if (tick % 20 == 0) {
-                AbyssDomainCast.drainOpenDomain(player);
             }
         }
     }

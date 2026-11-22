@@ -181,19 +181,43 @@ public class ModCommands {
       return 1;
    }
 
-   private static int grantOpenDomain(CommandSourceStack src, ServerPlayer player) {
-      if (PacketRequestUnlockOpenDomain.isRestrictedCT(player)) {
-         src.sendFailure(Component.literal("[JJS] " + player.getName().getString() +
-                 " has a restricted CT (Sukuna/Kenjaku/Kaori) — denied."));
-         return 0;
-      }
 
-      player.getPersistentData().putBoolean("witnessed_open_domain", true);
-      player.getPersistentData().putBoolean("open_domain_unlocked", true);
-      OpenDomain.sync(player);
-      src.sendSuccess(() -> Component.literal("[JJS] Unlocked Open Domain for " + player.getName().getString()), false);
-      return 1;
-   }
+    private static int grantOpenDomain(
+            CommandSourceStack src,
+            ServerPlayer player
+    ) {
+        var data = player.getPersistentData();
+
+        boolean alreadyUnlocked =
+                data.getBoolean(OpenDomain.KEY_UNLOCKED);
+
+        // Admin command: bypass normal progression requirements,
+        // including the old cursed-technique restrictions.
+        data.putBoolean("witnessed_open_domain", true);
+        data.putBoolean(OpenDomain.KEY_UNLOCKED, true);
+
+        // Newly unlocked players start with Closed selected.
+        // Existing players keep their saved preference.
+        if (!alreadyUnlocked) {
+            data.putBoolean(OpenDomain.KEY_TOGGLED, false);
+            data.putBoolean(OpenDomain.KEY_ACTIVE, false);
+        }
+
+        // Update the client immediately.
+        OpenDomain.sync(player);
+
+        src.sendSuccess(
+                () -> Component.literal(
+                        "[Abyss] Unlocked Open Domain for "
+                                + player.getName().getString()
+                                + ". Use the Open Domain keybind to toggle modes."
+                ),
+                false
+        );
+
+        return 1;
+    }
+
 
    private static int grantCOT(CommandSourceStack src, ServerPlayer player) {
       player.getPersistentData().putBoolean("cursed_object_transform_unlocked", true);
