@@ -2,6 +2,7 @@
 package com.ghosts.abyss.mixin.client;
 
 import com.ghosts.abyss.technique.TechniqueCooldownManager;
+
 import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
 import net.mcreator.jujutsucraft.procedures.OCoolTimeSelectingProcedure;
@@ -30,11 +31,8 @@ public class SelectedCooldownTimerMixin {
             Entity entity,
             CallbackInfoReturnable<String> cir
     ) {
-        if (!(entity instanceof Player player)) {
-            return;
-        }
-
-        if (!player.level().isClientSide()) {
+        if (!(entity instanceof Player player)
+                || !player.level().isClientSide()) {
             return;
         }
 
@@ -42,9 +40,7 @@ public class SelectedCooldownTimerMixin {
                 JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
         ).orElse(null);
 
-        if (vars == null) {
-            return;
-        }
+        if (vars == null) return;
 
         double technique = vars.SecondTechnique
                 ? vars.PlayerCurseTechnique2
@@ -59,22 +55,30 @@ public class SelectedCooldownTimerMixin {
             return;
         }
 
-        // Preserve JC's original priority for Unstable.
-        if (player.hasEffect(
-                JujutsucraftModMobEffects.UNSTABLE.get()
-        )) {
-            return;
-        }
-
-        int remaining = player.getPersistentData().getInt(
-                "abyss_ui_cd_" + skillId
-        );
+        int remaining = player.getPersistentData()
+                .getInt("abyss_ui_cd_" + skillId);
 
         if (remaining <= 0) {
+            // Let JC handle its normal HUD behavior.
             return;
         }
 
-        // Match JC's original cooldown timer formatting.
+        // If Unstable is also active, display the longer
+        // restriction for nonphysical techniques.
+        if (!vars.PhysicalAttack) {
+            var unstable = player.getEffect(
+                    JujutsucraftModMobEffects.UNSTABLE.get()
+            );
+
+            if (unstable != null) {
+                remaining = Math.max(
+                        remaining,
+                        unstable.getDuration()
+                );
+            }
+        }
+
+        // Match Jujutsucraft's original display formatting.
         long displayed = (long) Math.ceil(
                 remaining * 0.1D
         );
