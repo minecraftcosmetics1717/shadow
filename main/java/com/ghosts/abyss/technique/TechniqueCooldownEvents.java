@@ -1,0 +1,116 @@
+
+package com.ghosts.abyss.technique;
+
+import com.ghosts.abyss.network.ModNetwork;
+import com.ghosts.abyss.network.PacketSyncTechniqueCooldowns;
+
+import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
+
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffect;
+
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.MobEffectEvent;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.PacketDistributor;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Mod.EventBusSubscriber(
+        modid = "abyss",
+        bus = Mod.EventBusSubscriber.Bus.FORGE
+)
+public final class TechniqueCooldownEvents {
+
+    private TechniqueCooldownEvents() {}
+
+    @SubscribeEvent
+    public static void onEffectApplicable(
+            MobEffectEvent.Applicable event
+    ) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        int skillId = (int) Math.round(
+                player.getPersistentData().getDouble("skill")
+        );
+
+        if (!TechniqueCooldownManager.isManaged(skillId)) {
+            return;
+        }
+
+        MobEffect effect = event.getEffectInstance().getEffect();
+
+        boolean isMagicCooldown =
+                effect == JujutsucraftModMobEffects.COOLDOWN_TIME.get();
+
+        boolean isCombatCooldown =
+                effect == JujutsucraftModMobEffects.COOLDOWN_TIME_COMBAT.get();
+
+        // Only handle JC's two standard cooldown effects.
+        if (!isMagicCooldown && !isCombatCooldown) {
+            return;
+        }
+
+        // Physical moves use the combat cooldown.
+        // Other Mahito techniques use the magic cooldown.
+        boolean usesCombat =
+                TechniqueCooldownManager.usesCombatCooldown(skillId);
+
+        if (usesCombat != isCombatCooldown) {
+            return;
+        }
+
+        int duration = event.getEffectInstance().getDuration();
+
+        TechniqueCooldownManager.captureJcCooldown(
+                player,
+                skillId,
+                duration
+        );
+
+        // Store it individually instead of applying
+        // Jujutsucraft's shared cooldown effect.
+        event.setResult(Event.Result.DENY);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTick(
+            TickEvent.PlayerTickEvent event
+    ) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+
+        if (!(event.player instanceof ServerPlayer player)) {
+            return;
+        }
+
+        if (player.tickCount % 5 != 0) {
+            return;
+        }
+
+        Map<Integer, Integer> remaining = new HashMap<>();
+
+        for (int skillId :
+                TechniqueCooldownManager.getManagedSkillIds()) {
+
+            remaining.put(
+                    skillId,
+                    TechniqueCooldownManager.getRemainingTicks(
+                            player,
+                            skillId
+                    )
+            );
+        }
+
+        ModNetwork.CHANNEL.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new PacketSyncTechniqueCooldowns(remaining)
+        );
+    }
+}

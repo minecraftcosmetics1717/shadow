@@ -224,6 +224,12 @@ public class ModNetwork {
               PhoneMessagePackets.Signal::handle);
       CHANNEL.registerMessage(
               id++,
+              PacketSyncTechniqueCooldowns.class,
+              PacketSyncTechniqueCooldowns::encode,
+              PacketSyncTechniqueCooldowns::new,
+              PacketSyncTechniqueCooldowns::handle);
+      CHANNEL.registerMessage(
+              id++,
               RequestTeleportSyncPacket.class,
               RequestTeleportSyncPacket::encode,
               RequestTeleportSyncPacket::new,

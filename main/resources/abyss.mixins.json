@@ -128,13 +128,16 @@
     "DomainActivationCostMixin",
     "AbyssFlameDustMixin",
     "KenjakuDomainExecuteMixin",
-    "AIWombProfusionMixin"
+    "AIWombProfusionMixin",
+    "IndividualCooldownGateMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",
     "FlightTravelMixin",
     "BlueRedPurpleRendererMixin",
-    "client.MahoragaWheelScaleMixin"
+    "client.MahoragaWheelScaleMixin",
+    "client.SelectedCooldownIconMixin",
+    "client.SelectedCooldownTimerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
