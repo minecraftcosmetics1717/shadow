@@ -128,7 +128,32 @@ public class PhoneRctScreen extends Screen {
                 Perk.PROFICIENCY);
 
         // RCT Output (one-time unlock)
-        cy = drawOutputCard(g, mouseX, mouseY, cardX, cy, cardW, cx, exp, outputUnlocked);
+
+        // RCT Output
+        cy = drawUnlockCard(
+                g, mouseX, mouseY, cardX, cy, cardW, cx,
+                "RCT Output",
+                "Complete mastery over RCT, allowing the user " +
+                        "to manipulate the flow of their cursed energy",
+                exp,
+                outputUnlocked,
+                RctPoints.COST_OUTPUT,
+                Perk.OUTPUT
+        );
+
+        // RCT Burnout
+        cy = drawUnlockCard(
+                g, mouseX, mouseY, cardX, cy, cardW, cx,
+                "RCT Burnout",
+                "Hold the RCT Burnout key to rapidly recover " +
+                        "cursed technique cooldowns at the cost " +
+                        "of 30 cursed energy per tick.",
+                exp,
+                RctPoints.isClientBurnoutUnlocked(),
+                RctPoints.COST_BURNOUT,
+                Perk.BURNOUT
+        );
+
 
         contentHeight = (cy + scrollOffset) - contentTop + 8;
         g.disableScissor();
@@ -253,15 +278,14 @@ public class PhoneRctScreen extends Screen {
 
 
 
-    private int drawOutputCard(
+
+    private int drawUnlockCard(
             GuiGraphics g, int mx, int my,
             int x, int y, int w, int cx,
-            int exp, boolean unlocked
+            String title, String desc,
+            int exp, boolean unlocked,
+            int cost, Perk perk
     ) {
-        String desc =
-                "Complete mastery over RCT, allowing the user " +
-                        "to manipulate the flow of their cursed energy";
-
         List<FormattedCharSequence> lines = font.split(
                 Component.literal(desc),
                 (int) ((w - 16) / DESC_SCALE)
@@ -275,14 +299,12 @@ public class PhoneRctScreen extends Screen {
 
         drawCard(g, x, y, w, boxH);
 
-        // Scaled title
         var pose = g.pose();
         pose.pushPose();
         pose.scale(PERK_TITLE_SCALE, PERK_TITLE_SCALE, 1f);
 
         g.drawCenteredString(
-                font,
-                "RCT Output",
+                font, title,
                 (int) (cx / PERK_TITLE_SCALE),
                 (int) ((y + 6) / PERK_TITLE_SCALE),
                 COL_HEADER
@@ -290,7 +312,6 @@ public class PhoneRctScreen extends Screen {
 
         pose.popPose();
 
-        // Scaled description
         int dy = y + 18;
 
         pose.pushPose();
@@ -300,8 +321,7 @@ public class PhoneRctScreen extends Screen {
 
         for (FormattedCharSequence line : lines) {
             g.drawCenteredString(
-                    font,
-                    line,
+                    font, line,
                     (int) (cx / DESC_SCALE),
                     scaledY,
                     COL_LABEL
@@ -311,8 +331,7 @@ public class PhoneRctScreen extends Screen {
 
         pose.popPose();
 
-        // Unlock button
-        boolean canUnlock = !unlocked && exp >= 20;
+        boolean canUnlock = !unlocked && exp >= cost;
 
         int btnW = 90;
         int btnH = 14;
@@ -339,15 +358,14 @@ public class PhoneRctScreen extends Screen {
 
         String label = unlocked
                 ? "Unlocked"
-                : "Unlock (20 exp)";
+                : "Unlock (" + cost + " exp)";
 
         int textCol = canUnlock
                 ? COL_BTN_TEXT_DARK
                 : 0xFFAAAAAA;
 
         g.drawCenteredString(
-                font,
-                label,
+                font, label,
                 btnX + btnW / 2,
                 btnY + 3,
                 textCol
@@ -360,13 +378,14 @@ public class PhoneRctScreen extends Screen {
             buttons.add(new Btn(
                     btnX, btnY, btnW, btnH,
                     () -> ModNetwork.CHANNEL.sendToServer(
-                            new PacketPurchaseRctPerk(Perk.OUTPUT)
+                            new PacketPurchaseRctPerk(perk)
                     )
             ));
         }
 
         return y + boxH + 6;
     }
+
 
 
     private void drawSegments(GuiGraphics g, int cx, int y, int current, int max) {

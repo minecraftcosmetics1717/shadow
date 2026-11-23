@@ -4,6 +4,7 @@ import com.ghosts.abyss.Abyss;
 import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
+import com.ghosts.abyss.technique.TechniqueCooldownManager;
 import net.mcreator.jujutsucraft.procedures.ChangeTechniqueTestProcedure;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.core.Direction;
@@ -116,6 +117,13 @@ public class PacketActivateAbilitySlot {
                      if (!this.press) {
                         player.getPersistentData().putBoolean("jslop_yuta_keybind_active", false);
                         player.getPersistentData().putBoolean("PRESS_Z", false);
+                        return;
+                     }
+
+                     // Prevent Yuta's registered techniques from
+                     // bypassing post-domain cursed technique burnout.
+                     if (TechniqueCooldownManager
+                             .getPostDomainRemainingTicks(player) > 0) {
                         return;
                      }
 

@@ -234,6 +234,12 @@ public class ModNetwork {
               RequestTeleportSyncPacket::encode,
               RequestTeleportSyncPacket::new,
               RequestTeleportSyncPacket::handle);
-
+      CHANNEL.registerMessage(
+              id++,
+              PacketRctBurnoutHold.class,
+              PacketRctBurnoutHold::encode,
+              PacketRctBurnoutHold::decode,
+              PacketRctBurnoutHold::handle
+      );
    }
 }

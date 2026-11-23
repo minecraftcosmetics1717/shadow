@@ -50,6 +50,7 @@ public class PacketPurchaseRctPerk {
                case EFFICIENCY -> RctPoints.purchaseEfficiencyTier(player);
                case PROFICIENCY -> RctPoints.purchaseProficiencyTier(player);
                case OUTPUT -> RctPoints.purchaseOutputUnlock(player);
+               case BURNOUT -> RctPoints.purchaseBurnoutUnlock(player);
             };
 
             if (!success) {
@@ -68,6 +69,7 @@ public class PacketPurchaseRctPerk {
    public enum Perk {
       EFFICIENCY,
       PROFICIENCY,
-      OUTPUT
+      OUTPUT,
+      BURNOUT
    }
 }

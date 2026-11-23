@@ -57,6 +57,7 @@ public class ClientSetup {
       event.register(KeyBindings.AT_WILL_BLACK_FLASH);
       event.register(KeyBindings.REGISTER_COPY);
       event.register(KeyBindings.RCT_OUTPUT);
+      event.register(KeyBindings.RCT_BURNOUT);
 
       for (KeyMapping slot : KeyBindings.ABILITY_SLOTS) {
          event.register(slot);

@@ -12,7 +12,7 @@ public final class TechniqueCooldownManager {
             "abyss_individual_cooldowns";
     private static final String POST_DOMAIN_COOLDOWN_KEY =
             "abyss_post_domain_cooldown_end";
-    public static final int POST_DOMAIN_COOLDOWN_TICKS = 20 * 120;
+    public static final int POST_DOMAIN_COOLDOWN_TICKS = 20 * 45;
 
     private TechniqueCooldownManager() {}
 
@@ -187,6 +187,62 @@ public final class TechniqueCooldownManager {
         long remaining = Math.max(0L, endTick - now(player));
 
         return (int) Math.min(remaining, Integer.MAX_VALUE);
+    }
+
+    // JujutsuFIN-style RCT acceleration:
+    // subtract 20 EXTRA ticks per game tick.
+    // Physical combat cooldowns are not accelerated.
+    public static boolean accelerateNonPhysicalCooldowns(
+            ServerPlayer player, int extraTicks
+    ) {
+        if (extraTicks <= 0) return false;
+
+        CompoundTag data = player.getPersistentData();
+        long currentTick = now(player);
+        boolean changed = false;
+
+        // 1. Post-domain cursed technique burnout.
+        long burnoutEnd =
+                data.getLong(POST_DOMAIN_COOLDOWN_KEY);
+
+        if (burnoutEnd - currentTick >= 21L) {
+            data.putLong(
+                    POST_DOMAIN_COOLDOWN_KEY,
+                    Math.max(currentTick, burnoutEnd - extraTicks)
+            );
+            changed = true;
+        }
+
+        // 2. Ordinary nonphysical individual cooldowns.
+        CompoundTag cooldowns =
+                data.getCompound(COOLDOWNS_KEY);
+
+        boolean changedSkills = false;
+
+        for (int skillId : MANAGED_SKILLS) {
+            if (usesCombatCooldown(skillId)) {
+                continue;
+            }
+
+            String key = Integer.toString(skillId);
+            long end = cooldowns.getLong(key);
+
+            if (end - currentTick >= 21L) {
+                cooldowns.putLong(
+                        key,
+                        Math.max(currentTick, end - extraTicks)
+                );
+
+                changed = true;
+                changedSkills = true;
+            }
+        }
+
+        if (changedSkills) {
+            data.put(COOLDOWNS_KEY, cooldowns);
+        }
+
+        return changed;
     }
 
     // JC tracks whether the selected technique is physical.

@@ -15,6 +15,7 @@ public class KeyBindings {
    public static final KeyMapping AT_WILL_BLACK_FLASH;
    public static final KeyMapping REGISTER_COPY;
    public static final KeyMapping RCT_OUTPUT;          // ← new
+   public static final KeyMapping RCT_BURNOUT;
    public static final KeyMapping[] ABILITY_SLOTS;
 
    static {
@@ -27,6 +28,7 @@ public class KeyBindings {
       OPEN_KEYBIND_MENU = new KeyMapping("key.abyss.open_keybind_menu", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       REGISTER_COPY = new KeyMapping("key.abyss.register_copy", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       RCT_OUTPUT = new KeyMapping("key.abyss.rct_output", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
+      RCT_BURNOUT = new KeyMapping("key.abyss.rct_burnout", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       AT_WILL_BLACK_FLASH = new KeyMapping("key.abyss.black_flash", KeyConflictContext.IN_GAME, Type.KEYSYM, -1, "key.categories.abyss");
       ABILITY_SLOTS = new KeyMapping[8];
 
