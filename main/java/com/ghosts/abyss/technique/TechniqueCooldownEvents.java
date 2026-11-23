@@ -27,17 +27,12 @@ public final class TechniqueCooldownEvents {
 
     private TechniqueCooldownEvents() {}
 
+
     @SubscribeEvent
     public static void onEffectApplicable(
-            MobEffectEvent.Applicable event) {
+            MobEffectEvent.Applicable event
+    ) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
-            return;
-        }
-
-        int skillId = (int) Math.round(
-                player.getPersistentData().getDouble("skill"));
-
-        if (!TechniqueCooldownManager.isManaged(skillId)) {
             return;
         }
 
@@ -49,42 +44,56 @@ public final class TechniqueCooldownEvents {
         boolean isCombatCooldown =
                 effect == JujutsucraftModMobEffects.COOLDOWN_TIME_COMBAT.get();
 
-        // Only handle JC's two standard cooldown effects.
         if (!isMagicCooldown && !isCombatCooldown) {
             return;
         }
 
+        // Prefer the skill actually being executed by JC.
+        int skillId = (int) Math.round(
+                player.getPersistentData().getDouble("skill")
+        );
+
+        // Some JC procedures clear or change "skill" early.
+        // Fall back to the currently selected technique.
+        if (!TechniqueCooldownManager.isManaged(skillId)) {
+            skillId = TechniqueCooldownManager.getSelectedSkill(player);
+        }
+
+        if (!TechniqueCooldownManager.isManaged(skillId)) {
+            return;
+        }
+
+        // Preserve Jogo's special combat cooldown suppression.
         if (skillId == 415 && isCombatCooldown) {
             event.setResult(Event.Result.DENY);
             return;
         }
 
-        boolean usesCombat =
-                TechniqueCooldownManager.usesCombatCooldown(skillId);
-
-        if (usesCombat != isCombatCooldown) {
-            return;
-        }
-
-        int duration = event.getEffectInstance().getDuration();
-
-        // Gojo Teleport has its own 30-tick cooldown.
-        // Suppress the original shared effect, but let
-        // GojoTeleportExecuteMixin set its actual timer.
+        // Gojo Teleport already starts its own cooldown.
         if (skillId == 209) {
             event.setResult(Event.Result.DENY);
             return;
         }
 
+        int duration = event.getEffectInstance().getDuration();
+
+        if (duration <= 0) {
+            return;
+        }
+
+        // Capture whichever JC cooldown effect actually fired,
+        // rather than requiring a predetermined cooldown type.
         TechniqueCooldownManager.captureJcCooldown(
                 player,
                 skillId,
-                duration);
+                duration
+        );
 
-        // Store it individually instead of applying
-        // Jujutsucraft's shared cooldown effect.
+        // Keep JC's shared cooldown from replacing the
+        // individual cooldown stored by Abyss.
         event.setResult(Event.Result.DENY);
     }
+
 
     @SubscribeEvent
     public static void onPlayerTick(

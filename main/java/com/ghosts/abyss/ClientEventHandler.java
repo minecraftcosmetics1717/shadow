@@ -38,6 +38,7 @@ public class ClientEventHandler {
       if (event.phase != TickEvent.Phase.END) return;
 
       Minecraft mc = Minecraft.getInstance();
+
       if (mc.player == null || mc.screen != null) {
          wasBlackFlashDown = KeyBindings.AT_WILL_BLACK_FLASH.isDown();
 
