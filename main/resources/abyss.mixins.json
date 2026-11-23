@@ -137,7 +137,8 @@
     "BlueRedPurpleRendererMixin",
     "client.MahoragaWheelScaleMixin",
     "client.SelectedCooldownIconMixin",
-    "client.SelectedCooldownTimerMixin"
+    "client.OCoolTimeMixin",
+    "client.OCoolTimeCombatMixin"
   ],
   "injectors": {
     "defaultRequire": 1
