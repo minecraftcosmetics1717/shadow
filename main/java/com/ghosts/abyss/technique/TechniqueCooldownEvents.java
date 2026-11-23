@@ -1,4 +1,3 @@
-
 package com.ghosts.abyss.technique;
 
 import com.ghosts.abyss.network.ModNetwork;
@@ -21,23 +20,21 @@ import java.util.Map;
 
 @Mod.EventBusSubscriber(
         modid = "abyss",
-        bus = Mod.EventBusSubscriber.Bus.FORGE
-)
+        bus = Mod.EventBusSubscriber.Bus.FORGE)
+
 public final class TechniqueCooldownEvents {
 
     private TechniqueCooldownEvents() {}
 
     @SubscribeEvent
     public static void onEffectApplicable(
-            MobEffectEvent.Applicable event
-    ) {
+            MobEffectEvent.Applicable event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
 
         int skillId = (int) Math.round(
-                player.getPersistentData().getDouble("skill")
-        );
+                player.getPersistentData().getDouble("skill"));
 
         if (!TechniqueCooldownManager.isManaged(skillId)) {
             return;
@@ -68,7 +65,6 @@ public final class TechniqueCooldownEvents {
             return;
         }
 
-
         int duration = event.getEffectInstance().getDuration();
 
         // Gojo Teleport has its own 30-tick cooldown.
@@ -82,9 +78,7 @@ public final class TechniqueCooldownEvents {
         TechniqueCooldownManager.captureJcCooldown(
                 player,
                 skillId,
-                duration
-        );
-
+                duration);
 
         // Store it individually instead of applying
         // Jujutsucraft's shared cooldown effect.
@@ -116,14 +110,11 @@ public final class TechniqueCooldownEvents {
                     skillId,
                     TechniqueCooldownManager.getRemainingTicks(
                             player,
-                            skillId
-                    )
-            );
+                            skillId));
         }
 
         ModNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new PacketSyncTechniqueCooldowns(remaining)
-        );
+                new PacketSyncTechniqueCooldowns(remaining));
     }
 }

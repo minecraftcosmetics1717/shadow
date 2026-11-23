@@ -1,4 +1,3 @@
-
 package com.ghosts.abyss.technique;
 
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
@@ -12,11 +11,6 @@ public final class TechniqueCooldownManager {
             "abyss_individual_cooldowns";
 
     private TechniqueCooldownManager() {}
-
-
-    // Mahito's moves managed by Abyss.
-    // Slot 1520 (Domain Expansion) is intentionally excluded.
-
 
     private static final int[] MANAGED_SKILLS = {
 
@@ -48,7 +42,13 @@ public final class TechniqueCooldownManager {
             3905, 3906, 3907, 3908, 3909,
 
             // ===== Nanami =====
-            1306, 1307, 1310,
+            1305, 1306, 1307, 1310,
+
+            // ===== Angel =====
+            2815,
+
+            // ===== Ryu Ishigori =====
+            1205, 1206,
 
             // ===== Jogo =====
             405, 406, 407, 408, 409, 415,
@@ -59,11 +59,23 @@ public final class TechniqueCooldownManager {
             // ===== Kashimo =====
             703, 704, 716, 717, 719,
 
+            // ===== Physical Gifted =====
+            -100, -99, -98, -95, -94, -93,
+
+            // ===== Nobara Kugisaki =====
+            3405, 3406, 3407,
+
+            // ===== Junpei =====
+            3505,
+
+            // ===== Aoi =====
+            2003, 2004, 2005, 2006, 2007, 2015,
+
+            // ===== Uro Takako =====
+            3810,
             // ===== Mahito =====
             1503, 1504, 1505, 1506, 1507, 1508, 1509, 1510, 1515, 1516
     };
-
-
 
     public static int[] getManagedSkillIds() {
         return MANAGED_SKILLS.clone();
@@ -78,9 +90,6 @@ public final class TechniqueCooldownManager {
 
         return false;
     }
-
-    // These moves use JC's physical combat cooldown
-    // rather than its magic technique cooldown.
 
     public static boolean usesCombatCooldown(int skillId) {
         return
@@ -104,19 +113,29 @@ public final class TechniqueCooldownManager {
                         || skillId == 1307 // Nanami Consecutive Attacks
                         || skillId == 703  // Kashimo Rotating Kick
                         || skillId == 704  // Kashimo Jump Attack
-                        || skillId == 719;  // Kashimo Flying Kick
+                        || skillId == 719 // Kashimo Flying Kick
+
+                        // ===== Aoi =====
+                        || skillId == 2003 // Overhead Attack
+                        || skillId == 2004 // Jump Attack
+                        || skillId == 2006 // Lariat
+                        || skillId == 2007 // Consecutive Attacks
+                        || skillId == 2015 // Black Flash Attack
+        // Physical Gifted
+                        || skillId == -100
+                        || skillId == -99
+                        || skillId == -98
+                        || skillId == -95
+                        || skillId == -94
+                        || skillId == -93;
 
     }
-
-
 
     // Get the full skill ID from JC's selected technique.
     // Supports primary and secondary cursed techniques.
     public static int getSelectedSkill(ServerPlayer player) {
         var vars = player.getCapability(
-                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
-        ).orElse(null);
-
+                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY).orElse(null);
         if (vars == null) {
             return 0;
         }
@@ -142,8 +161,7 @@ public final class TechniqueCooldownManager {
     public static void startCooldown(
             ServerPlayer player,
             int skillId,
-            int durationTicks
-    ) {
+            int durationTicks) {
         if (durationTicks <= 0) {
             return;
         }
@@ -175,24 +193,20 @@ public final class TechniqueCooldownManager {
                         .getCompound(COOLDOWNS_KEY);
 
         long end = cooldowns.getLong(
-                Integer.toString(skillId)
-        );
+                Integer.toString(skillId));
 
         long remaining = Math.max(
                 0L,
-                end - now(player)
-        );
+                end - now(player));
 
         return (int) Math.min(
                 remaining,
-                Integer.MAX_VALUE
-        );
+                Integer.MAX_VALUE);
     }
 
     public static boolean isOnCooldown(
             ServerPlayer player,
-            int skillId
-    ) {
+            int skillId) {
         return getRemainingTicks(player, skillId) > 0;
     }
 
@@ -201,8 +215,7 @@ public final class TechniqueCooldownManager {
     public static void captureJcCooldown(
             ServerPlayer player,
             int skillId,
-            int durationTicks
-    ) {
+            int durationTicks) {
         if (!isManaged(skillId)
                 || durationTicks <= 0) {
             return;
@@ -216,14 +229,11 @@ public final class TechniqueCooldownManager {
                 "COOLDOWN_TICKS",
                 Math.max(
                         data.getDouble("COOLDOWN_TICKS"),
-                        durationTicks
-                )
-        );
+                        durationTicks));
 
         startCooldown(
                 player,
                 skillId,
-                durationTicks
-        );
+                durationTicks);
     }
 }
