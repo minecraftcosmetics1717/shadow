@@ -30,12 +30,11 @@ public class PacketSyncTechniqueCooldowns {
 
         int count = buf.readVarInt();
 
-        if (count < 0 || count > 64) {
+        if (count < 0 || count > 256) {
             throw new IllegalArgumentException(
-                    "Invalid cooldown packet size: " + count
-            );
+                    "Invalid cooldown packet size: " + count);
         }
-
+        
         for (int i = 0; i < count; i++) {
             int skillId = buf.readVarInt();
             int remaining = buf.readVarInt();

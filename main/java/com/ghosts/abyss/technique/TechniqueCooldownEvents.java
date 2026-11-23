@@ -56,8 +56,11 @@ public final class TechniqueCooldownEvents {
             return;
         }
 
-        // Physical moves use the combat cooldown.
-        // Other Mahito techniques use the magic cooldown.
+        if (skillId == 415 && isCombatCooldown) {
+            event.setResult(Event.Result.DENY);
+            return;
+        }
+
         boolean usesCombat =
                 TechniqueCooldownManager.usesCombatCooldown(skillId);
 
@@ -65,13 +68,23 @@ public final class TechniqueCooldownEvents {
             return;
         }
 
+
         int duration = event.getEffectInstance().getDuration();
+
+        // Gojo Teleport has its own 30-tick cooldown.
+        // Suppress the original shared effect, but let
+        // GojoTeleportExecuteMixin set its actual timer.
+        if (skillId == 209) {
+            event.setResult(Event.Result.DENY);
+            return;
+        }
 
         TechniqueCooldownManager.captureJcCooldown(
                 player,
                 skillId,
                 duration
         );
+
 
         // Store it individually instead of applying
         // Jujutsucraft's shared cooldown effect.

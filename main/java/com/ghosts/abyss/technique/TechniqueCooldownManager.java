@@ -16,18 +16,54 @@ public final class TechniqueCooldownManager {
 
     // Mahito's moves managed by Abyss.
     // Slot 1520 (Domain Expansion) is intentionally excluded.
+
+
     private static final int[] MANAGED_SKILLS = {
-            1503, // Attack Speed
-            1504, // Attack Overhead (future Soul Grasp)
-            1505, // Idle Transfiguration
-            1506, // Mahito Hand 3
-            1507, // Mahito Gun
-            1508, // Body Repel Single
-            1509, // Body Repel
-            1510, // Polymorphic Soul Isomer
-            1515, // Instant Spirit Body
-            1516  // Attack Strong Mahito
+
+            // ===== Sukuna =====
+            105, 106, 107, 111, 112, 113,
+
+            // ===== Gojo =====
+            206, 207, 208, 209, 215,
+
+            // ===== Choso / Blood Manipulation =====
+            1005, 1006, 1007, 1008, 1016, 1018, 1019,
+
+            // ===== Hakari =====
+            2904, 2905, 2906, 2907,
+
+            // ===== Naoya =====
+            1907, 1910,
+
+            // ===== Uraume =====
+            2405, 2406, 2408, 2409,
+
+            // ===== Dagon =====
+            805, 806, 807, 809, 810,
+
+            // ===== Yuki Tsukumo =====
+            904, 905, 906,
+
+            // ===== Yorozu =====
+            3905, 3906, 3907, 3908, 3909,
+
+            // ===== Nanami =====
+            1306, 1307, 1310,
+
+            // ===== Jogo =====
+            405, 406, 407, 408, 409, 415,
+
+            // ===== Megumi / Ten Shadows =====
+            605, 606, 607, 608, 609, 610, 612, 613, 614, 615, 617,
+
+            // ===== Kashimo =====
+            703, 704, 716, 717, 719,
+
+            // ===== Mahito =====
+            1503, 1504, 1505, 1506, 1507, 1508, 1509, 1510, 1515, 1516
     };
+
+
 
     public static int[] getManagedSkillIds() {
         return MANAGED_SKILLS.clone();
@@ -45,11 +81,33 @@ public final class TechniqueCooldownManager {
 
     // These moves use JC's physical combat cooldown
     // rather than its magic technique cooldown.
+
     public static boolean usesCombatCooldown(int skillId) {
-        return skillId == 1503
-                || skillId == 1504
-                || skillId == 1516;
+        return
+                // Sukuna's physical Dismantle combos
+                skillId == 111
+                        || skillId == 112
+                        || skillId == 113
+
+                        // Mahito's physical attacks
+                        || skillId == 1503
+                        || skillId == 1504
+                        || skillId == 1516
+                        || skillId == 2904
+
+                        || skillId == 904
+                        || skillId == 3905
+                        || skillId == 3906
+                        || skillId == 3907
+
+                        || skillId == 1306 // Nanami Jump Attack
+                        || skillId == 1307 // Nanami Consecutive Attacks
+                        || skillId == 703  // Kashimo Rotating Kick
+                        || skillId == 704  // Kashimo Jump Attack
+                        || skillId == 719;  // Kashimo Flying Kick
+
     }
+
 
 
     // Get the full skill ID from JC's selected technique.

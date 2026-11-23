@@ -2,6 +2,7 @@ package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.Abyss;
 
+import com.ghosts.abyss.technique.TechniqueCooldownManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -98,30 +99,18 @@ public class GojoTeleportExecuteMixin {
                   serverLevel.playSound((Player) null, dest.x, dest.y, dest.z, SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1.0F, 1.0F);
                }
 
+
+               // Gojo Teleport's individual cooldown.
+               // No longer applies JC's shared cooldown effect.
                if (!player.isCreative()) {
-                  MobEffect cooldownFx = ForgeRegistries.MOB_EFFECTS.getValue(ResourceLocation.tryParse("jujutsucraft:cooldown_time"));
-
-                  if (cooldownFx == null) {
-                     Abyss.LOGGER.warn("[JSlop][Teleport] cooldown_time effect NOT found in registry");
-                  } else {
-                     MobEffectInstance before = player.getEffect(cooldownFx);
-                     Abyss.LOGGER.info("[JSlop][Teleport] COOLDOWN_TIME before override: {}", before != null ? before.getDuration() + " ticks" : "not active");
-
-                     player.removeEffect(cooldownFx);
-                     player.addEffect(new MobEffectInstance(cooldownFx, 30, 0, false, false));
-
-                     MobEffectInstance after = player.getEffect(cooldownFx);
-                     Abyss.LOGGER.info("[JSlop][Teleport] COOLDOWN_TIME after override: {}", after != null ? after.getDuration() + " ticks" : "MISSING — addEffect failed");
-                  }
-               } else {
-                  Abyss.LOGGER.info("[JSlop][Teleport] creative mode — skipping cooldown override");
+                  TechniqueCooldownManager.startCooldown(
+                          player,
+                          209,
+                          COOLDOWN_TICKS
+                  );
                }
 
-               ci.cancel();
-            }
-         } else {
-            ci.cancel();
          }
       }
    }
-}
+}}

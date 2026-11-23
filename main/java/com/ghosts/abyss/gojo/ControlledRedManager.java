@@ -4,6 +4,7 @@ import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketRedControlState;
 import com.ghosts.abyss.progression.GojoProgression;
 
+import com.ghosts.abyss.technique.TechniqueCooldownManager;
 import net.mcreator.jujutsucraft.entity.RedEntity;
 import net.mcreator.jujutsucraft.init.JujutsucraftModEntities;
 import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
@@ -290,19 +291,43 @@ public final class ControlledRedManager {
         cancel(player);
     }
 
-    private static void reset(ServerPlayer player, boolean clearSkill) {
+
+    private static void reset(
+            ServerPlayer player,
+            boolean clearSkill
+    ) {
         CompoundTag data = player.getPersistentData();
+
+        boolean wasActive = data.getBoolean(ACTIVE);
+
+        // Begin Red's individual cooldown after
+        // the held move ends, fires, or is interrupted.
+        if (wasActive && !player.isCreative()) {
+            TechniqueCooldownManager.startCooldown(
+                    player,
+                    207,
+                    250
+            );
+        }
+
         data.remove(ACTIVE);
         data.remove(PRESS_TICK);
         data.remove(ENTITY_ID);
         data.remove(DISTANCE);
         data.remove(ALLOW_ORIGINAL);
+
         syncControl(player, false);
+
         if (clearSkill && (int) data.getDouble("skill") == 207) {
             data.putDouble("skill", 0.0D);
-            player.removeEffect(JujutsucraftModMobEffects.CURSED_TECHNIQUE.get());
+
+            player.removeEffect(
+                    JujutsucraftModMobEffects
+                            .CURSED_TECHNIQUE.get()
+            );
         }
     }
+
 
     private static void syncControl(ServerPlayer player, boolean value) {
         ModNetwork.CHANNEL.send(

@@ -3,6 +3,7 @@ package com.ghosts.abyss.blood;
 
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketPiercingBloodPose;
+import com.ghosts.abyss.technique.TechniqueCooldownManager;
 import net.mcreator.jujutsucraft.init.JujutsucraftModAttributes;
 import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 
@@ -205,9 +206,23 @@ public final class AbyssPiercingBlood {
         syncFirstPersonPose(player, false);
         boolean wasRunning = isRunning(player);
 
+
         if (wasRunning) {
             PiercingBloodBeam.stop(player);
+
+            // Start Piercing Blood's individual cooldown
+            // when firing ends or the technique is interrupted.
+            if (!player.isCreative()) {
+                TechniqueCooldownManager.startCooldown(
+                        player,
+                        1007,
+                        100
+                );
+            }
         }
+
+        reset(player);
+
 
         reset(player);
         // Only end JC's technique if our Piercing

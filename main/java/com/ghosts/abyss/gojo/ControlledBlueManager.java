@@ -5,6 +5,7 @@ import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketBlueControlState;
 import com.ghosts.abyss.progression.GojoProgression;
 
+import com.ghosts.abyss.technique.TechniqueCooldownManager;
 import net.mcreator.jujutsucraft.entity.BlueEntity;
 import net.mcreator.jujutsucraft.init.JujutsucraftModAttributes;
 import net.mcreator.jujutsucraft.init.JujutsucraftModEntities;
@@ -263,17 +264,31 @@ public final class ControlledBlueManager {
         player.getPersistentData().remove(BLUE_DISTANCE);
     }
 
+
     private static void clearSkill(ServerPlayer player) {
         CompoundTag data = player.getPersistentData();
 
         if ((int) data.getDouble("skill") == 206) {
+
+            // Begin a fresh individual cooldown when
+            // controlled Blue is released or anchored.
+            if (!player.isCreative()) {
+                TechniqueCooldownManager.startCooldown(
+                        player,
+                        206,
+                        100
+                );
+            }
+
             data.putDouble("skill", 0.0D);
+
             player.removeEffect(
                     JujutsucraftModMobEffects
                             .CURSED_TECHNIQUE.get()
             );
         }
     }
+
 
     private static BlueEntity getBlue(ServerPlayer player) {
         CompoundTag data = player.getPersistentData();
