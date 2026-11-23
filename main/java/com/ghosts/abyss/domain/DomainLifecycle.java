@@ -1,6 +1,6 @@
 package com.ghosts.abyss.domain;
 
-import com.ghosts.abyss.effect.ModEffects;
+import com.ghosts.abyss.technique.TechniqueCooldownManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -12,11 +12,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.ForgeRegistries;
-
 import java.util.*;
 
-import static com.ghosts.abyss.domain.AbyssDomainCast.NBT_CANCEL_CHARGE;
-import static com.ghosts.abyss.domain.AbyssDomainCast.NBT_CANCEL_CHARGING;
 
 public class DomainLifecycle {
 
@@ -796,6 +793,7 @@ public class DomainLifecycle {
         }
         if (owner != null) {
             clearCastState(owner);
+            TechniqueCooldownManager.startPostDomainCooldown(owner);
         }
     }
 
@@ -872,7 +870,7 @@ public class DomainLifecycle {
                     entity.getUUID())) {
 
                 arena.participants.remove(entity.getUUID());
-
+                TechniqueCooldownManager.startPostDomainCooldown(entity);
                 entity.getPersistentData().putBoolean(
                         "abyss_domain_clashing", false
                 );
@@ -918,20 +916,21 @@ public class DomainLifecycle {
         if (domainLevel != null) {
             winner = DomainClash.findActiveDomainInArena(domainLevel, asOwner, entity.getUUID());
         }
+
         if (winner != null) {
-            DomainClash.transferOwnership(asOwner, entity, winner, domainLevel);
+            DomainClash.transferOwnership(
+                    asOwner, entity, winner, domainLevel);
             clearCastState(entity);
+            // The defeated caster suffers technique burnout.
+            TechniqueCooldownManager.startPostDomainCooldown(entity);
             DomainCooldown.apply(entity);
             return;
         }
-
         entity.getPersistentData().putDouble("x_pos_doma", asOwner.overworldCenter.x);
         entity.getPersistentData().putDouble("y_pos_doma", asOwner.overworldCenter.y);
         entity.getPersistentData().putDouble("z_pos_doma", asOwner.overworldCenter.z);
-
         returnLevel.getChunkAt(BlockPos.containing(asOwner.overworldCenter));
         DomainOverworldShell.clear(returnLevel, asOwner.overworldCenter, AbyssDomainCast.OVERWORLD_RADIUS);
-
 
         if (domainLevel != null) {
 
@@ -980,7 +979,10 @@ public class DomainLifecycle {
         server.tell(new TickTask(server.getTickCount() + 40,
                 () -> DomainOverworldCleanup.triggerJcDomainBreak(over, overCenter)));
 
+
         DomainInstanceManager.release(entity.getUUID());
         clearCastState(entity);
+        TechniqueCooldownManager.startPostDomainCooldown(entity);
         DomainCooldown.apply(entity);
+
     }}

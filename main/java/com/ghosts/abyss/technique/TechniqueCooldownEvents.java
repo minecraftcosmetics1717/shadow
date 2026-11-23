@@ -10,6 +10,7 @@ import net.minecraft.world.effect.MobEffect;
 
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.MobEffectEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -101,20 +102,45 @@ public final class TechniqueCooldownEvents {
             return;
         }
 
+
         Map<Integer, Integer> remaining = new HashMap<>();
+
+        int selectedSkill =
+                TechniqueCooldownManager.getSelectedSkill(player);
+
+        boolean selectedPhysical =
+                TechniqueCooldownManager.isSelectedPhysicalSkill(player);
+
+        int burnout =
+                TechniqueCooldownManager.getPostDomainRemainingTicks(player);
 
         for (int skillId :
                 TechniqueCooldownManager.getManagedSkillIds()) {
 
-            remaining.put(
-                    skillId,
+            int ticks =
                     TechniqueCooldownManager.getRemainingTicks(
-                            player,
-                            skillId));
+                            player, skillId
+                    );
+
+            // Show domain burnout for the currently selected
+            // nonphysical skill without changing physical cooldowns.
+            if (skillId == selectedSkill && !selectedPhysical) {
+                ticks = Math.max(ticks, burnout);
+            }
+
+            remaining.put(skillId, ticks);
         }
+
 
         ModNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new PacketSyncTechniqueCooldowns(remaining));
+    }
+    @SubscribeEvent
+    public static void onPlayerClone(PlayerEvent.Clone event) {
+        TechniqueCooldownManager.copyPostDomainCooldown(
+                event.getOriginal(),
+                event.getEntity()
+        );
     }
 }

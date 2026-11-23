@@ -38,6 +38,15 @@ public class IndividualCooldownGateMixin {
             return;
         }
 
+        // Post-domain cursed technique burnout.
+        // Block all nonphysical skills for 120 seconds.
+        if (TechniqueCooldownManager.getPostDomainRemainingTicks(player) > 0
+                && !TechniqueCooldownManager.isSelectedPhysicalSkill(player)) {
+
+            ci.cancel();
+            return;
+        }
+
         int skillId =
                 TechniqueCooldownManager.getSelectedSkill(player);
 

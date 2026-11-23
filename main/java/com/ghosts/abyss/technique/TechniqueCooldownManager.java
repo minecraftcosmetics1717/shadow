@@ -1,7 +1,8 @@
 package com.ghosts.abyss.technique;
 
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
-
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -9,6 +10,9 @@ public final class TechniqueCooldownManager {
 
     private static final String COOLDOWNS_KEY =
             "abyss_individual_cooldowns";
+    private static final String POST_DOMAIN_COOLDOWN_KEY =
+            "abyss_post_domain_cooldown_end";
+    public static final int POST_DOMAIN_COOLDOWN_TICKS = 20 * 120;
 
     private TechniqueCooldownManager() {}
 
@@ -93,7 +97,7 @@ public final class TechniqueCooldownManager {
 
     public static boolean usesCombatCooldown(int skillId) {
         return
-                // Sukuna's physical Dismantle combos
+                        // Sukuna's physical Dismantle combos
                 skillId == 111
                         || skillId == 112
                         || skillId == 113
@@ -121,7 +125,7 @@ public final class TechniqueCooldownManager {
                         || skillId == 2006 // Lariat
                         || skillId == 2007 // Consecutive Attacks
                         || skillId == 2015 // Black Flash Attack
-        // Physical Gifted
+                        // Physical Gifted
                         || skillId == -100
                         || skillId == -99
                         || skillId == -98
@@ -156,6 +160,57 @@ public final class TechniqueCooldownManager {
                 .getServer()
                 .overworld()
                 .getGameTime();
+    }
+
+    // Apply 2 minutes of cursed technique burnout
+    // after a domain ends or the caster loses a clash.
+    public static void startPostDomainCooldown(LivingEntity entity) {
+        if (!(entity instanceof ServerPlayer player)) {
+            return;
+        }
+
+        CompoundTag data = player.getPersistentData();
+
+        long endTick = now(player) + POST_DOMAIN_COOLDOWN_TICKS;
+        long previousEnd = data.getLong(POST_DOMAIN_COOLDOWN_KEY);
+
+        // Never shorten an existing burnout.
+        if (endTick > previousEnd) {
+            data.putLong(POST_DOMAIN_COOLDOWN_KEY, endTick);
+        }
+    }
+
+    public static int getPostDomainRemainingTicks(ServerPlayer player) {
+        long endTick = player.getPersistentData()
+                .getLong(POST_DOMAIN_COOLDOWN_KEY);
+
+        long remaining = Math.max(0L, endTick - now(player));
+
+        return (int) Math.min(remaining, Integer.MAX_VALUE);
+    }
+
+    // JC tracks whether the selected technique is physical.
+    // This is more accurate than checking the combat cooldown list.
+    public static boolean isSelectedPhysicalSkill(ServerPlayer player) {
+        var vars = player.getCapability(
+                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
+        ).orElse(null);
+
+        return vars != null && vars.PhysicalAttack;
+    }
+
+    // Preserve burnout if a player respawns after dying.
+    public static void copyPostDomainCooldown(
+            Player original,
+            Player replacement
+    ) {
+        long endTick = original.getPersistentData()
+                .getLong(POST_DOMAIN_COOLDOWN_KEY);
+
+        if (endTick > 0L) {
+            replacement.getPersistentData()
+                    .putLong(POST_DOMAIN_COOLDOWN_KEY, endTick);
+        }
     }
 
     public static void startCooldown(

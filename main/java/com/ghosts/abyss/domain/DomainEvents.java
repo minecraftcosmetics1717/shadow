@@ -6,7 +6,7 @@ import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectInstance;
+import com.ghosts.abyss.technique.TechniqueCooldownManager;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -94,8 +94,7 @@ public class DomainEvents {
                 && DomainInstanceManager.getByOwner(entity.getUUID()) == null) {
 
             entity.getPersistentData().putBoolean(
-                    "abyss_domain_pending", false
-            );
+                    "abyss_domain_pending", false);
             return;
         }
 
@@ -187,8 +186,7 @@ public class DomainEvents {
                             inst.arenaCenter.getZ() + 0.5);
 
                     MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(
-                            DOMAIN_EFFECT_ID
-                    );
+                            DOMAIN_EFFECT_ID);
 
                     if (effect != null) {
                         entity.removeEffect(effect);
@@ -213,24 +211,18 @@ public class DomainEvents {
                     DomainInstanceManager.getByOwner(deadId);
 
             if (owned != null) {
+                TechniqueCooldownManager.startPostDomainCooldown(entity);
                 entity.getPersistentData().putBoolean(
-                        "abyss_domain_owner_dead", true
-                );
-
+                        "abyss_domain_owner_dead", true);
                 entity.getPersistentData().putDouble(
-                        "abyss_drop_x", owned.overworldCenter.x
-                );
+                        "abyss_drop_x", owned.overworldCenter.x);
                 entity.getPersistentData().putDouble(
-                        "abyss_drop_y", owned.overworldCenter.y
-                );
+                        "abyss_drop_y", owned.overworldCenter.y);
                 entity.getPersistentData().putDouble(
-                        "abyss_drop_z", owned.overworldCenter.z
-                );
+                        "abyss_drop_z", owned.overworldCenter.z);
                 entity.getPersistentData().putString(
                         "abyss_drop_dim",
-                        owned.returnDim.location().toString()
-                );
-
+                        owned.returnDim.location().toString());
                 scheduleEndAfterDeath(entity, owned);
                 return;
             }
@@ -245,7 +237,7 @@ public class DomainEvents {
 
             if (arena == null) return;
             if (!arena.participants.contains(deadId)) return;
-
+            TechniqueCooldownManager.startPostDomainCooldown(entity);
             // Remove the dead challenger's domain from the clash.
             arena.participants.remove(deadId);
 
@@ -361,21 +353,17 @@ public class DomainEvents {
                     "[Abyss Domain] Ignoring domain effect removal " +
                             "during startup. Owner={} Slot={}",
                     entity.getUUID(),
-                    startupInstance.slot
-            );
-
+                    startupInstance.slot);
             return;
         }
 
         boolean hadAbyssDomain = startupInstance != null;
 
         entity.getPersistentData().putBoolean(
-                "abyss_domain_handled", false
-        );
+                "abyss_domain_handled", false);
 
         entity.getPersistentData().putBoolean(
-                "abyss_domain_pending", false
-        );
+                "abyss_domain_pending", false);
 
         DomainLifecycle.end(entity);
 
@@ -419,22 +407,17 @@ public class DomainEvents {
                     "[Abyss Domain] Ignoring domain effect expiration " +
                             "during startup. Owner={} Slot={}",
                     entity.getUUID(),
-                    startupInstance.slot
-            );
+                    startupInstance.slot);
 
             return;
         }
-
         boolean hadAbyssDomain = startupInstance != null;
 
         entity.getPersistentData().putBoolean(
-                "abyss_domain_handled", false
-        );
+                "abyss_domain_handled", false);
 
         entity.getPersistentData().putBoolean(
-                "abyss_domain_pending", false
-        );
-
+                "abyss_domain_pending", false);
         DomainLifecycle.end(entity);
 
         if (hadAbyssDomain) {
