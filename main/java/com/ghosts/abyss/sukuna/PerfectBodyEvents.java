@@ -99,9 +99,7 @@ public final class PerfectBodyEvents {
                                 PERFECT_BODY_MODIFIER_UUID,
                                 PERFECT_BODY_MODIFIER_NAME,
                                 0.25D,
-                                AttributeModifier.Operation.MULTIPLY_TOTAL
-                        )
-                );
+                                AttributeModifier.Operation.MULTIPLY_TOTAL));
 
             } else if (!shouldApply && existing != null) {
                 inst.removeModifier(PERFECT_BODY_MODIFIER_UUID);
@@ -111,9 +109,7 @@ public final class PerfectBodyEvents {
                 player.setHealth(
                         Math.min(
                                 player.getHealth(),
-                                player.getMaxHealth()
-                        )
-                );
+                                player.getMaxHealth()));
             }
         }
 
@@ -130,9 +126,7 @@ public final class PerfectBodyEvents {
                                 PERFECT_BODY_MODIFIER_UUID,
                                 PERFECT_BODY_MODIFIER_NAME,
                                 1.0D,
-                                AttributeModifier.Operation.ADDITION
-                        )
-                );
+                                AttributeModifier.Operation.ADDITION));
 
             } else if (!perfectBody && kbExisting != null) {
                 kbInst.removeModifier(PERFECT_BODY_MODIFIER_UUID);
@@ -158,9 +152,7 @@ public final class PerfectBodyEvents {
                             Integer.MAX_VALUE,
                             3,
                             false,
-                            false
-                    )
-            );
+                            false));
         }
     }
 
@@ -187,8 +179,7 @@ public final class PerfectBodyEvents {
                         "[JSlop] chantBoost {} cnt5 {} → {}",
                         player.getGameProfile().getName(),
                         cnt5,
-                        boosted
-                );
+                        boosted);
 
             } else if (prev != null
                     && cnt5 < prev
@@ -199,8 +190,7 @@ public final class PerfectBodyEvents {
                         player.getGameProfile().getName(),
                         prev,
                         cnt5,
-                        hasCooldownTime(player)
-                );
+                        hasCooldownTime(player));
             }
         }
     }
@@ -210,9 +200,7 @@ public final class PerfectBodyEvents {
                 ForgeRegistries.MOB_EFFECTS.getValue(
                         new ResourceLocation(
                                 "jujutsucraft",
-                                "cooldown_time"
-                        )
-                );
+                                "cooldown_time"));
 
         return fx != null && player.hasEffect(fx);
     }
@@ -231,9 +219,7 @@ public final class PerfectBodyEvents {
                 ForgeRegistries.MOB_EFFECTS.getValue(
                         new ResourceLocation(
                                 "jujutsucraft",
-                                "sukuna_effect"
-                        )
-                );
+                                "sukuna_effect"));
 
         return sukunaFx != null && player.hasEffect(sukunaFx);
     }
@@ -258,8 +244,7 @@ public final class PerfectBodyEvents {
 
             if (prev == null || prev != current) {
                 lastKnownPerfectBody.put(
-                        player.getUUID(), current
-                );
+                        player.getUUID(), current);
 
                 broadcastPerfectBodyToAll(player, current);
                 AdvTechPoints.sync(player);
@@ -281,16 +266,14 @@ public final class PerfectBodyEvents {
         PacketSyncPerfectBodyVisible pkt =
                 new PacketSyncPerfectBodyVisible(
                         subject.getUUID(),
-                        effectiveState
-                );
+                        effectiveState);
 
         for (ServerPlayer recipient :
                 subject.server.getPlayerList().getPlayers()) {
 
             ModNetwork.CHANNEL.send(
                     PacketDistributor.PLAYER.with(() -> recipient),
-                    pkt
-            );
+                    pkt);
         }
     }
 }

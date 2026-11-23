@@ -102,7 +102,6 @@ public final class TechniqueCooldownEvents {
             return;
         }
 
-
         Map<Integer, Integer> remaining = new HashMap<>();
 
         int selectedSkill =
@@ -140,7 +139,6 @@ public final class TechniqueCooldownEvents {
     public static void onPlayerClone(PlayerEvent.Clone event) {
         TechniqueCooldownManager.copyPostDomainCooldown(
                 event.getOriginal(),
-                event.getEntity()
-        );
+                event.getEntity());
     }
 }

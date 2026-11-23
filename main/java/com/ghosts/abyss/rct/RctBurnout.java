@@ -37,8 +37,7 @@ public final class RctBurnout {
 
     public static void setHolding(
             ServerPlayer player,
-            boolean holding
-    ) {
+            boolean holding) {
         UUID id = player.getUUID();
 
         if (!holding) {
@@ -49,8 +48,7 @@ public final class RctBurnout {
         // Unlock and gamerule are server-authoritative.
         if (!AbyssGamerules.isEnabled(
                 player,
-                AbyssGamerules.REVERSE_CURSED_TECHNIQUE
-        )) {
+                AbyssGamerules.REVERSE_CURSED_TECHNIQUE)) {
             HOLDING.remove(id);
             return;
         }
@@ -60,10 +58,8 @@ public final class RctBurnout {
 
             player.displayClientMessage(
                     Component.literal(
-                            "Unlock RCT Burnout in your phone first."
-                    ),
-                    true
-            );
+                            ""),
+                    true);
             return;
         }
 
@@ -72,8 +68,7 @@ public final class RctBurnout {
 
     @SubscribeEvent
     public static void onPlayerTick(
-            TickEvent.PlayerTickEvent event
-    ) {
+            TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
 
         if (!(event.player instanceof ServerPlayer player)) {
@@ -88,19 +83,18 @@ public final class RctBurnout {
                 || !RctPoints.isBurnoutUnlocked(player)
                 || !AbyssGamerules.isEnabled(
                 player,
-                AbyssGamerules.REVERSE_CURSED_TECHNIQUE
-        )) {
+                AbyssGamerules.REVERSE_CURSED_TECHNIQUE)) {
             HOLDING.remove(id);
             return;
         }
 
         player.getCapability(
                 JujutsucraftModVariables
-                        .PLAYER_VARIABLES_CAPABILITY
-        ).ifPresent(vars -> {
+                        .PLAYER_VARIABLES_CAPABILITY).ifPresent(vars -> {
 
-            // Match FIN: at least 30 CE is required.
-            if (vars.PlayerCursePower < CE_COST_PER_TICK) {
+            double availableCE =
+                    vars.PlayerCursePower + vars.PlayerCursePowerChange;
+            if (availableCE < CE_COST_PER_TICK) {
                 return;
             }
 
@@ -108,8 +102,7 @@ public final class RctBurnout {
                     TechniqueCooldownManager
                             .accelerateNonPhysicalCooldowns(
                                     player,
-                                    EXTRA_TICKS
-                            );
+                                    EXTRA_TICKS);
 
             // FIN also accelerates Unstable.
             // Abyss uses this effect after domains.
@@ -132,14 +125,7 @@ public final class RctBurnout {
 
                 player.removeEffect(unstable);
 
-                player.addEffect(new MobEffectInstance(
-                        unstable,
-                        newDuration,
-                        amplifier,
-                        ambient,
-                        visible,
-                        icon
-                ));
+                player.addEffect(new MobEffectInstance(unstable, newDuration, amplifier, ambient, visible, icon));
 
                 accelerated = true;
             }
@@ -157,8 +143,7 @@ public final class RctBurnout {
 
     @SubscribeEvent
     public static void onLogout(
-            PlayerEvent.PlayerLoggedOutEvent event
-    ) {
+            PlayerEvent.PlayerLoggedOutEvent event) {
         HOLDING.remove(event.getEntity().getUUID());
     }
 
@@ -174,8 +159,7 @@ public final class RctBurnout {
                     .getPersistentData()
                     .putBoolean(
                             RctPoints.KEY_BURNOUT_UNLOCKED,
-                            true
-                    );
+                            true);
         }
 
         HOLDING.remove(event.getEntity().getUUID());
@@ -203,8 +187,7 @@ public final class RctBurnout {
 
     @SubscribeEvent
     public static void onDimensionChange(
-            PlayerEvent.PlayerChangedDimensionEvent event
-    ) {
+            PlayerEvent.PlayerChangedDimensionEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             RctPoints.sync(player);
         }

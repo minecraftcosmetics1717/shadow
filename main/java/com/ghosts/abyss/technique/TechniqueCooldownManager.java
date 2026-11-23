@@ -230,8 +230,7 @@ public final class TechniqueCooldownManager {
             if (end - currentTick >= 21L) {
                 cooldowns.putLong(
                         key,
-                        Math.max(currentTick, end - extraTicks)
-                );
+                        Math.max(currentTick, end - extraTicks));
 
                 changed = true;
                 changedSkills = true;
@@ -249,17 +248,14 @@ public final class TechniqueCooldownManager {
     // This is more accurate than checking the combat cooldown list.
     public static boolean isSelectedPhysicalSkill(ServerPlayer player) {
         var vars = player.getCapability(
-                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
-        ).orElse(null);
-
+                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY).orElse(null);
         return vars != null && vars.PhysicalAttack;
     }
 
     // Preserve burnout if a player respawns after dying.
     public static void copyPostDomainCooldown(
             Player original,
-            Player replacement
-    ) {
+            Player replacement) {
         long endTick = original.getPersistentData()
                 .getLong(POST_DOMAIN_COOLDOWN_KEY);
 
@@ -297,8 +293,7 @@ public final class TechniqueCooldownManager {
 
     public static int getRemainingTicks(
             ServerPlayer player,
-            int skillId
-    ) {
+            int skillId) {
         CompoundTag cooldowns =
                 player.getPersistentData()
                         .getCompound(COOLDOWNS_KEY);
