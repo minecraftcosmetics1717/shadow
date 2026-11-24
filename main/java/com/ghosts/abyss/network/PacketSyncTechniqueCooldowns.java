@@ -1,8 +1,6 @@
 
 package com.ghosts.abyss.network;
 
-import com.ghosts.abyss.technique.TechniqueCooldownManager;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 
@@ -80,17 +78,14 @@ public class PacketSyncTechniqueCooldowns {
             return;
         }
 
-        for (int skillId :
-                TechniqueCooldownManager.getManagedSkillIds()) {
-
-            int remaining = Math.max(
-                    0,
-                    remainingBySkill.getOrDefault(skillId, 0)
-            );
+        // Also accept original skill IDs registered by Yuta,
+        // including those outside the static MANAGED_SKILLS list.
+        for (Map.Entry<Integer, Integer> entry :
+                remainingBySkill.entrySet()) {
 
             player.getPersistentData().putInt(
-                    "abyss_ui_cd_" + skillId,
-                    remaining
+                    "abyss_ui_cd_" + entry.getKey(),
+                    Math.max(0, entry.getValue())
             );
         }
     }
