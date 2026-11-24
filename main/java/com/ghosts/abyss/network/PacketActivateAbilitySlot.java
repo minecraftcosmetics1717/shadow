@@ -151,8 +151,10 @@ public class PacketActivateAbilitySlot {
                         return;
                      }
 
-                     MobEffect cooldownFx = ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation("jujutsucraft", "cooldown_time"));
-                     if (!player.isCreative() && cooldownFx != null && player.hasEffect(cooldownFx)) {
+                     // The original skill ID owns the cooldown, even
+                     // when Yuta has registered it in multiple slots.
+                     int originalSkillId = (int) Math.round(regSkill);
+                     if (!player.isCreative() && TechniqueCooldownManager.isOnCooldown(player, originalSkillId)) {
                         return;
                      }
 
@@ -206,9 +208,8 @@ public class PacketActivateAbilitySlot {
                         player.addEffect(new MobEffectInstance(cursedTechFx, Integer.MAX_VALUE, 0, false, false));
                      }
 
-                     if (!player.isCreative() && cooldownFx != null) {
-                        player.removeEffect(cooldownFx);
-                        player.addEffect(new MobEffectInstance(cooldownFx, (int) regCooldown, 0, false, false));
+                     if (!player.isCreative()) {
+                        TechniqueCooldownManager.startCooldown(player, originalSkillId, (int) regCooldown);
                      }
 
                      return;

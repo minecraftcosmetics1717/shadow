@@ -78,7 +78,64 @@ public final class TechniqueCooldownManager {
             // ===== Uro Takako =====
             3810,
             // ===== Mahito =====
-            1503, 1504, 1505, 1506, 1507, 1508, 1509, 1510, 1515, 1516
+            1503, 1504, 1505, 1506, 1507, 1508, 1509, 1510, 1515, 1516,
+
+            // ===== Cursed Speech =====
+            304, 305, 306, 307, 308, 309,
+
+            // ===== Kaori Itadori =====
+            4105, 4110,
+
+            // ===== Masamichi Yaga =====
+            3306, 3310, 3315,
+
+            // ===== Ogi Zenin =====
+            2605, 2611, 2612, 2613, 2614, 2615, 2619,
+
+            // ===== Hanami =====
+            1405, 1406, 1410, 1415,
+
+            // ===== Reggie Star =====
+            4405, 4410, 4411, 4415,
+
+            // ===== Kurourushi =====
+            2304, 2305, 2306, 2307, 2308,
+
+            // ===== Miguel =====
+            3005, 3006,
+
+            // ===== Higuruma =====
+            2705, 2706, 2707, 2708, 2710, 2711, 2719,
+
+            // ===== Nishimiya =====
+            3605, 3606, 3610,
+
+            // ===== Chojuro =====
+            3205, 3209,
+
+            // ===== Kusakabe =====
+            3105, 3107,
+
+            // ===== Smallpox Deity =====
+            2505, 2506,
+
+            // ===== Ranta Zenin =====
+            4610,
+
+            // ===== Dhruv =====
+            3705, 3706,
+
+            // ===== Takaba =====
+            1705, 1706, 1710, 1715,
+
+            // ===== Jinichi Zenin =====
+            2205, 2207, 2208, 2210,
+
+            // ===== Hazenoki =====
+            4505, 4510,
+
+            // ===== Geto / Cursed Spirit Manipulation =====
+            1812, 1815
     };
 
     public static int[] getManagedSkillIds() {
@@ -97,7 +154,7 @@ public final class TechniqueCooldownManager {
 
     public static boolean usesCombatCooldown(int skillId) {
         return
-                        // Sukuna's physical Dismantle combos
+                // Sukuna's physical Dismantle combos
                 skillId == 111
                         || skillId == 112
                         || skillId == 113
@@ -131,7 +188,29 @@ public final class TechniqueCooldownManager {
                         || skillId == -98
                         || skillId == -95
                         || skillId == -94
-                        || skillId == -93;
+                        || skillId == -93
+
+                        // ===== Kurourushi =====
+                        || skillId == 2304
+
+                        // ===== Miguel =====
+                        || skillId == 3006
+
+                        // ===== Higuruma =====
+                        || skillId == 2705
+                        || skillId == 2706
+                        || skillId == 2707
+                        || skillId == 2708
+                        || skillId == 2710
+                        || skillId == 2711
+                        || skillId == 2719
+
+                        // ===== Kusakabe =====
+                        || skillId == 3105
+                        || skillId == 3107
+
+                        // ===== Takaba =====
+                        || skillId == 1706;
 
     }
 

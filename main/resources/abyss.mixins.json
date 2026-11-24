@@ -138,7 +138,9 @@
     "client.MahoragaWheelScaleMixin",
     "client.SelectedCooldownIconMixin",
     "client.OCoolTimeMixin",
-    "client.OCoolTimeCombatMixin"
+    "client.OCoolTimeCombatMixin",
+    "client.LogicCooldownMagicOnlyMixin",
+    "client.LogicCooldownCombatMixin"
   ],
   "injectors": {
     "defaultRequire": 1

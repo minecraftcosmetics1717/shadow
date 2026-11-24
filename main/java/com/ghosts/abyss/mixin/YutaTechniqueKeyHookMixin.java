@@ -2,6 +2,7 @@ package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.yuta.ClientYutaTechniqueCache;
 import com.ghosts.abyss.Abyss;
+import com.ghosts.abyss.technique.TechniqueCooldownManager;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -86,8 +87,8 @@ public class YutaTechniqueKeyHookMixin {
 
             try {
                rikaPresent = (Boolean) Class.forName("net.mcreator.jujutsucraft.procedures.LocateRikaProcedure")
-                     .getMethod("execute", LevelAccessor.class, Entity.class)
-                     .invoke(null, world, entity);
+                       .getMethod("execute", LevelAccessor.class, Entity.class)
+                       .invoke(null, world, entity);
             } catch (Exception ignored) {
             }
 
@@ -101,22 +102,25 @@ public class YutaTechniqueKeyHookMixin {
                return;
             }
 
-            MobEffect cooldownFx = ForgeRegistries.MOB_EFFECTS.getValue(ResourceLocation.tryParse("jujutsucraft:cooldown_time"));
-            if (!player.isCreative() && cooldownFx != null && player.hasEffect(cooldownFx)) {
+            CompoundTag tech = registered.getCompound(regIdx);
+            double regSkill = tech.getDouble("skill");
+            double regCooldown = tech.getDouble("cooldown_ticks");
+            int originalSkillId = (int) Math.round(regSkill);
+
+            // Copy cooldowns use the original technique's ID,
+            // not Yuta's synthetic 600+ selection ID.
+            if (!player.isCreative() && TechniqueCooldownManager.isOnCooldown(player, originalSkillId)) {
                ci.cancel();
                return;
             }
 
-            CompoundTag tech = registered.getCompound(regIdx);
-            double regSkill = tech.getDouble("skill");
-            double regCooldown = tech.getDouble("cooldown_ticks");
             double baseCeCost = tech.getDouble("ce_cost");
             String techName = tech.getString("name");
 
             try {
                Class.forName("net.mcreator.jujutsucraft.procedures.TechniqueDecideProcedure")
-                     .getMethod("execute", Entity.class, Boolean.TYPE, Boolean.TYPE, Double.TYPE, Double.TYPE, Double.TYPE, String.class)
-                     .invoke(null, player, false, false, baseCeCost, 5.0D, (double) (100 + regIdx), techName);
+                       .getMethod("execute", Entity.class, Boolean.TYPE, Boolean.TYPE, Double.TYPE, Double.TYPE, Double.TYPE, String.class)
+                       .invoke(null, player, false, false, baseCeCost, 5.0D, (double) (100 + regIdx), techName);
             } catch (Exception ignored) {
             }
 
@@ -155,9 +159,8 @@ public class YutaTechniqueKeyHookMixin {
                player.addEffect(new MobEffectInstance(cursedTechFx, Integer.MAX_VALUE, 0, false, false));
             }
 
-            if (!player.isCreative() && cooldownFx != null) {
-               player.removeEffect(cooldownFx);
-               player.addEffect(new MobEffectInstance(cooldownFx, (int) regCooldown, 0, false, false));
+            if (!player.isCreative()) {
+               TechniqueCooldownManager.startCooldown(player, originalSkillId, (int) regCooldown);
             }
 
             Abyss.LOGGER.info("[JSlop] Yuta native Z activate: player={} idx={} skill={}", player.getName().getString(), regIdx, regSkill);
@@ -211,8 +214,8 @@ public class YutaTechniqueKeyHookMixin {
 
             try {
                Class.forName("net.mcreator.jujutsucraft.procedures.ResetCounterProcedure")
-                     .getMethod("execute", Entity.class)
-                     .invoke(null, entity);
+                       .getMethod("execute", Entity.class)
+                       .invoke(null, entity);
             } catch (Exception ignored) {
             }
 
