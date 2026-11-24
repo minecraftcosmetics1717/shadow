@@ -284,7 +284,7 @@ public final class TechniqueCooldownManager {
         long burnoutEnd =
                 data.getLong(POST_DOMAIN_COOLDOWN_KEY);
 
-        if (burnoutEnd - currentTick >= 21L) {
+        if (burnoutEnd - currentTick > 0L) {
             data.putLong(
                     POST_DOMAIN_COOLDOWN_KEY,
                     Math.max(currentTick, burnoutEnd - extraTicks)
@@ -306,7 +306,7 @@ public final class TechniqueCooldownManager {
             String key = Integer.toString(skillId);
             long end = cooldowns.getLong(key);
 
-            if (end - currentTick >= 21L) {
+            if (end - currentTick > 0L) {
                 cooldowns.putLong(
                         key,
                         Math.max(currentTick, end - extraTicks));

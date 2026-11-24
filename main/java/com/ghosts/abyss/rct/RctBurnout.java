@@ -1,4 +1,3 @@
-
 package com.ghosts.abyss.rct;
 
 import com.ghosts.abyss.AbyssGamerules;
@@ -113,10 +112,12 @@ public final class RctBurnout {
                     player.getEffect(unstable);
 
             if (current != null
-                    && current.getDuration() >= 21) {
+                    && current.getDuration() > 0) {
 
-                int newDuration =
-                        current.getDuration() - EXTRA_TICKS;
+                // Continue RCT acceleration through the final second.
+                // Remove the effect when its remaining time reaches zero.
+                int newDuration = Math.max(0,
+                        current.getDuration() - EXTRA_TICKS);
 
                 int amplifier = current.getAmplifier();
                 boolean ambient = current.isAmbient();
@@ -125,7 +126,11 @@ public final class RctBurnout {
 
                 player.removeEffect(unstable);
 
-                player.addEffect(new MobEffectInstance(unstable, newDuration, amplifier, ambient, visible, icon));
+                if (newDuration > 0) {
+                    player.addEffect(new MobEffectInstance(
+                            unstable, newDuration, amplifier,
+                            ambient, visible, icon));
+                }
 
                 accelerated = true;
             }

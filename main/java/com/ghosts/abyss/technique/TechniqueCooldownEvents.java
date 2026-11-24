@@ -137,11 +137,27 @@ public final class TechniqueCooldownEvents {
             }
         }
 
-        boolean selectedPhysical =
-                TechniqueCooldownManager.isSelectedPhysicalSkill(player);
+        // Resolve the actual copied skill from server-owned registration data.
+        // Yuta slot IDs (600+) are not technique IDs.
+        ListTag registered = player.getPersistentData().getList(
+                "jslop_yuta_registered", Tag.TAG_COMPOUND);
+        int selectedYutaOriginalSkill = 0;
+        if (selectedYutaCopyIndex >= 0
+                && selectedYutaCopyIndex < registered.size()) {
+            selectedYutaOriginalSkill = (int) Math.round(
+                    registered.getCompound(selectedYutaCopyIndex).getDouble("skill"));
+        }
+
+        boolean selectedPhysical = selectedYutaOriginalSkill != 0
+                ? TechniqueCooldownManager.usesCombatCooldown(selectedYutaOriginalSkill)
+                : TechniqueCooldownManager.isSelectedPhysicalSkill(player);
 
         int burnout =
                 TechniqueCooldownManager.getPostDomainRemainingTicks(player);
+        var unstable = player.getEffect(
+                JujutsucraftModMobEffects.UNSTABLE.get());
+        int unstableTicks = unstable == null ? 0 : unstable.getDuration();
+        int selectedRestriction = Math.max(burnout, unstableTicks);
 
         for (int skillId :
                 TechniqueCooldownManager.getManagedSkillIds()) {
@@ -154,7 +170,7 @@ public final class TechniqueCooldownEvents {
             // Show domain burnout for the currently selected
             // nonphysical skill without changing physical cooldowns.
             if (skillId == selectedSkill && !selectedPhysical) {
-                ticks = Math.max(ticks, burnout);
+                ticks = Math.max(ticks, selectedRestriction);
             }
 
             remaining.put(skillId, ticks);
@@ -162,9 +178,6 @@ public final class TechniqueCooldownEvents {
 
         // Reuse Yuta's existing original skill IDs. Do not create
         // synthetic cooldowns for the 600+ selection slots.
-        ListTag registered = player.getPersistentData().getList(
-                "jslop_yuta_registered", Tag.TAG_COMPOUND);
-
         for (int i = 0; i < registered.size(); i++) {
             int originalSkillId = (int) Math.round(
                     registered.getCompound(i).getDouble("skill"));
@@ -176,7 +189,7 @@ public final class TechniqueCooldownEvents {
             // Preserve the existing post-domain cooldown display when
             // Yuta is currently viewing a registered copied ability.
             if (i == selectedYutaCopyIndex && !selectedPhysical) {
-                ticks = Math.max(ticks, burnout);
+                ticks = Math.max(ticks, selectedRestriction);
             }
 
             remaining.merge(originalSkillId, ticks, Math::max);
@@ -184,7 +197,8 @@ public final class TechniqueCooldownEvents {
 
         ModNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new PacketSyncTechniqueCooldowns(remaining));
+                new PacketSyncTechniqueCooldowns(
+                        remaining, selectedYutaCopyIndex, selectedYutaOriginalSkill));
     }
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
