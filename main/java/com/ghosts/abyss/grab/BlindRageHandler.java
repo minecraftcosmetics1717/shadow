@@ -104,7 +104,7 @@ public final class BlindRageHandler {
             if (available < cost) {
                 if (!hold.warned) {
                     player.displayClientMessage(
-                            Component.literal("Not enough cursed energy for Blind Rage."), true);
+                            Component.literal(""), true);
                     hold.warned = true;
                 }
                 return;

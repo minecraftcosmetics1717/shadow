@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(targets = "net.mcreator.jujutsucraft.procedures.KeyChangeTechniqueOnKeyPressedProcedure",
         remap = false)
 public class UroBlindRageDisplayMixin {
-   private static final double SKILL_COST = 1000.0D;
+   private static final double SKILL_COST = 50.0D;
 
    @Inject(method = "execute", at = @At("HEAD"), cancellable = true, remap = false)
    private static void abyss$blindRageDisplay(

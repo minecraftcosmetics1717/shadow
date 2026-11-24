@@ -73,19 +73,22 @@ public final class GrabManager {
             return false;
         }
 
-        // A protected or immune target shouldn't become grabbed through an
-        // attack that failed to connect.
-        if (config.contactDamage() > 0.0F
-                && !target.hurt(grabber.damageSources().mobAttack(grabber),
-                        config.contactDamage())) {
-            return false;
-        }
-
+        // The grab is validated by reach/contact and server-side eligibility
+        // above, not by hurt()'s return value. Some JC damage handlers can
+        // apply contact damage while returning false from the hurt call.
+        // Previously this resulted in damage but NO grab session/cooldown.
         ACTIVE.put(grabber.getUUID(), new Session(
                 target.getUUID(), grabber.serverLevel(),
                 grabber.serverLevel().getGameTime() + config.durationTicks(),
                 config));
         HELD_TARGETS.add(target.getUUID());
+
+        // Apply the move's contact damage separately. A blocked/reduced hit
+        // doesn't silently cancel the grab after contact was confirmed.
+        if (config.contactDamage() > 0.0F) {
+            target.hurt(grabber.damageSources().mobAttack(grabber),
+                    config.contactDamage());
+        }
         return true;
     }
 
