@@ -76,7 +76,7 @@ public final class TechniqueCooldownManager {
             2003, 2004, 2005, 2006, 2007, 2015,
 
             // ===== Uro Takako =====
-            3810,
+            3809, 3810,
             // ===== Mahito =====
             1503, 1504, 1505, 1506, 1507, 1508, 1509, 1510, 1515, 1516,
 
@@ -195,6 +195,9 @@ public final class TechniqueCooldownManager {
 
                         // ===== Miguel =====
                         || skillId == 3006
+
+                        // ===== Uro =====
+                        || skillId == 3809
 
                         // ===== Higuruma =====
                         || skillId == 2705

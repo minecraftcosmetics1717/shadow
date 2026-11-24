@@ -239,7 +239,10 @@ public class ModNetwork {
               PacketRctBurnoutHold.class,
               PacketRctBurnoutHold::encode,
               PacketRctBurnoutHold::decode,
-              PacketRctBurnoutHold::handle
-      );
+              PacketRctBurnoutHold::handle);
+      CHANNEL.registerMessage(id++, PacketBlindRageInput.class,
+              PacketBlindRageInput::encode,
+              PacketBlindRageInput::new,
+              PacketBlindRageInput::handle);
    }
 }
