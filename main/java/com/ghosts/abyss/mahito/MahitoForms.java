@@ -3,6 +3,10 @@ package com.ghosts.abyss.mahito;
 import com.ghosts.abyss.ability.AbilityScanHandler;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketSyncMahitoForms;
+import net.mcreator.jujutsucraft.init.JujutsucraftModItems;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.network.PacketDistributor;
 import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
@@ -43,7 +47,12 @@ public final class MahitoForms {
     private static final String UNLOCK_MULTIPLICITY = "abyss_mahito_unlock_multiplicity";
     private static final String UNLOCK_POLYMORPHIC = "abyss_mahito_unlock_polymorphic";
     private static final String UNLOCK_DOMAIN = "abyss_mahito_unlock_domain";
-    private static final int FORM_EFFECT_DURATION = 20 * 60 * 5;
+    private static final String ORIGINAL_MOTION = "abyss_mahito_original_motion";
+    private static final String MOTION_SAVED = "abyss_mahito_motion_saved";
+    private static final String TEMP_ARMOR_TAG = "abyss_mahito_generated_armor";
+
+    private static final UUID SMALL_SPEED_UUID =
+            UUID.fromString("03898458-6d58-4f5f-97b6-10f33d2a8704");
 
     // Additional Abyss buffs, on top of Jujutsucraft's existing form effect.
     private static final UUID ATTACK_UUID = UUID.fromString("03898458-6d58-4f5f-97b6-10f33d2a8701");
@@ -129,10 +138,11 @@ public final class MahitoForms {
             data.putBoolean(BLADES_KEY, false);
             disableDiminution(player);
             data.putBoolean(TRUE_KEY, true);
-            player.addEffect(new MobEffectInstance(
-                    JujutsucraftModMobEffects.INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_EFFECT.get(),
-                    FORM_EFFECT_DURATION, 0, false, false, false));
+            player.removeEffect(
+                    JujutsucraftModMobEffects.INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_EFFECT.get()
+            );
             applyModifiers(player);
+            equipTrueFormArmor(player);
         } else {
             if (data.getBoolean(TRUE_KEY)) return;
             String key = slot == BLADES ? BLADES_KEY : SMALL_KEY;
@@ -194,23 +204,71 @@ public final class MahitoForms {
     }
 
     private static void enableDiminution(ServerPlayer player) {
-        ScaleData size = ScaleTypes.BASE.getScaleData(player);
         CompoundTag data = player.getPersistentData();
+
+        ScaleData size = ScaleTypes.BASE.getScaleData(player);
+        ScaleData motion = ScaleTypes.MOTION.getScaleData(player);
+
         if (!data.getBoolean(SIZE_SAVED)) {
             data.putFloat(ORIGINAL_SIZE, size.getBaseScale());
             data.putBoolean(SIZE_SAVED, true);
         }
-        size.setScale(Math.max(0.05F, data.getFloat(ORIGINAL_SIZE) * 0.5F));
+
+        if (!data.getBoolean(MOTION_SAVED)) {
+            data.putFloat(ORIGINAL_MOTION, motion.getBaseScale());
+            data.putBoolean(MOTION_SAVED, true);
+        }
+
+        // Half-size player.
+        size.setScale(
+                Math.max(0.05F, data.getFloat(ORIGINAL_SIZE) * 0.5F)
+        );
+
+        // Compensate for Pehkui's BASE movement reduction.
+        // This also avoids reducing jump movement.
+        motion.setScale(data.getFloat(ORIGINAL_MOTION) * 2.0F);
+
+        // Slightly slower walking/running, without reducing jump height.
+        AttributeInstance speed =
+                player.getAttribute(Attributes.MOVEMENT_SPEED);
+
+        if (speed != null && speed.getModifier(SMALL_SPEED_UUID) == null) {
+            speed.addTransientModifier(new AttributeModifier(
+                    SMALL_SPEED_UUID,
+                    "Abyss Mahito diminution speed",
+                    -0.10D,
+                    AttributeModifier.Operation.MULTIPLY_TOTAL
+            ));
+        }
+
         data.putBoolean(SMALL_KEY, true);
     }
 
     private static void disableDiminution(ServerPlayer player) {
         CompoundTag data = player.getPersistentData();
         data.putBoolean(SMALL_KEY, false);
+
         if (data.getBoolean(SIZE_SAVED)) {
-            ScaleTypes.BASE.getScaleData(player).setScale(data.getFloat(ORIGINAL_SIZE));
+            ScaleTypes.BASE.getScaleData(player)
+                    .setScale(data.getFloat(ORIGINAL_SIZE));
+
             data.remove(ORIGINAL_SIZE);
             data.remove(SIZE_SAVED);
+        }
+
+        if (data.getBoolean(MOTION_SAVED)) {
+            ScaleTypes.MOTION.getScaleData(player)
+                    .setScale(data.getFloat(ORIGINAL_MOTION));
+
+            data.remove(ORIGINAL_MOTION);
+            data.remove(MOTION_SAVED);
+        }
+
+        AttributeInstance speed =
+                player.getAttribute(Attributes.MOVEMENT_SPEED);
+
+        if (speed != null && speed.getModifier(SMALL_SPEED_UUID) != null) {
+            speed.removeModifier(SMALL_SPEED_UUID);
         }
     }
 
@@ -237,11 +295,121 @@ public final class MahitoForms {
         removeModifier(player.getAttribute(Attributes.ARMOR), ARMOR_UUID);
         removeModifier(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TOUGH_UUID);
     }
+    private static final EquipmentSlot[] TRUE_FORM_SLOTS = {
+            EquipmentSlot.HEAD,
+            EquipmentSlot.CHEST,
+            EquipmentSlot.LEGS
+    };
 
+    private static ItemStack createTrueFormArmor(EquipmentSlot slot) {
+        ItemStack stack = switch (slot) {
+            case HEAD -> new ItemStack(
+                    JujutsucraftModItems
+                            .ARMOR_INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_HELMET.get());
+
+            case CHEST -> new ItemStack(
+                    JujutsucraftModItems
+                            .ARMOR_INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_CHESTPLATE.get());
+
+            case LEGS -> new ItemStack(
+                    JujutsucraftModItems
+                            .ARMOR_INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_LEGGINGS.get());
+
+            default -> ItemStack.EMPTY;
+        };
+
+        if (!stack.isEmpty()) {
+            stack.getOrCreateTag().putBoolean(TEMP_ARMOR_TAG, true);
+        }
+
+        return stack;
+    }
+
+    private static boolean isTemporaryArmor(ItemStack stack) {
+        return !stack.isEmpty()
+                && stack.hasTag()
+                && stack.getTag().getBoolean(TEMP_ARMOR_TAG);
+    }
+
+    // Remove spare temporary armor if it was moved into inventory.
+    private static void clearTemporaryCopies(ServerPlayer player) {
+        var inv = player.getInventory();
+        boolean changed = false;
+
+        for (int i = 0; i < inv.items.size(); i++) {
+            if (isTemporaryArmor(inv.items.get(i))) {
+                inv.items.set(i, ItemStack.EMPTY);
+                changed = true;
+            }
+        }
+
+        for (int i = 0; i < inv.offhand.size(); i++) {
+            if (isTemporaryArmor(inv.offhand.get(i))) {
+                inv.offhand.set(i, ItemStack.EMPTY);
+                changed = true;
+            }
+        }
+
+        if (changed) inv.setChanged();
+    }
+
+    private static void equipTrueFormArmor(ServerPlayer player) {
+        clearTemporaryCopies(player);
+
+        for (EquipmentSlot slot : TRUE_FORM_SLOTS) {
+            ItemStack expected = createTrueFormArmor(slot);
+            ItemStack current = player.getItemBySlot(slot);
+
+            // Already wearing the correct temporary armor.
+            if (isTemporaryArmor(current)
+                    && current.is(expected.getItem())) {
+                continue;
+            }
+
+            // Preserve normal armor by moving it into the inventory.
+            if (!current.isEmpty() && !isTemporaryArmor(current)) {
+                ItemStack displaced = current.copy();
+
+                player.setItemSlot(slot, ItemStack.EMPTY);
+                player.getInventory().add(displaced);
+
+                if (!displaced.isEmpty()) {
+                    player.drop(displaced, false);
+                }
+            }
+
+            player.setItemSlot(slot, expected);
+        }
+    }
+
+    private static void removeTrueFormArmor(ServerPlayer player) {
+        for (EquipmentSlot slot : TRUE_FORM_SLOTS) {
+            if (isTemporaryArmor(player.getItemBySlot(slot))) {
+                player.setItemSlot(slot, ItemStack.EMPTY);
+            }
+        }
+
+        clearTemporaryCopies(player);
+    }
+
+    // Temporary transformation armor must not become death loot.
+    @SubscribeEvent
+    public static void onTrueFormArmorDrops(LivingDropsEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer)) return;
+
+        event.getDrops().removeIf(
+                drop -> isTemporaryArmor(drop.getItem())
+        );
+    }
     private static void disableTrueForm(ServerPlayer player) {
         player.getPersistentData().putBoolean(TRUE_KEY, false);
-        player.removeEffect(JujutsucraftModMobEffects.INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_EFFECT.get());
+
+        player.removeEffect(
+                JujutsucraftModMobEffects.INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_EFFECT.get()
+        );
+
         removeModifiers(player);
+        removeTrueFormArmor(player);
     }
 
     @SubscribeEvent
@@ -249,23 +417,29 @@ public final class MahitoForms {
         if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player)) return;
         CompoundTag data = player.getPersistentData();
         if (!player.isAlive() || !isMahito(player)) {
-            if (data.getBoolean(SMALL_KEY) || data.getBoolean(SIZE_SAVED)) disableDiminution(player);
+            if (data.getBoolean(SMALL_KEY)
+        || data.getBoolean(SIZE_SAVED)
+        || data.getBoolean(MOTION_SAVED)) disableDiminution(player);
             data.putBoolean(BLADES_KEY, false);
             if (data.getBoolean(TRUE_KEY)) disableTrueForm(player);
             if (player.tickCount % 20 == 0) sync(player);
             return;
         }
         if (data.getBoolean(TRUE_KEY)) {
-            if (data.getBoolean(SMALL_KEY) || data.getBoolean(SIZE_SAVED)) disableDiminution(player);
+            if (data.getBoolean(SMALL_KEY)
+        || data.getBoolean(SIZE_SAVED)
+        || data.getBoolean(MOTION_SAVED)) disableDiminution(player);
             data.putBoolean(BLADES_KEY, false);
-            applyModifiers(player);
-            MobEffectInstance form = player.getEffect(
-                    JujutsucraftModMobEffects.INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_EFFECT.get());
-            if (form == null || form.getDuration() < 200) {
-                player.addEffect(new MobEffectInstance(
-                        JujutsucraftModMobEffects.INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_EFFECT.get(),
-                        FORM_EFFECT_DURATION, 0, false, false, false));
+// Remove any leftover potion effect from the older implementation.
+            if (player.hasEffect(
+                    JujutsucraftModMobEffects.INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_EFFECT.get())) {
+                player.removeEffect(
+                        JujutsucraftModMobEffects.INSTANT_SPIRIT_BODYOF_DISTORTED_KILLING_EFFECT.get()
+                );
             }
+
+            applyModifiers(player);
+            equipTrueFormArmor(player);
         } else {
             removeModifiers(player);
         }
@@ -281,8 +455,22 @@ public final class MahitoForms {
         player.getPersistentData().putBoolean(SMALL_KEY, false);
         player.getPersistentData().putBoolean(TRUE_KEY, false);
         if (old.getBoolean(SIZE_SAVED)) {
-            ScaleTypes.BASE.getScaleData(player).setScale(old.getFloat(ORIGINAL_SIZE));
+            ScaleTypes.BASE.getScaleData(player)
+                    .setScale(old.getFloat(ORIGINAL_SIZE));
         }
+
+        if (old.getBoolean(MOTION_SAVED)) {
+            ScaleTypes.MOTION.getScaleData(player)
+                    .setScale(old.getFloat(ORIGINAL_MOTION));
+        }
+
+        AttributeInstance speed =
+                player.getAttribute(Attributes.MOVEMENT_SPEED);
+
+        if (speed != null && speed.getModifier(SMALL_SPEED_UUID) != null) {
+            speed.removeModifier(SMALL_SPEED_UUID);
+        }
+
         removeModifiers(player);
     }
 }

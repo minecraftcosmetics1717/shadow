@@ -147,8 +147,7 @@
     "client.OCoolTimeMixin",
     "client.OCoolTimeCombatMixin",
     "client.LogicCooldownMagicOnlyMixin",
-    "client.LogicCooldownCombatMixin",
-    "client.GrabHudIconMixin"
+    "client.LogicCooldownCombatMixin"
   ],
   "injectors": {
     "defaultRequire": 1
