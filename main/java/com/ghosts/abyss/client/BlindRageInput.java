@@ -25,31 +25,33 @@ public final class BlindRageInput {
         Minecraft mc = Minecraft.getInstance();
 
         if (event.getAction() == GLFW.GLFW_PRESS && canGrab(mc)) {
-            // Prevent ordinary punching/block breaking while either grab is armed.
+            // Prevent regular punching/block breaking while a grab is armed.
             event.setCanceled(true);
             if (!pressed) {
                 pressed = true;
+                GrabHudState.beginHold(); // Show custom icon immediately.
                 ModNetwork.CHANNEL.sendToServer(new PacketBlindRageInput(true));
             }
         } else if (event.getAction() == GLFW.GLFW_RELEASE && pressed) {
-            // Do not cancel mouse release: vanilla can clear its input state.
+            // Let vanilla clear mouse-release state.
             stop(mc);
         }
     }
 
     @SubscribeEvent
     public static void onTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !pressed) return;
+        if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
-        if (!canGrab(mc)
+        if (pressed && (!canGrab(mc)
                 || GLFW.glfwGetMouseButton(mc.getWindow().getWindow(),
-                        GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_PRESS) {
+                        GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_PRESS)) {
             stop(mc);
         }
     }
 
     private static void stop(Minecraft mc) {
         pressed = false;
+        GrabHudState.endHold();
         if (mc.getConnection() != null) {
             ModNetwork.CHANNEL.sendToServer(new PacketBlindRageInput(false));
         }

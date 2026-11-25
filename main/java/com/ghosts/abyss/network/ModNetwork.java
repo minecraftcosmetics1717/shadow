@@ -248,5 +248,9 @@ public class ModNetwork {
               PacketSyncMahitoForms::encode,
               PacketSyncMahitoForms::new,
               PacketSyncMahitoForms::handle);
+      CHANNEL.registerMessage(id++, PacketSyncGrabState.class,
+              PacketSyncGrabState::encode,
+              PacketSyncGrabState::new,
+              PacketSyncGrabState::handle);
    }
 }

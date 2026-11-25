@@ -1,5 +1,7 @@
 package com.ghosts.abyss.grab;
 
+import com.ghosts.abyss.network.ModNetwork;
+import com.ghosts.abyss.network.PacketSyncGrabState;
 import com.ghosts.abyss.technique.TechniqueCooldownManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
@@ -14,6 +16,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.PacketDistributor;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,10 +26,7 @@ import java.util.UUID;
 
 /**
  * One server-authoritative grab per player and one grabber per victim.
- *
- * Future abilities call tryStart() when their attack makes contact and
- * release() when the attack button is released. This class handles the
- * following, release finisher, time limit, and cooldown.
+ * All grab abilities share movement/throw/cooldown and grab-state sync.
  */
 @Mod.EventBusSubscriber(modid = "abyss", bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class GrabManager {
@@ -74,18 +74,17 @@ public final class GrabManager {
             return false;
         }
 
-        // The grab is validated by reach/contact and server-side eligibility
-        // above, not by hurt()'s return value. Some JC damage handlers can
-        // apply contact damage while returning false from the hurt call.
-        // Previously this resulted in damage but NO grab session/cooldown.
+        // Contact and reach determine the grab, not hurt()'s return value.
         ACTIVE.put(grabber.getUUID(), new Session(
                 target.getUUID(), grabber.serverLevel(),
                 grabber.serverLevel().getGameTime() + config.durationTicks(),
                 config));
         HELD_TARGETS.add(target.getUUID());
 
-        // Apply the move's contact damage separately. A blocked/reduced hit
-        // doesn't silently cancel the grab after contact was confirmed.
+        // Tell only the grabber's client: a target is now actually attached.
+        ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> grabber),
+                new PacketSyncGrabState(true));
+
         if (config.contactDamage() > 0.0F) {
             target.hurt(grabber.damageSources().mobAttack(grabber),
                     config.contactDamage());
@@ -93,18 +92,14 @@ public final class GrabManager {
         return true;
     }
 
-    /** Normal release: apply this move's configured finishing effect. */
+    /** Normal release: apply the configured finishing effect. */
     public static void release(ServerPlayer grabber) {
-        if (grabber != null) {
-            finish(grabber, true);
-        }
+        if (grabber != null) finish(grabber, true);
     }
 
-    /** Interruption: stop dragging without applying the finisher. */
+    /** Interruption: end the grab without applying the finisher. */
     public static void interrupt(ServerPlayer grabber) {
-        if (grabber != null) {
-            finish(grabber, false);
-        }
+        if (grabber != null) finish(grabber, false);
     }
 
     public static boolean isGrabbing(ServerPlayer grabber) {
@@ -143,8 +138,7 @@ public final class GrabManager {
             return;
         }
 
-        // Keep the victim a short distance behind the grabber. Check space
-        // first so grabbing doesn't force entities through solid blocks.
+        // Keep the victim just behind the grabber, without entering blocks.
         Vec3 horizontal = grabber.getLookAngle().multiply(1.0D, 0.0D, 1.0D);
         if (horizontal.lengthSqr() < 1.0E-4D) {
             horizontal = Vec3.directionFromRotation(0.0F, grabber.getYRot());
@@ -185,6 +179,10 @@ public final class GrabManager {
         HELD_TARGETS.remove(session.targetId());
         GrabConfig config = session.config();
 
+        // Reset the confirmed attachment state on the grabber's HUD.
+        ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> grabber),
+                new PacketSyncGrabState(false));
+
         Entity entity = session.level().getEntity(session.targetId());
         if (applyFinisher && grabber.isAlive()
                 && grabber.serverLevel() == session.level()
@@ -207,14 +205,11 @@ public final class GrabManager {
                 }
             }
 
-            // Notify other abilities AFTER the normal release finisher.
-            // Uro's Blind Rage needs no additional action; Mahito schedules
-            // its delayed soul damage using this reusable event.
+            // Preserve Soul Grasp's delayed soul-damage listener.
             MinecraftForge.EVENT_BUS.post(new GrabReleasedEvent(grabber, target, config));
         }
 
-        // Start cooldown after any successful grab, even if an interruption
-        // cancels the finisher (so dimension hops cannot bypass cooldown).
+        // A successful grab always starts cooldown, even when interrupted.
         if (config.skillId() >= 0 && config.cooldownTicks() > 0) {
             TechniqueCooldownManager.startCooldown(
                     grabber, config.skillId(), config.cooldownTicks());
