@@ -3,6 +3,7 @@ package com.ghosts.abyss.mixin;
 import com.ghosts.abyss.ability.AbilityScanHandler;
 import com.ghosts.abyss.ability.ScannedAbility;
 import com.ghosts.abyss.mahito.MahitoForms;
+import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,10 +32,17 @@ public final class MahitoAbilityScanMixin {
         int[] order = transformed ? TRUE_FORM : NORMAL;
         List<ScannedAbility> changed = new ArrayList<>();
 
+        boolean domainActive = player.hasEffect(
+                JujutsucraftModMobEffects.DOMAIN_EXPANSION.get()
+        );
+
         for (ScannedAbility ability : cir.getReturnValue()) {
             int slot = ability.select();
             if (indexOf(order, slot) < 0) continue;
             if (!transformed && (slot == 3 || slot == 4)) continue;
+            // Hide skills that don't apply to the current domain state.
+            if (slot == 20 && domainActive) continue;
+            if (slot == 21 && !domainActive) continue;
             if (slot == 15 && !unlocked) continue;
 
             boolean available = ability.available();

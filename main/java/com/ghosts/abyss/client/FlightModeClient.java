@@ -4,6 +4,7 @@ import com.ghosts.abyss.effect.ModEffects;
 import com.ghosts.abyss.flight.PoweredFlightSpeed;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketFlightToggle;
+import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Pose;
@@ -39,7 +40,9 @@ public final class FlightModeClient {
     /** Used by the client-only travel mixin. */
     public static boolean isPowered(LocalPlayer player) {
         return player != null && trackedPlayer == player && powered
-                && player.hasEffect(ModEffects.FLIGHT.get());
+                && player.hasEffect(ModEffects.FLIGHT.get())
+                && !player.hasEffect(JujutsucraftModMobEffects.DOMAIN_AMPLIFICATION.get())
+                && !player.hasEffect(JujutsucraftModMobEffects.UNSTABLE.get());
     }
 
     /** Same speed curve as the server; movement remains client-predicted. */
@@ -54,6 +57,8 @@ public final class FlightModeClient {
         return player.isAlive()
                 && !player.isSpectator()
                 && player.hasEffect(ModEffects.FLIGHT.get())
+                && !player.hasEffect(JujutsucraftModMobEffects.DOMAIN_AMPLIFICATION.get())
+                && !player.hasEffect(JujutsucraftModMobEffects.UNSTABLE.get())
                 && player.getAbilities().mayfly
                 && !player.isPassenger()
                 && !player.isInWaterOrBubble()

@@ -2,6 +2,7 @@ package com.ghosts.abyss.grab;
 
 import com.ghosts.abyss.soul.SoulAwareness;
 import com.ghosts.abyss.technique.TechniqueCooldownManager;
+import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -30,8 +31,8 @@ public final class SoulGraspHandler {
     private static final double THROW_POWER = 1.65D;
 
     private static final int SOUL_DELAY_TICKS = 20; // 1 second after release
-    // Same awareness-based formula as Abyss Idle Transfiguration, but 20%
-    // strength for a repeatable grab (full strength is often lethal).
+    // Preserve the existing Soul Grasp soul-damage multiplier.
+    // Domain Amplification suppresses the delayed soul hit entirely.
     private static final float SOUL_DAMAGE_MULTIPLIER = 1F;
 
     private static final GrabConfig SOUL_GRASP = new GrabConfig(
@@ -84,12 +85,20 @@ public final class SoulGraspHandler {
 
         // Resolve queued soul hits even when Soul Grasp is no longer selected.
         PendingSoulHit pending = PENDING.get(player.getUUID());
+        // DA suppresses the soul portion entirely, even while the hit waits.
+        if (pending != null && player.hasEffect(
+                JujutsucraftModMobEffects.DOMAIN_AMPLIFICATION.get())) {
+            PENDING.remove(player.getUUID());
+            pending = null;
+        }
         if (pending != null && player.serverLevel().getGameTime() >= pending.hitAtTick()) {
             PENDING.remove(player.getUUID()); // exactly one delayed hit
             if (player.isAlive() && player.serverLevel() == pending.level()) {
                 Entity entity = pending.level().getEntity(pending.targetId());
                 if (entity instanceof LivingEntity target && target.isAlive()
                         && target.level() == player.level()
+                        // Never allow the delayed bypass-damage to pierce Infinity.
+                        && !target.hasEffect(JujutsucraftModMobEffects.INFINITY_EFFECT.get())
                         && !(target instanceof Player targetPlayer
                              && (targetPlayer.isCreative() || targetPlayer.isSpectator()))) {
                     float damage = SoulAwareness.calculateDamage(player, target)
@@ -142,6 +151,12 @@ public final class SoulGraspHandler {
     public static void onGrabReleased(GrabReleasedEvent event) {
         if (event.config().skillId() != SKILL_ID) return;
         ServerPlayer grabber = event.grabber();
+        // If amplification was used at ANY point during the hold, the
+        // technique functions only as a physical grab and throw.
+        if (GrabManager.amplificationWasUsed(grabber)
+                || grabber.hasEffect(JujutsucraftModMobEffects.DOMAIN_AMPLIFICATION.get())) {
+            return;
+        }
         LivingEntity target = event.target();
         PENDING.put(grabber.getUUID(), new PendingSoulHit(
                 target.getUUID(), grabber.serverLevel(),

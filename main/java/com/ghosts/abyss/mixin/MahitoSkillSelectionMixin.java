@@ -1,10 +1,12 @@
 package com.ghosts.abyss.mixin;
 
 import com.ghosts.abyss.mahito.MahitoForms;
+import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
 import net.mcreator.jujutsucraft.procedures.TechniqueDecideProcedure;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.LevelAccessor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -29,8 +31,13 @@ public final class MahitoSkillSelectionMixin {
         int current = (int) Math.round(vars.PlayerSelectCurseTechnique);
         int[] order = MahitoForms.trueForm(entity) ? TRUE_FORM : NORMAL;
         if (vars.noChangeTechnique) {
-            if (isAllowed(entity, current, order)) decide(world, x, y, z, entity, current);
-            else TechniqueDecideProcedure.execute(entity, false, false, 0, 15, current, "-----");
+            if (isAllowed(entity, current, order)) {
+                decide(world, x, y, z, entity, current);
+            } else if (current == 20 && isAllowed(entity, 21, order)) {
+                decide(world, x, y, z, entity, 21);
+            } else {
+                decide(world, x, y, z, entity, 0);
+            }
             ci.cancel();
             return;
         }
@@ -56,9 +63,35 @@ public final class MahitoSkillSelectionMixin {
 
     private static boolean isAllowed(Entity entity, int slot, int[] order) {
         boolean inOrder = false;
-        for (int value : order) if (value == slot) { inOrder = true; break; }
+        for (int value : order) {
+            if (value == slot) {
+                inOrder = true;
+                break;
+            }
+        }
+
         if (!inOrder) return false;
-        if ((slot == 3 || slot == 4 || slot == 16) && !MahitoForms.trueForm(entity)) return false;
+
+        if ((slot == 3 || slot == 4 || slot == 16)
+                && !MahitoForms.trueForm(entity)) {
+            return false;
+        }
+
+        // Match Jujutsucraft's domain skill behavior.
+        if (slot == 20 || slot == 21) {
+            if (!(entity instanceof LivingEntity living)) return false;
+
+            boolean domainActive = living.hasEffect(
+                    JujutsucraftModMobEffects.DOMAIN_EXPANSION.get()
+            );
+
+            // Don't show Domain Expansion while already expanded.
+            if (slot == 20 && domainActive) return false;
+
+            // Don't show Cancel Domain without an active expansion.
+            if (slot == 21 && !domainActive) return false;
+        }
+
         return MahitoForms.unlocked(entity, slot);
     }
 

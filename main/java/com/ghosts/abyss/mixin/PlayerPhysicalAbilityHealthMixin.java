@@ -1,27 +1,18 @@
-
 package com.ghosts.abyss.mixin;
-
-import com.ghosts.abyss.grade.AbyssGradeManager;
 
 import net.mcreator.jujutsucraft.procedures.PlayerPhysicalAbilityProcedure;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(
-        value = PlayerPhysicalAbilityProcedure.class,
-        remap = false
-)
+/** Keep JC's other grade effects, but never its permanent Health Boost. */
+@Mixin(value = PlayerPhysicalAbilityProcedure.class, remap = false)
 public abstract class PlayerPhysicalAbilityHealthMixin {
 
-    // Block JC's permanent Health Boost
-// for players managed by Abyss.
-// Strength and Resistance are intentionally left unchanged.
     @Redirect(
             method = "execute(Lnet/minecraftforge/eventbus/api/Event;Lnet/minecraft/world/entity/Entity;)V",
             at = @At(
@@ -37,22 +28,15 @@ public abstract class PlayerPhysicalAbilityHealthMixin {
             CommandSourceStack source,
             String command
     ) {
-
-        if (source.getEntity() instanceof ServerPlayer player
-                && AbyssGradeManager.hasGrade(player)) {
-
-            if (command.startsWith(
-                    "effect give @s minecraft:health_boost "
-            )) {
-                return 1;
-            }
-
+        // No stored Abyss-grade check: every JC player uses the attribute
+        // health replacement, whether Ungraded or Special Grade.
+        if (source.getEntity() instanceof ServerPlayer
+                && command.startsWith("effect give @s minecraft:health_boost ")) {
+            return 1;
         }
-
         return commands.performPrefixedCommand(source, command);
     }
 
-    // Prevent JC's original Health Boost healing.
     @Redirect(
             method = "execute(Lnet/minecraftforge/eventbus/api/Event;Lnet/minecraft/world/entity/Entity;)V",
             at = @At(
@@ -67,12 +51,7 @@ public abstract class PlayerPhysicalAbilityHealthMixin {
             LivingEntity entity,
             float health
     ) {
-
-        if (entity instanceof ServerPlayer player
-                && AbyssGradeManager.hasGrade(player)) {
-            return;
-        }
-
+        if (entity instanceof ServerPlayer) return;
         entity.setHealth(health);
     }
 }

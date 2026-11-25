@@ -1,17 +1,14 @@
-
 package com.ghosts.abyss.event;
 
 import com.ghosts.abyss.effect.ModEffects;
-import net.minecraft.resources.ResourceLocation;
+import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.MobEffectEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.lang.reflect.Field;
 
@@ -28,47 +25,40 @@ public final class FlightEffectHandler {
         if (event.phase != TickEvent.Phase.END) return;
         if (!(event.player instanceof ServerPlayer player)) return;
 
-        MobEffect unstable = ForgeRegistries.MOB_EFFECTS.getValue(
-                new ResourceLocation("jujutsucraft", "unstable")
-        );
+        boolean blocked = player.hasEffect(
+                JujutsucraftModMobEffects.UNSTABLE.get())
+                || player.hasEffect(
+                JujutsucraftModMobEffects.DOMAIN_AMPLIFICATION.get());
 
         boolean isUro = isUroTechnique(player);
-        boolean hasUnstable =
-                unstable != null && player.hasEffect(unstable);
+        MobEffectInstance flight = player.getEffect(ModEffects.FLIGHT.get());
 
-        MobEffectInstance flight =
-                player.getEffect(ModEffects.FLIGHT.get());
-
-        if (isUro && !hasUnstable) {
-
-            // Only grant once, rather than resetting the duration.
-            if (flight == null) {
-                player.addEffect(new MobEffectInstance(
-                        ModEffects.FLIGHT.get(),
-                        PERMANENT_DURATION,
-                        0,
-                        false,  // Ambient
-                        false,  // Show particles
-                        false   // Show effect icon
-                ));
+        // Match existing Uro behavior: UNSTABLE or DA removes Uro's effect;
+        // it is granted again when both blockers are gone. For other sources
+        // of abyss:flight, keep the effect but temporarily revoke flight.
+        if (blocked) {
+            if (isUro && flight != null) {
+                player.removeEffect(ModEffects.FLIGHT.get());
             }
-
-        } else if (flight != null && hasUnstable && isUro) {
-
-            // Unstable disables Uro's flight.
-            player.removeEffect(ModEffects.FLIGHT.get());
+        } else if (isUro && flight == null) {
+            player.addEffect(new MobEffectInstance(
+                    ModEffects.FLIGHT.get(),
+                    PERMANENT_DURATION,
+                    0,
+                    false, // Ambient
+                    false, // Particles
+                    false  // Effect icon
+            ));
         }
 
-        boolean hasFlight = player.hasEffect(ModEffects.FLIGHT.get());
-
+        boolean hasFlight = !blocked && player.hasEffect(ModEffects.FLIGHT.get());
         if (hasFlight) {
             if (!player.getAbilities().mayfly) {
                 player.getAbilities().mayfly = true;
                 player.onUpdateAbilities();
             }
         } else if (!player.isCreative() && !player.isSpectator()) {
-            if (player.getAbilities().mayfly
-                    || player.getAbilities().flying) {
+            if (player.getAbilities().mayfly || player.getAbilities().flying) {
                 player.getAbilities().mayfly = false;
                 player.getAbilities().flying = false;
                 player.onUpdateAbilities();

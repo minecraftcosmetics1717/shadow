@@ -2,6 +2,7 @@ package com.ghosts.abyss.network;
 
 import com.ghosts.abyss.effect.ModEffects;
 import com.ghosts.abyss.flight.PoweredFlightSpeed;
+import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Pose;
@@ -66,6 +67,8 @@ public final class PacketFlightToggle {
         return player.isAlive()
                 && !player.isSpectator()
                 && player.hasEffect(ModEffects.FLIGHT.get())
+                && !player.hasEffect(JujutsucraftModMobEffects.DOMAIN_AMPLIFICATION.get())
+                && !player.hasEffect(JujutsucraftModMobEffects.UNSTABLE.get())
                 && player.getAbilities().mayfly
                 && !player.isPassenger()
                 && !player.isInWaterOrBubble()

@@ -3,6 +3,7 @@ package com.ghosts.abyss.grab;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketSyncGrabState;
 import com.ghosts.abyss.technique.TechniqueCooldownManager;
+import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -34,11 +35,29 @@ public final class GrabManager {
     private static final Map<UUID, Session> ACTIVE = new HashMap<>();
     private static final Set<UUID> HELD_TARGETS = new HashSet<>();
 
+    // Tracks DA throughout a grab, even if the effect is later turned off.
+    private static final Set<UUID> AMPLIFIED_SESSIONS = new HashSet<>();
+
     private static final double CONTACT_RANGE_SQR = 16.0D; // 4 blocks
     private static final double BREAK_RANGE_SQR = 64.0D;   // 8 blocks
     private static final double FOLLOW_DISTANCE = 1.25D;
 
     private GrabManager() {}
+
+    private static boolean hasAmplification(LivingEntity entity) {
+        return entity.hasEffect(JujutsucraftModMobEffects.DOMAIN_AMPLIFICATION.get());
+    }
+
+    /** Infinity must prevent physical contact unless the grabber uses DA. */
+    private static boolean blocksGrab(ServerPlayer grabber, LivingEntity target) {
+        return target.hasEffect(JujutsucraftModMobEffects.INFINITY_EFFECT.get())
+                && !hasAmplification(grabber);
+    }
+
+    /** Queried synchronously by Soul Grasp's release event. */
+    public static boolean amplificationWasUsed(ServerPlayer grabber) {
+        return grabber != null && AMPLIFIED_SESSIONS.contains(grabber.getUUID());
+    }
 
     private record Session(
             UUID targetId,
@@ -69,6 +88,8 @@ public final class GrabManager {
             return false;
         }
 
+        if (blocksGrab(grabber, target)) return false;
+
         if (config.skillId() >= 0 && TechniqueCooldownManager.isOnCooldown(
                 grabber, config.skillId())) {
             return false;
@@ -80,6 +101,9 @@ public final class GrabManager {
                 grabber.serverLevel().getGameTime() + config.durationTicks(),
                 config));
         HELD_TARGETS.add(target.getUUID());
+        if (hasAmplification(grabber)) {
+            AMPLIFIED_SESSIONS.add(grabber.getUUID());
+        }
 
         // Tell only the grabber's client: a target is now actually attached.
         ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> grabber),
@@ -119,6 +143,9 @@ public final class GrabManager {
 
         Session session = ACTIVE.get(grabber.getUUID());
         if (session == null) return;
+        if (hasAmplification(grabber)) {
+            AMPLIFIED_SESSIONS.add(grabber.getUUID());
+        }
 
         Entity entity = session.level().getEntity(session.targetId());
         if (!grabber.isAlive() || grabber.serverLevel() != session.level()
@@ -130,6 +157,12 @@ public final class GrabManager {
 
         if (grabber.serverLevel().getGameTime() >= session.endTick()) {
             finish(grabber, true);
+            return;
+        }
+
+        // Infinity activated mid-hold? Immediately detach unless DA bypasses it.
+        if (blocksGrab(grabber, target)) {
+            finish(grabber, false);
             return;
         }
 
@@ -184,6 +217,13 @@ public final class GrabManager {
                 new PacketSyncGrabState(false));
 
         Entity entity = session.level().getEntity(session.targetId());
+        // Recheck Infinity on release, including releases between server ticks.
+        if (entity instanceof LivingEntity target && blocksGrab(grabber, target)) {
+            applyFinisher = false;
+        }
+        if (hasAmplification(grabber)) {
+            AMPLIFIED_SESSIONS.add(grabber.getUUID());
+        }
         if (applyFinisher && grabber.isAlive()
                 && grabber.serverLevel() == session.level()
                 && entity instanceof LivingEntity target && target.isAlive()) {
@@ -214,5 +254,6 @@ public final class GrabManager {
             TechniqueCooldownManager.startCooldown(
                     grabber, config.skillId(), config.cooldownTicks());
         }
+        AMPLIFIED_SESSIONS.remove(grabber.getUUID());
     }
 }
