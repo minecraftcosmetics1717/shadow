@@ -10,15 +10,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Client-side prediction for powered fall-flying. This mixin stays in the
- * "client" list in abyss.mixins.json. The server's own movement packet
- * handler validates player positions; don't move the ServerPlayer twice.
- */
+/** Client-predicted constant-speed prone flight, with a shared boost curve. */
 @Mixin(Player.class)
 public abstract class FlightTravelMixin {
-
-    private static final double FLIGHT_SPEED = 0.65D;
 
     @Inject(method = "travel(Lnet/minecraft/world/phys/Vec3;)V",
             at = @At("HEAD"), cancellable = true)
@@ -27,11 +21,10 @@ public abstract class FlightTravelMixin {
         if (!(player instanceof LocalPlayer local)) return;
         if (!FlightModeClient.isPowered(local)) return;
 
-        // No Elytra glide acceleration, gravity, or momentum. Sprinting
-        // forward steers movement in the exact direction the player looks.
         Vec3 motion = Vec3.ZERO;
         if (local.isSprinting() && local.input.forwardImpulse > 0.0F) {
-            motion = local.getLookAngle().normalize().scale(FLIGHT_SPEED);
+            motion = local.getLookAngle().normalize()
+                    .scale(FlightModeClient.currentSpeed(local));
         }
 
         local.move(MoverType.SELF, motion);

@@ -1,6 +1,7 @@
 package com.ghosts.abyss.grab;
 
 import com.ghosts.abyss.technique.TechniqueCooldownManager;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -205,6 +206,11 @@ public final class GrabManager {
                     victimPlayer.connection.send(new ClientboundSetEntityMotionPacket(target));
                 }
             }
+
+            // Notify other abilities AFTER the normal release finisher.
+            // Uro's Blind Rage needs no additional action; Mahito schedules
+            // its delayed soul damage using this reusable event.
+            MinecraftForge.EVENT_BUS.post(new GrabReleasedEvent(grabber, target, config));
         }
 
         // Start cooldown after any successful grab, even if an interruption

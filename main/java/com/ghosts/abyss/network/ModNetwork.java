@@ -244,5 +244,9 @@ public class ModNetwork {
               PacketBlindRageInput::encode,
               PacketBlindRageInput::new,
               PacketBlindRageInput::handle);
+      CHANNEL.registerMessage(id++, PacketSyncMahitoForms.class,
+              PacketSyncMahitoForms::encode,
+              PacketSyncMahitoForms::new,
+              PacketSyncMahitoForms::handle);
    }
 }

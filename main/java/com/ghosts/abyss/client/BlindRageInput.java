@@ -11,7 +11,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
-/** Left mouse is reserved for Blind Rage while Uro's slot 9 is selected. */
+/** Existing left-click grab input, shared by Uro and Mahito. */
 @Mod.EventBusSubscriber(modid = "abyss", bus = Mod.EventBusSubscriber.Bus.FORGE,
         value = Dist.CLIENT)
 public final class BlindRageInput {
@@ -25,7 +25,7 @@ public final class BlindRageInput {
         Minecraft mc = Minecraft.getInstance();
 
         if (event.getAction() == GLFW.GLFW_PRESS && canGrab(mc)) {
-            // Prevent ordinary punching/block breaking while using this move.
+            // Prevent ordinary punching/block breaking while either grab is armed.
             event.setCanceled(true);
             if (!pressed) {
                 pressed = true;
@@ -43,7 +43,7 @@ public final class BlindRageInput {
         Minecraft mc = Minecraft.getInstance();
         if (!canGrab(mc)
                 || GLFW.glfwGetMouseButton(mc.getWindow().getWindow(),
-                GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_PRESS) {
+                        GLFW.GLFW_MOUSE_BUTTON_LEFT) != GLFW.GLFW_PRESS) {
             stop(mc);
         }
     }
@@ -63,7 +63,10 @@ public final class BlindRageInput {
         if (vars == null) return false;
         double ct = vars.SecondTechnique
                 ? vars.PlayerCurseTechnique2 : vars.PlayerCurseTechnique;
-        return (int) Math.round(ct) == 38
-                && (int) Math.round(vars.PlayerSelectCurseTechnique) == 9;
+        int technique = (int) Math.round(ct);
+        int selected = (int) Math.round(vars.PlayerSelectCurseTechnique);
+        // Shared input for Uro's Blind Rage and Mahito's Soul Grasp.
+        return (technique == 38 && selected == 9)
+                || (technique == 15 && selected == 11);
     }
 }

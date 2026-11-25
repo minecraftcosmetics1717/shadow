@@ -2,6 +2,7 @@
 package com.ghosts.abyss.blackflash;
 
 import com.ghosts.abyss.AbyssGamerules;
+import com.ghosts.abyss.mahito.MahitoForms;
 import net.mcreator.jujutsucraft.init.JujutsucraftModEntities;
 import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
@@ -353,6 +354,7 @@ public final class BlackFlashTiming {
 
         attempt.chain = chaining ? attempt.chain + 1 : 1;
         attempt.lastSuccessTick = now;
+        MahitoForms.onBlackFlashSuccess(player, attempt.chain);
     }
 
     @SubscribeEvent

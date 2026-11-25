@@ -78,7 +78,7 @@ public final class TechniqueCooldownManager {
             // ===== Uro Takako =====
             3809, 3810,
             // ===== Mahito =====
-            1503, 1504, 1505, 1506, 1507, 1508, 1509, 1510, 1515, 1516,
+            1503, 1504, 1505, 1506, 1507, 1508, 1509, 1510, 1511, 1515, 1516,
 
             // ===== Cursed Speech =====
             304, 305, 306, 307, 308, 309,
@@ -162,6 +162,7 @@ public final class TechniqueCooldownManager {
                         // Mahito's physical attacks
                         || skillId == 1503
                         || skillId == 1504
+                        || skillId == 1511
                         || skillId == 1516
                         || skillId == 2904
 

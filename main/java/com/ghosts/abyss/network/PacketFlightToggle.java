@@ -1,6 +1,7 @@
 package com.ghosts.abyss.network;
 
 import com.ghosts.abyss.effect.ModEffects;
+import com.ghosts.abyss.flight.PoweredFlightSpeed;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Pose;
@@ -14,31 +15,39 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-/** Server-authoritative permission and pose for abyss:flight-powered gliding. */
+/** Server-side permission/pose and boost timing for any abyss:flight holder. */
 @Mod.EventBusSubscriber(modid = "abyss", bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class PacketFlightToggle {
-
-    // Preserve the existing NBT keys so updating the mod is straightforward.
     private static final String ACTIVE = "abyss_powered_elytra_flight";
     private static final String LAST_INPUT = "abyss_powered_elytra_last_input";
     private static final String WANTS_POWER = "abyss_powered_elytra_requested";
+    private static final String BOOST_STARTED = "abyss_powered_elytra_boost_started";
+    private static final String NEXT_BOOST = "abyss_powered_elytra_next_boost";
 
     private static final int TIMEOUT_TICKS = 40;
-    private static final double FLIGHT_SPEED = 0.65D;
 
     private final boolean enabled;
+    private final boolean boostPress;
 
+    /** Retain compatibility with existing Java callers. */
     public PacketFlightToggle(boolean enabled) {
+        this(enabled, false);
+    }
+
+    public PacketFlightToggle(boolean enabled, boolean boostPress) {
         this.enabled = enabled;
+        this.boostPress = boostPress;
     }
 
     public PacketFlightToggle(FriendlyByteBuf buf) {
         this.enabled = buf.readBoolean();
+        this.boostPress = buf.readBoolean();
     }
 
-    // Keep the existing registration signatures in ModNetwork.java.
+    // No ModNetwork registration changes are required.
     public static void encode(PacketFlightToggle message, FriendlyByteBuf buf) {
         buf.writeBoolean(message.enabled);
+        buf.writeBoolean(message.boostPress);
     }
 
     public static void handle(PacketFlightToggle message,
@@ -47,7 +56,7 @@ public final class PacketFlightToggle {
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
             if (player != null) {
-                setMode(player, message.enabled);
+                setMode(player, message.enabled, message.boostPress);
             }
         });
         context.setPacketHandled(true);
@@ -69,7 +78,6 @@ public final class PacketFlightToggle {
         return player.level().noCollision(player, standingBox);
     }
 
-    /** Does not depend on Uro; any holder of abyss:flight can use the mode. */
     public static boolean isActive(ServerPlayer player) {
         return player != null && player.getPersistentData().getBoolean(ACTIVE);
     }
@@ -77,8 +85,6 @@ public final class PacketFlightToggle {
     private static void start(ServerPlayer player) {
         if (isActive(player)) return;
         player.getPersistentData().putBoolean(ACTIVE, true);
-
-        // This should only change on entry, not on each heartbeat/tick.
         if (player.getAbilities().flying) {
             player.getAbilities().flying = false;
             player.onUpdateAbilities();
@@ -95,6 +101,8 @@ public final class PacketFlightToggle {
         player.getPersistentData().remove(ACTIVE);
         player.getPersistentData().remove(WANTS_POWER);
         player.getPersistentData().remove(LAST_INPUT);
+        player.getPersistentData().remove(BOOST_STARTED);
+        // Preserve NEXT_BOOST across quick exit/re-entry to avoid bypasses.
 
         if (player.isFallFlying()) {
             player.stopFallFlying();
@@ -108,30 +116,42 @@ public final class PacketFlightToggle {
     }
 
     public static void setMode(ServerPlayer player, boolean enabled) {
+        setMode(player, enabled, false);
+    }
+
+    public static void setMode(ServerPlayer player, boolean enabled,
+                               boolean boostPress) {
         if (enabled && !eligible(player)) {
             if (isActive(player)) stop(player, false);
             return;
         }
 
         var data = player.getPersistentData();
+        long now = player.level().getGameTime();
         data.putBoolean(WANTS_POWER, enabled);
-        data.putLong(LAST_INPUT, player.level().getGameTime());
+        data.putLong(LAST_INPUT, now);
 
         if (!enabled) {
             if (isActive(player) && canStand(player)) {
                 stop(player, true);
             }
-            // Otherwise retain the low hitbox until there is headroom.
-            return;
+            return; // Stay low if the standing hitbox would intersect blocks.
         }
 
-        // The client enters while flying in air. Once active, allow brushing
-        // a tunnel floor to keep the low hitbox as long as it cannot stand.
         if (player.onGround() && (!isActive(player) || canStand(player))) {
             if (isActive(player)) stop(player, false);
             return;
         }
         start(player);
+
+        // A one-shot Space press, validated by the server. Heartbeats never
+        // restart the speed curve, and rapid presses cannot extend the boost.
+        if (boostPress && isActive(player)
+                && (!data.contains(NEXT_BOOST) || now >= data.getLong(NEXT_BOOST))) {
+            data.putLong(BOOST_STARTED, now);
+            data.putLong(NEXT_BOOST,
+                    now + PoweredFlightSpeed.RECHARGE_TICKS);
+        }
     }
 
     @SubscribeEvent
@@ -165,16 +185,20 @@ public final class PacketFlightToggle {
             return;
         }
 
-        // Start only if a different system actually cleared the pose.
         if (!player.isFallFlying()) {
             player.startFallFlying();
         }
 
-        // The server uses client movement packets for position. Don't move
-        // or teleport the ServerPlayer a second time here! Track matching
-        // expected velocity for vanilla movement validation instead.
+        double speed = PoweredFlightSpeed.NORMAL;
+        if (data.contains(BOOST_STARTED)) {
+            speed = PoweredFlightSpeed.atElapsedTicks(
+                    now - data.getLong(BOOST_STARTED));
+        }
+
+        // Movement itself remains client-predicted and server-validated;
+        // do not double-teleport the ServerPlayer on each tick.
         Vec3 expected = requested && player.isSprinting()
-                ? player.getLookAngle().normalize().scale(FLIGHT_SPEED)
+                ? player.getLookAngle().normalize().scale(speed)
                 : Vec3.ZERO;
         player.setDeltaMovement(expected);
         player.fallDistance = 0.0F;
@@ -183,10 +207,11 @@ public final class PacketFlightToggle {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            // Do not leave active mode stored across sessions.
             if (isActive(player)) stop(player, false);
             player.getPersistentData().remove(WANTS_POWER);
             player.getPersistentData().remove(LAST_INPUT);
+            player.getPersistentData().remove(BOOST_STARTED);
+            player.getPersistentData().remove(NEXT_BOOST);
         }
     }
 

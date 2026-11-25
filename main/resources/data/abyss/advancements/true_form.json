@@ -1,0 +1,15 @@
+{
+  "parent": "jujutsucraft:skill_mahito",
+  "display": {
+    "icon": {"item": "jujutsucraft:armor_instant_spirit_bodyof_distorted_killing_chestplate"},
+    "title": {"translate": "advancements.abyss.true_form.title"},
+    "description": {"translate": "advancements.abyss.true_form.description"},
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "two_consecutive_black_flashes": {"trigger": "minecraft:impossible"}
+  }
+}

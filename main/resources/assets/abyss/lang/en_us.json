@@ -175,5 +175,7 @@
   "item.abyss.blindfold": "Blindfold",
   "item.abyss.blindfold_bandages": "Bandages",
   "item.abyss.sunglasses": "Sunglasses",
-  "key.abyss.rct_burnout": "[Abyss] Reverse Cursed Technique Burnout"
+  "key.abyss.rct_burnout": "[Abyss] Reverse Cursed Technique Burnout",
+  "advancements.abyss.true_form.title": "True Form",
+  "advancements.abyss.true_form.description": "Land two consecutive Black Flashes as Mahito"
 }

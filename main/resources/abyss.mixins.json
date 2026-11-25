@@ -129,7 +129,14 @@
     "AbyssFlameDustMixin",
     "KenjakuDomainExecuteMixin",
     "AIWombProfusionMixin",
-    "IndividualCooldownGateMixin"
+    "IndividualCooldownGateMixin",
+    "MahitoSoulGraspDisplayMixin",
+    "MahitoSoulGraspExecuteMixin",
+    "MahitoSkillSelectionMixin",
+    "MahitoToggleKeyMixin",
+    "MahitoFormsExecuteMixin",
+    "MahitoBladeAttacksMixin",
+    "MahitoAbilityScanMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

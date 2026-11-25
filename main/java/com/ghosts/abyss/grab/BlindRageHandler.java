@@ -23,7 +23,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = "abyss", bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class BlindRageHandler {
     public static final int SKILL_ID = 3809;
-    private static final int DURATION_TICKS = 80; // 4 seconds
+    private static final int DURATION_TICKS = 40; // 2 seconds
     private static final int COOLDOWN_TICKS = 200; // 10 seconds
 
     // First balancing values. Tune these without changing GrabManager.

@@ -1,6 +1,7 @@
 package com.ghosts.abyss.client;
 
 import com.ghosts.abyss.effect.ModEffects;
+import com.ghosts.abyss.flight.PoweredFlightSpeed;
 import com.ghosts.abyss.network.ModNetwork;
 import com.ghosts.abyss.network.PacketFlightToggle;
 import net.minecraft.client.Minecraft;
@@ -14,12 +15,10 @@ import net.minecraftforge.fml.common.Mod;
 
 /**
  * Predicted client state for Abyss's powered, one-block-high flight.
- * A technique ID is intentionally NOT checked: the abyss:flight effect is
- * the only power requirement, so other characters can use this later.
+ * Any player with abyss:flight can enter this mode.
  */
 @Mod.EventBusSubscriber(modid = "abyss", value = Dist.CLIENT)
 public final class FlightModeClient {
-    // Allow brief sprint/input changes without flickering between poses.
     private static final int EXIT_GRACE_TICKS = 4;
     private static final int HEARTBEAT_TICKS = 8;
 
@@ -29,12 +28,26 @@ public final class FlightModeClient {
     private static int exitTicks;
     private static int heartbeatTicks;
 
+    // A Space key press during prone flight triggers one boost.
+    private static boolean lastJumpDown;
+    private static long clientTicks;
+    private static long boostStartedAt = -1L;
+    private static long nextBoostAllowedAt;
+
     private FlightModeClient() {}
 
-    /** Used only by the client-side travel mixin. */
+    /** Used by the client-only travel mixin. */
     public static boolean isPowered(LocalPlayer player) {
         return player != null && trackedPlayer == player && powered
                 && player.hasEffect(ModEffects.FLIGHT.get());
+    }
+
+    /** Same speed curve as the server; movement remains client-predicted. */
+    public static double currentSpeed(LocalPlayer player) {
+        if (!isPowered(player) || boostStartedAt < 0L) {
+            return PoweredFlightSpeed.NORMAL;
+        }
+        return PoweredFlightSpeed.atElapsedTicks(clientTicks - boostStartedAt);
     }
 
     private static boolean eligible(LocalPlayer player) {
@@ -57,9 +70,9 @@ public final class FlightModeClient {
         if (powered) return;
         powered = true;
         exitTicks = 0;
+        boostStartedAt = -1L;
 
-        // Predict the transition immediately. The server receives the same
-        // request and maintains the synced fall-flying flag for other players.
+        // Predict this once; the server independently sets the synced pose.
         player.getAbilities().flying = false;
         if (!player.isFallFlying()) {
             player.startFallFlying();
@@ -71,10 +84,10 @@ public final class FlightModeClient {
         if (!powered) return;
         powered = false;
         exitTicks = 0;
+        boostStartedAt = -1L;
         if (player.isFallFlying()) {
             player.stopFallFlying();
         }
-        // Don't force an upright hitbox when there is no headroom.
         if (restoreCreativeFlight && eligible(player) && canStand(player)
                 && !player.onGround()) {
             player.getAbilities().flying = true;
@@ -82,10 +95,12 @@ public final class FlightModeClient {
         player.fallDistance = 0.0F;
     }
 
-    private static void sendRequest(boolean desired) {
+    private static void sendRequest(boolean desired, boolean boostPress) {
         heartbeatTicks++;
-        if (desired != lastSent || heartbeatTicks >= HEARTBEAT_TICKS) {
-            ModNetwork.CHANNEL.sendToServer(new PacketFlightToggle(desired));
+        if (desired != lastSent || boostPress
+                || heartbeatTicks >= HEARTBEAT_TICKS) {
+            ModNetwork.CHANNEL.sendToServer(
+                    new PacketFlightToggle(desired, boostPress));
             lastSent = desired;
             heartbeatTicks = 0;
         }
@@ -104,6 +119,10 @@ public final class FlightModeClient {
             lastSent = false;
             exitTicks = 0;
             heartbeatTicks = 0;
+            lastJumpDown = false;
+            clientTicks = 0L;
+            boostStartedAt = -1L;
+            nextBoostAllowedAt = 0L;
             return;
         }
 
@@ -112,9 +131,17 @@ public final class FlightModeClient {
             powered = false;
             lastSent = false;
             exitTicks = 0;
-            // Force an immediate state-sync on player/world changes.
             heartbeatTicks = HEARTBEAT_TICKS;
+            lastJumpDown = mc.options.keyJump.isDown();
+            clientTicks = 0L;
+            boostStartedAt = -1L;
+            nextBoostAllowedAt = 0L;
         }
+
+        clientTicks++;
+        boolean jumpDown = mc.screen == null && mc.options.keyJump.isDown();
+        boolean jumpPressed = jumpDown && !lastJumpDown;
+        lastJumpDown = jumpDown;
 
         boolean allowed = eligible(player);
         boolean standingRoom = canStand(player);
@@ -123,43 +150,44 @@ public final class FlightModeClient {
                 && player.isSprinting()
                 && player.input.forwardImpulse > 0.0F;
 
-        // Keep the input state independent of the creative-flight flag:
-        // that flag becomes false when we START fall-flying.
         boolean wantsPower = allowed && sprintForward && canStayProne
                 && (powered || player.isFallFlying()
                 || player.getAbilities().flying);
 
+        // A press that ENTERS prone flight does not also trigger a boost.
+        boolean wasPowered = powered;
         if (!powered) {
-            // Only enter from actual airborne creative-style flight.
             if (wantsPower && !player.onGround()) {
                 enter(player);
             }
         } else if (!allowed || (player.onGround() && standingRoom)) {
-            // Normal landing or effect removal.
             leave(player, false);
         } else if (wantsPower) {
             exitTicks = 0;
         } else if (!standingRoom) {
-            // Hold the prone hitbox inside 1-block tunnels, even if sprint
-            // is released. The server makes the same clearance check.
-            exitTicks = 0;
+            exitTicks = 0; // Remain prone until the space is tall enough.
         } else if (++exitTicks >= EXIT_GRACE_TICKS) {
             leave(player, true);
         }
 
+        boolean boostPress = false;
+        if (wasPowered && powered && allowed && sprintForward
+                && jumpPressed && clientTicks >= nextBoostAllowedAt) {
+            boostStartedAt = clientTicks;
+            nextBoostAllowedAt = clientTicks + PoweredFlightSpeed.RECHARGE_TICKS;
+            boostPress = true;
+        }
+
         if (powered) {
-            // Usually this flag is already set. Recover gracefully if some
-            // other movement code cleared it during a transition.
             if (!player.isFallFlying()) {
                 player.startFallFlying();
             }
             player.fallDistance = 0.0F;
         }
 
-        // During the exit grace period keep the server in powered mode.
-        // In a cramped tunnel send false but remain prone until space opens.
+        // Retain the previous low-tunnel and pose-exit synchronization rules.
         boolean requestPowered = powered && allowed
                 && (wantsPower || (standingRoom && exitTicks > 0));
-        sendRequest(requestPowered);
+        sendRequest(requestPowered, boostPress);
     }
 }

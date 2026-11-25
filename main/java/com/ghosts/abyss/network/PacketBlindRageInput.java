@@ -1,13 +1,14 @@
 package com.ghosts.abyss.network;
 
 import com.ghosts.abyss.grab.BlindRageHandler;
+import com.ghosts.abyss.grab.SoulGraspHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-/** Only transmits whether the attack button is held. Never trusts client targets. */
+/** Existing grab-input packet; forwards hold/release to both abilities. */
 public final class PacketBlindRageInput {
     private final boolean holding;
 
@@ -27,7 +28,12 @@ public final class PacketBlindRageInput {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
-            if (player != null) BlindRageHandler.setHolding(player, holding);
+            if (player != null) {
+                // Each handler checks its own selected technique. A release
+                // resets both, even if the player changed skill mid-grab.
+                BlindRageHandler.setHolding(player, holding);
+                SoulGraspHandler.setHolding(player, holding);
+            }
         });
         context.setPacketHandled(true);
     }
