@@ -137,7 +137,9 @@
     "MahitoAbilityScanMixin",
     "JudgemanDecorationMixin",
     "HigurumaDomainExecuteMixin",
-    "HigurumaWitnessStandMixin"
+    "HigurumaWitnessStandMixin",
+    "HakariCardAiMixin",
+    "HakariNativeGambleMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

@@ -59,8 +59,7 @@ public final class PiercingBloodBeam {
 
     private static float calculateScaledDamage(
             ServerPlayer player,
-            float baseDamage
-    ) {
+            float baseDamage) {
         var data = player.getPersistentData();
 
         // Save the attack data used by Jujutsucraft.
@@ -90,8 +89,7 @@ public final class PiercingBloodBeam {
 
             return (float) Math.max(
                     0.0D,
-                    data.getDouble("Damage")
-            );
+                    data.getDouble("Damage"));
 
         } finally {
 
@@ -166,8 +164,7 @@ public final class PiercingBloodBeam {
 
         DamageState state = DAMAGE_STATES.computeIfAbsent(
                 ownerId,
-                id -> new DamageState()
-        );
+                id -> new DamageState());
 
         // =========================================
         // EXISTING BEAM RAY
@@ -181,8 +178,7 @@ public final class PiercingBloodBeam {
                 .add(0.0D, -0.28D, 0.0D);
 
         Vec3 desiredEnd = eye.add(
-                direction.scale(MAX_RANGE)
-        );
+                direction.scale(MAX_RANGE));
 
         BlockHitResult aimHit = level.clip(
                 new ClipContext(
@@ -190,9 +186,7 @@ public final class PiercingBloodBeam {
                         desiredEnd,
                         ClipContext.Block.COLLIDER,
                         ClipContext.Fluid.NONE,
-                        player
-                )
-        );
+                        player));
 
         Vec3 aimedEnd =
                 aimHit.getType() == HitResult.Type.MISS
@@ -205,9 +199,7 @@ public final class PiercingBloodBeam {
                         aimedEnd,
                         ClipContext.Block.COLLIDER,
                         ClipContext.Fluid.NONE,
-                        player
-                )
-        );
+                        player));
 
         Vec3 end =
                 beamHit.getType() == HitResult.Type.MISS
@@ -222,8 +214,7 @@ public final class PiercingBloodBeam {
 
         visibleLength = Math.max(
                 0.0D,
-                Math.min(MAX_RANGE, visibleLength)
-        );
+                Math.min(MAX_RANGE, visibleLength));
 
         beam.setBeamLength((float) visibleLength);
 
@@ -236,7 +227,8 @@ public final class PiercingBloodBeam {
                         || aimHit.getType() == HitResult.Type.BLOCK;
 
         if (hitBlock && player.tickCount % 2 == 0) {
-            spawnImpactParticles(level, end, direction);
+            spawnImpactParticles(
+                    level, end, direction, beam.isWaterVariant());
         }
 
         // =========================================
@@ -253,8 +245,7 @@ public final class PiercingBloodBeam {
                 start,
                 end,
                 state,
-                initialWindow
-        );
+                initialWindow);
 
         state.ticksActive++;
     }
@@ -268,8 +259,7 @@ public final class PiercingBloodBeam {
             Vec3 start,
             Vec3 end,
             DamageState state,
-            boolean initialWindow
-    ) {
+            boolean initialWindow) {
 
         if (!(player.level() instanceof ServerLevel level)) {
             return;
@@ -283,8 +273,7 @@ public final class PiercingBloodBeam {
                 searchBox,
                 entity -> entity.isAlive()
                         && entity != player
-                        && !entity.isSpectator()
-        )) {
+                        && !entity.isSpectator())) {
 
             AABB hitbox = target.getBoundingBox()
                     .inflate(HIT_RADIUS);
@@ -312,8 +301,7 @@ public final class PiercingBloodBeam {
 
                 boolean damaged = target.hurt(
                         level.damageSources().magic(),
-                        calculateScaledDamage(player, INITIAL_DAMAGE)
-                );
+                        calculateScaledDamage(player, INITIAL_DAMAGE));
 
                 if (damaged) {
 
@@ -321,8 +309,7 @@ public final class PiercingBloodBeam {
 
                     state.lastHitTicks.put(
                             targetId,
-                            state.ticksActive
-                    );
+                            state.ticksActive);
                 }
 
                 continue;
@@ -346,15 +333,13 @@ public final class PiercingBloodBeam {
 
             boolean damaged = target.hurt(
                     level.damageSources().magic(),
-                    calculateScaledDamage(player, SUSTAINED_DAMAGE)
-            );
+                    calculateScaledDamage(player, SUSTAINED_DAMAGE));
 
             if (damaged) {
 
                 state.lastHitTicks.put(
                         targetId,
-                        state.ticksActive
-                );
+                        state.ticksActive);
             }
         }
     }
@@ -366,16 +351,16 @@ public final class PiercingBloodBeam {
     private static void spawnImpactParticles(
             ServerLevel level,
             Vec3 impact,
-            Vec3 direction
-    ) {
-
-        ParticleOptions crimson = new DustParticleOptions(
-                new Vector3f(0.47F, 0.0F, 0.05F),
-                1.0F
-        );
+            Vec3 direction,
+            boolean water) {
+        ParticleOptions primary = new DustParticleOptions(
+                water
+                        ? new Vector3f(0.25F, 0.65F, 1.0F)
+                        : new Vector3f(0.47F, 0.0F, 0.05F),
+                1.0F);
 
         level.sendParticles(
-                crimson,
+                primary,
                 impact.x,
                 impact.y,
                 impact.z,
@@ -383,16 +368,16 @@ public final class PiercingBloodBeam {
                 0.10D,
                 0.10D,
                 0.10D,
-                0.015D
-        );
+                0.015D);
 
-        ParticleOptions brightRed = new DustParticleOptions(
-                new Vector3f(0.85F, 0.08F, 0.12F),
-                0.7F
-        );
+        ParticleOptions secondary = new DustParticleOptions(
+                water
+                        ? new Vector3f(0.70F, 0.90F, 1.0F)
+                        : new Vector3f(0.85F, 0.08F, 0.12F),
+                0.7F);
 
         level.sendParticles(
-                brightRed,
+                secondary,
                 impact.x,
                 impact.y,
                 impact.z,
@@ -400,8 +385,7 @@ public final class PiercingBloodBeam {
                 0.035D,
                 0.035D,
                 0.035D,
-                0.005D
-        );
+                0.005D);
     }
 
     // =========================================

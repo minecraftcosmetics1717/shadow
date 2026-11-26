@@ -29,9 +29,7 @@ public final class BlackFlashFocusCommands {
                             player.sendSystemMessage(
                                     Component.literal(
                                             "§dBlack Flash Focus: §f"
-                                                    + focus + "/100"
-                                    )
-                            );
+                                                    + focus + "/100"));
 
                             return 1;
                         })
@@ -51,22 +49,17 @@ public final class BlackFlashFocusCommands {
                                                     int amount =
                                                             IntegerArgumentType.getInteger(
                                                                     context,
-                                                                    "amount"
-                                                            );
+                                                                    "amount");
 
                                                     BlackFlashFocus.set(player, amount);
 
                                                     player.sendSystemMessage(
                                                             Component.literal(
                                                                     "§aBlack Flash Focus set to "
-                                                                            + amount + "/100"
-                                                            )
-                                                    );
+                                                                            + amount + "/100"));
 
                                                     return 1;
-                                                })
-                                )
-                        )
+                                                })))
 
                         // /blackflashfocus reset
                         .then(Commands.literal("reset")
@@ -80,13 +73,9 @@ public final class BlackFlashFocusCommands {
 
                                     player.sendSystemMessage(
                                             Component.literal(
-                                                    "§cBlack Flash Focus reset."
-                                            )
-                                    );
+                                                    "§cBlack Flash Focus reset."));
 
                                     return 1;
-                                })
-                        )
-        );
+                                })));
     }
 }

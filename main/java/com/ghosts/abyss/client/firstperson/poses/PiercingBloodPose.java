@@ -21,8 +21,7 @@ public final class PiercingBloodPose {
             int light,
             AbstractClientPlayer player,
             PlayerRenderer renderer,
-            float progress
-    ) {
+            float progress) {
         float t = Math.max(0.0F, Math.min(1.0F, progress));
 
         // Smooth ease-out: fast at first, slower near the end.
@@ -38,8 +37,7 @@ public final class PiercingBloodPose {
         pose.translate(
                 -0.18F,
                 -0.50F + riseOffset,
-                -0.25F
-        );
+                -0.25F);
 
         // Keep the exact final rotations.
         pose.mulPose(Axis.XP.rotationDegrees(-85.0F));
@@ -47,8 +45,7 @@ public final class PiercingBloodPose {
         pose.mulPose(Axis.ZP.rotationDegrees(-40.0F));
 
         renderer.renderRightHand(
-                pose, buffers, light, player
-        );
+                pose, buffers, light, player);
 
         pose.popPose();
 
@@ -58,8 +55,7 @@ public final class PiercingBloodPose {
         pose.translate(
                 0.18F,
                 -0.50F + riseOffset,
-                -0.25F
-        );
+                -0.25F);
 
         // Keep the exact final rotations.
         pose.mulPose(Axis.XP.rotationDegrees(-85.0F));
@@ -67,8 +63,7 @@ public final class PiercingBloodPose {
         pose.mulPose(Axis.ZP.rotationDegrees(40.0F));
 
         renderer.renderLeftHand(
-                pose, buffers, light, player
-        );
+                pose, buffers, light, player);
 
         pose.popPose();
     }

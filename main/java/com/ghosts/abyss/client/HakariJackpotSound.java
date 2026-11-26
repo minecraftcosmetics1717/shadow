@@ -20,13 +20,11 @@ public class HakariJackpotSound
 
     public HakariJackpotSound(
             LivingEntity owner,
-            SoundEvent sound
-    ) {
+            SoundEvent sound) {
         super(
                 sound,
                 SoundSource.PLAYERS,
-                RandomSource.create()
-        );
+                RandomSource.create());
 
         this.ownerId = owner.getUUID();
 
@@ -55,8 +53,7 @@ public class HakariJackpotSound
 
         this.volume = (float) Math.max(
                 0.0,
-                1.0 - distance / MAX_DISTANCE
-        );
+                1.0 - distance / MAX_DISTANCE);
     }
 
     @Override
@@ -73,8 +70,7 @@ public class HakariJackpotSound
         for (LivingEntity entity :
                 mc.level.getEntitiesOfClass(
                         LivingEntity.class,
-                        mc.player.getBoundingBox().inflate(82.0)
-                )) {
+                        mc.player.getBoundingBox().inflate(82.0))) {
 
             if (entity.getUUID().equals(ownerId)) {
                 owner = entity;
@@ -103,8 +99,7 @@ public class HakariJackpotSound
         // Linear fade from 100% to 0% over 80 blocks.
         double fade = Math.max(
                 0.0,
-                1.0 - distance / MAX_DISTANCE
-        );
+                1.0 - distance / MAX_DISTANCE);
 
         this.volume = (float) fade;
 

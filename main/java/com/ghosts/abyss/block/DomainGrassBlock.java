@@ -23,8 +23,7 @@ public class DomainGrassBlock extends DomainBlock {
 
     @Override
     public void initializeClient(
-            Consumer<IClientBlockExtensions> consumer
-    ) {
+            Consumer<IClientBlockExtensions> consumer) {
         consumer.accept(new IClientBlockExtensions() {
 
             @Override
@@ -43,8 +42,7 @@ public class DomainGrassBlock extends DomainBlock {
                     BlockState state,
                     Level level,
                     HitResult target,
-                    ParticleEngine manager
-            ) {
+                    ParticleEngine manager) {
                 // No digging/hitting particles.
                 return true;
             }
@@ -56,8 +54,7 @@ public class DomainGrassBlock extends DomainBlock {
             BlockState state,
             Level level,
             BlockPos pos,
-            Entity entity
-    ) {
+            Entity entity) {
         return true;
     }
 
@@ -68,8 +65,7 @@ public class DomainGrassBlock extends DomainBlock {
             BlockPos pos,
             BlockState state2,
             LivingEntity entity,
-            int numberOfParticles
-    ) {
+            int numberOfParticles) {
         return true;
     }
 }

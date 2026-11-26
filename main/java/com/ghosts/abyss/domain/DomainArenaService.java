@@ -99,7 +99,7 @@ public final class DomainArenaService {
         if (domainLevel == null || returnLevel == null || inst == null) {
             return;
         }
-
+        HakariSubwayStage.returnToBase(domainLevel, inst);
         int r = DomainDimension.OUTER_RADIUS + 4;
         BlockPos c = inst.arenaCenter;
 

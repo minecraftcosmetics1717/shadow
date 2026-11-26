@@ -24,6 +24,9 @@ public final class DomainClash {
 
         DomainInstance inst = findInstanceContaining(challenger.position());
         if (inst == null) {
+            if (!inst.ownerId.equals(challenger.getUUID())) {
+                HakariSubwayStage.returnToBase(domainLevel, inst);
+            }
             abortFailedDomainStart(challenger);
             return;
         }
@@ -149,7 +152,7 @@ public final class DomainClash {
         if (domainLevel == null) return;
 
         DomainArenaService.forceLoadArena(domainLevel, inst);
-
+        HakariSubwayStage.returnToBase(domainLevel, inst);
         var data = challenger.getPersistentData();
         double skillDomain = data.getDouble("skill_domain");
         if (skillDomain == 0) {
@@ -271,7 +274,7 @@ public final class DomainClash {
                 return inst;
             }
         }
-        return null;
+        return HakariSubwayStage.findContaining(pos);
     }
 
 

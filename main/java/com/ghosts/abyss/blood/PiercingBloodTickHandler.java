@@ -19,8 +19,7 @@ public final class PiercingBloodTickHandler {
 
     @SubscribeEvent
     public static void onPlayerTick(
-            TickEvent.PlayerTickEvent event
-    ) {
+            TickEvent.PlayerTickEvent event) {
 
         if (event.phase != TickEvent.Phase.END) {
             return;

@@ -11,8 +11,7 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 @EventBusSubscriber(
         modid = "abyss",
         bus = Bus.MOD,
-        value = {Dist.CLIENT}
-)
+        value = {Dist.CLIENT})
 public class FourArmRenderer {
    @SubscribeEvent
    public static void onAddLayers(EntityRenderersEvent.AddLayers event) {

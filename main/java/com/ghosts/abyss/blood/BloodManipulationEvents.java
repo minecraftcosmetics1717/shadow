@@ -13,8 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(
         modid = Abyss.MOD_ID,
-        bus = Mod.EventBusSubscriber.Bus.FORGE
-)
+        bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class BloodManipulationEvents {
 
     private static final String KEY_TRANSFORMED =
@@ -61,8 +60,7 @@ public final class BloodManipulationEvents {
     private static boolean isWaterTechnique(Player player) {
         var vars = player.getCapability(
                 JujutsucraftModVariables
-                        .PLAYER_VARIABLES_CAPABILITY
-        ).orElse(null);
+                        .PLAYER_VARIABLES_CAPABILITY).orElse(null);
 
         if (vars == null) {
             return false;
@@ -77,8 +75,7 @@ public final class BloodManipulationEvents {
 
     @SubscribeEvent
     public static void onPlayerTick(
-            TickEvent.PlayerTickEvent event
-    ) {
+            TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
             return;
         }
@@ -144,8 +141,7 @@ public final class BloodManipulationEvents {
         if (oldData.getBoolean(KEY_TRANSFORMED)) {
             newData.putBoolean(
                     KEY_TRANSFORMED,
-                    true
-            );
+                    true);
         }
 
         // Do not preserve active casting state.

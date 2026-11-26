@@ -23,8 +23,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(
         modid = "abyss",
         value = Dist.CLIENT,
-        bus = Mod.EventBusSubscriber.Bus.FORGE
-)
+        bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class HakariJackpotMusic {
 
     private HakariJackpotMusic() {}
@@ -32,15 +31,13 @@ public final class HakariJackpotMusic {
     private static final ResourceLocation JACKPOT_EFFECT =
             new ResourceLocation(
                     "jujutsucraft",
-                    "jackpot"
-            );
+                    "jackpot");
 
     // Provisional sound ID from Jujutsucraft.
     private static final ResourceLocation MUSIC_ID =
             new ResourceLocation(
                     "jujutsucraft",
-                    "hakari1"
-            );
+                    "hakari1");
 
     private static final Map<UUID, HakariJackpotSound> SOUNDS =
             new HashMap<>();
@@ -48,8 +45,7 @@ public final class HakariJackpotMusic {
     public static boolean hasJackpot(LivingEntity entity) {
         MobEffect effect =
                 ForgeRegistries.MOB_EFFECTS.getValue(
-                        JACKPOT_EFFECT
-                );
+                        JACKPOT_EFFECT);
 
         return effect != null
                 && entity.hasEffect(effect);
@@ -57,8 +53,7 @@ public final class HakariJackpotMusic {
 
     @SubscribeEvent
     public static void onClientTick(
-            TickEvent.ClientTickEvent event
-    ) {
+            TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
             return;
         }
@@ -72,8 +67,7 @@ public final class HakariJackpotMusic {
 
         SoundEvent music =
                 ForgeRegistries.SOUND_EVENTS.getValue(
-                        MUSIC_ID
-                );
+                        MUSIC_ID);
 
         if (music == null) {
             clearAll();
@@ -86,8 +80,7 @@ public final class HakariJackpotMusic {
         for (LivingEntity entity :
                 mc.level.getEntitiesOfClass(
                         LivingEntity.class,
-                        mc.player.getBoundingBox().inflate(80.0)
-                )) {
+                        mc.player.getBoundingBox().inflate(80.0))) {
 
             if (!entity.isAlive()) {
                 continue;

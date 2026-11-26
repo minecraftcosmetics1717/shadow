@@ -12,8 +12,7 @@ public final class ProximityMessages {
 
     public static boolean canHear(
             ServerPlayer sender,
-            ServerPlayer receiver
-    ) {
+            ServerPlayer receiver) {
         if (sender == receiver) {
             return true;
         }

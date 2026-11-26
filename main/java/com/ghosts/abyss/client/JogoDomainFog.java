@@ -14,8 +14,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(
         modid = "abyss",
         value = Dist.CLIENT,
-        bus = Mod.EventBusSubscriber.Bus.FORGE
-)
+        bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class JogoDomainFog {
 
     // Fog color: #E88A30
@@ -46,8 +45,7 @@ public final class JogoDomainFog {
         BlockPos floorPos = new BlockPos(
                 mc.player.getBlockX(),
                 DomainDimension.CENTER_Y,
-                mc.player.getBlockZ()
-        );
+                mc.player.getBlockZ());
 
         if (!mc.level.hasChunkAt(floorPos)) {
             return false;

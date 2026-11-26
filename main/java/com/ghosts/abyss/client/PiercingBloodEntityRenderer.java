@@ -32,12 +32,10 @@ public class PiercingBloodEntityRenderer
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(
                     "abyss",
-                    "textures/entity/piercing_blood.png"
-            );
+                    "textures/entity/piercing_blood.png");
 
     public PiercingBloodEntityRenderer(
-            EntityRendererProvider.Context context
-    ) {
+            EntityRendererProvider.Context context) {
         super(context);
         this.shadowRadius = 0.0F;
     }
@@ -49,8 +47,7 @@ public class PiercingBloodEntityRenderer
             float partialTick,
             PoseStack pose,
             MultiBufferSource buffers,
-            int packedLight
-    ) {
+            int packedLight) {
 
         Player owner = beam.getOwnerPlayer();
 
@@ -83,26 +80,22 @@ public class PiercingBloodEntityRenderer
             double entityX = Mth.lerp(
                     partialTick,
                     beam.xOld,
-                    beam.getX()
-            );
+                    beam.getX());
 
             double entityY = Mth.lerp(
                     partialTick,
                     beam.yOld,
-                    beam.getY()
-            );
+                    beam.getY());
 
             double entityZ = Mth.lerp(
                     partialTick,
                     beam.zOld,
-                    beam.getZ()
-            );
+                    beam.getZ());
 
             Vec3 renderEntityPosition = new Vec3(
                     entityX,
                     entityY,
-                    entityZ
-            );
+                    entityZ);
 
             Vec3 worldUp = new Vec3(0, 1, 0);
 
@@ -154,30 +147,24 @@ public class PiercingBloodEntityRenderer
             Vec3 cameraForward = new Vec3(
                     look.x(),
                     look.y(),
-                    look.z()
-            );
+                    look.z());
 
             Vec3 targetWorld = camera.add(
-                    cameraForward.scale(beamLength)
-            );
+                    cameraForward.scale(beamLength));
 
             Vec3 entityPosition = new Vec3(
                     Mth.lerp(
                             partialTick,
                             beam.xOld,
-                            beam.getX()
-                    ),
+                            beam.getX()),
                     Mth.lerp(
                             partialTick,
                             beam.yOld,
-                            beam.getY()
-                    ),
+                            beam.getY()),
                     Mth.lerp(
                             partialTick,
                             beam.zOld,
-                            beam.getZ()
-                    )
-            );
+                            beam.getZ()));
 
             end = targetWorld.subtract(entityPosition);
 
@@ -185,8 +172,7 @@ public class PiercingBloodEntityRenderer
 
             // Preserve existing third-person direction.
             end = origin.add(
-                    direction.scale(beamLength)
-            );
+                    direction.scale(beamLength));
         }
 
         // =========================================
@@ -196,16 +182,15 @@ public class PiercingBloodEntityRenderer
         Matrix4f matrix = pose.last().pose();
 
         VertexConsumer vertices = buffers.getBuffer(
-                RenderType.entityCutoutNoCull(TEXTURE)
-        );
+                RenderType.entityCutoutNoCull(TEXTURE));
 
         drawBeam(
                 vertices,
                 matrix,
                 origin,
                 end,
-                packedLight
-        );
+                packedLight,
+                beam.isWaterVariant());
 
         super.render(
                 beam,
@@ -213,8 +198,7 @@ public class PiercingBloodEntityRenderer
                 partialTick,
                 pose,
                 buffers,
-                packedLight
-        );
+                packedLight);
     }
 
     // =============================================
@@ -226,8 +210,8 @@ public class PiercingBloodEntityRenderer
             Matrix4f matrix,
             Vec3 start,
             Vec3 end,
-            int packedLight
-    ) {
+            int packedLight,
+            boolean water) {
 
         Vec3 difference = end.subtract(start);
 
@@ -255,8 +239,7 @@ public class PiercingBloodEntityRenderer
         // One complete rotation every second.
 
         double angle = Math.toRadians(
-                (System.currentTimeMillis() % 1000L) * 0.36D
-        );
+                (System.currentTimeMillis() % 1000L) * 0.36D);
 
         Vec3 rotatedRight = right
                 .scale(Math.cos(angle))
@@ -277,8 +260,8 @@ public class PiercingBloodEntityRenderer
                 start,
                 end,
                 right.scale(HALF_WIDTH),
-                packedLight
-        );
+                packedLight,
+                water);
 
         drawQuad(
                 buffer,
@@ -286,8 +269,8 @@ public class PiercingBloodEntityRenderer
                 start,
                 end,
                 up.scale(HALF_WIDTH),
-                packedLight
-        );
+                packedLight,
+                water);
     }
 
     // =============================================
@@ -300,8 +283,8 @@ public class PiercingBloodEntityRenderer
             Vec3 start,
             Vec3 end,
             Vec3 offset,
-            int packedLight
-    ) {
+            int packedLight,
+            boolean water) {
 
         Vec3 a = start.subtract(offset);
         Vec3 b = start.add(offset);
@@ -309,16 +292,16 @@ public class PiercingBloodEntityRenderer
         Vec3 d = end.subtract(offset);
 
         // Front face.
-        vertex(buffer, matrix, a, packedLight);
-        vertex(buffer, matrix, b, packedLight);
-        vertex(buffer, matrix, c, packedLight);
-        vertex(buffer, matrix, d, packedLight);
+        vertex(buffer, matrix, a, packedLight, water);
+        vertex(buffer, matrix, b, packedLight, water);
+        vertex(buffer, matrix, c, packedLight, water);
+        vertex(buffer, matrix, d, packedLight, water);
 
         // Back face.
-        vertex(buffer, matrix, d, packedLight);
-        vertex(buffer, matrix, c, packedLight);
-        vertex(buffer, matrix, b, packedLight);
-        vertex(buffer, matrix, a, packedLight);
+        vertex(buffer, matrix, d, packedLight, water);
+        vertex(buffer, matrix, c, packedLight, water);
+        vertex(buffer, matrix, b, packedLight, water);
+        vertex(buffer, matrix, a, packedLight, water);
     }
 
     // =============================================
@@ -329,18 +312,19 @@ public class PiercingBloodEntityRenderer
             VertexConsumer buffer,
             Matrix4f matrix,
             Vec3 point,
-            int packedLight
-    ) {
+            int packedLight,
+            boolean water) {
 
         buffer.vertex(
                         matrix,
                         (float) point.x,
                         (float) point.y,
-                        (float) point.z
-                )
-                // #7F0000 - dark red
-                .color(127, 0, 0, 255)
-
+                        (float) point.z)
+                .color(
+                        water ? 118 : 127,
+                        water ? 207 : 0,
+                        water ? 255 : 0,
+                        255)
                 // White texture supplies the base color.
                 .uv(0.0F, 0.0F)
 
@@ -364,8 +348,7 @@ public class PiercingBloodEntityRenderer
             Frustum frustum,
             double cameraX,
             double cameraY,
-            double cameraZ
-    ) {
+            double cameraZ) {
         return true;
     }
 
@@ -375,8 +358,7 @@ public class PiercingBloodEntityRenderer
 
     @Override
     public ResourceLocation getTextureLocation(
-            PiercingBloodEntity entity
-    ) {
+            PiercingBloodEntity entity) {
         return TEXTURE;
     }
 }

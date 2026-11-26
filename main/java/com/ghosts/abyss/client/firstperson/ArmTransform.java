@@ -13,8 +13,7 @@ public final class ArmTransform {
             float baseX, float baseY, float baseZ,
             float moveX, float moveY, float moveZ,
             float rotX, float rotY, float rotZ,
-            float progress
-    ) {
+            float progress) {
         float t = Math.max(0.0F, Math.min(1.0F, progress));
 
         // Convert Blockbench pixel movement to model units.
@@ -25,8 +24,7 @@ public final class ArmTransform {
         pose.translate(
                 baseX + x,
                 baseY + y,
-                baseZ + z
-        );
+                baseZ + z);
 
         // Apply rotations in a consistent order.
         pose.mulPose(Axis.ZP.rotationDegrees(rotZ * t));

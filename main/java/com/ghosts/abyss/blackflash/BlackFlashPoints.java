@@ -181,9 +181,7 @@ public class BlackFlashPoints {
                       d.getInt("bf_brain_tier"),
                       d.getBoolean("bf_at_will_unlocked"),
                       d.getBoolean("bf_at_will_charged"),
-                      d.getLong("bf_at_will_cooldown_end")
-              )
-      );
+                      d.getLong("bf_at_will_cooldown_end")));
    }
 
    public static void setClientData(int exp, int chanceTier, int fatigueTier, int energyTier, int brainTier,

@@ -17,16 +17,14 @@ import org.lwjgl.glfw.GLFW;
 @Mod.EventBusSubscriber(
         modid = "abyss",
         bus = Mod.EventBusSubscriber.Bus.FORGE,
-        value = Dist.CLIENT
-)
+        value = Dist.CLIENT)
 public final class ControlledBlueInput {
 
     private ControlledBlueInput() {}
 
     @SubscribeEvent
     public static void onMouseButton(
-            InputEvent.MouseButton.Pre event
-    ) {
+            InputEvent.MouseButton.Pre event) {
         if (event.getButton() != GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             return;
         }
@@ -48,14 +46,12 @@ public final class ControlledBlueInput {
 
         // The server validates the actual held state.
         ModNetwork.CHANNEL.sendToServer(
-                new PacketAnchorBlue()
-        );
+                new PacketAnchorBlue());
     }
 
     @SubscribeEvent
     public static void onMouseScroll(
-            InputEvent.MouseScrollingEvent event
-    ) {
+            InputEvent.MouseScrollingEvent event) {
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.player == null || mc.screen != null) {
@@ -79,8 +75,7 @@ public final class ControlledBlueInput {
         int direction = scroll > 0.0D ? 1 : -1;
 
         ModNetwork.CHANNEL.sendToServer(
-                new PacketBlueScroll(direction)
-        );
+                new PacketBlueScroll(direction));
     }
 
 }

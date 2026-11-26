@@ -27,23 +27,20 @@ public class DomainShortGrassBlock extends BushBlock {
                 .instabreak()
                 .noLootTable()
                 .sound(SoundType.GRASS)
-                .offsetType(BlockBehaviour.OffsetType.XZ)
-        );
+                .offsetType(BlockBehaviour.OffsetType.XZ));
     }
 
     @Override
     protected boolean mayPlaceOn(
             BlockState state,
             BlockGetter level,
-            BlockPos pos
-    ) {
+            BlockPos pos) {
         return state.is(ModBlocks.DOMAIN_GRASS.get());
     }
 
     @Override
     public void initializeClient(
-            Consumer<IClientBlockExtensions> consumer
-    ) {
+            Consumer<IClientBlockExtensions> consumer) {
         consumer.accept(new IClientBlockExtensions() {
 
             @Override
@@ -51,8 +48,7 @@ public class DomainShortGrassBlock extends BushBlock {
                     BlockState state,
                     Level level,
                     BlockPos pos,
-                    ParticleEngine manager
-            ) {
+                    ParticleEngine manager) {
                 return true;
             }
 
@@ -61,8 +57,7 @@ public class DomainShortGrassBlock extends BushBlock {
                     BlockState state,
                     Level level,
                     HitResult target,
-                    ParticleEngine manager
-            ) {
+                    ParticleEngine manager) {
                 return true;
             }
         });
@@ -73,8 +68,7 @@ public class DomainShortGrassBlock extends BushBlock {
             BlockState state,
             Level level,
             BlockPos pos,
-            Entity entity
-    ) {
+            Entity entity) {
         return true;
     }
 
@@ -85,8 +79,7 @@ public class DomainShortGrassBlock extends BushBlock {
             BlockPos pos,
             BlockState state2,
             LivingEntity entity,
-            int numberOfParticles
-    ) {
+            int numberOfParticles) {
         return true;
     }
 }

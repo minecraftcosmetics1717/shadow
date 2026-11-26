@@ -59,8 +59,7 @@ public class AbilityScanHandler {
                        5, 100 + i,
                        tech.getString("name"),
                        tech.getDouble("ce_cost"),
-                       false, false, true
-               ));
+                       false, false, true));
             }
          }
 

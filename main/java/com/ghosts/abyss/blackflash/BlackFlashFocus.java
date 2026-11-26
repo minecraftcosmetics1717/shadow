@@ -55,8 +55,7 @@ public final class BlackFlashFocus {
     private static CombatState state(ServerPlayer player) {
         return STATES.computeIfAbsent(
                 player.getUUID(),
-                id -> new CombatState()
-        );
+                id -> new CombatState());
     }
 
     private static CompoundTag savedData(ServerPlayer player) {
@@ -65,8 +64,7 @@ public final class BlackFlashFocus {
         if (!persistent.contains(Player.PERSISTED_NBT_TAG, 10)) {
             persistent.put(
                     Player.PERSISTED_NBT_TAG,
-                    new CompoundTag()
-            );
+                    new CompoundTag());
         }
 
         return persistent.getCompound(Player.PERSISTED_NBT_TAG);
@@ -75,15 +73,13 @@ public final class BlackFlashFocus {
     public static int get(ServerPlayer player) {
         return Math.max(0, Math.min(
                 MAX_FOCUS,
-                savedData(player).getInt(FOCUS_KEY)
-        ));
+                savedData(player).getInt(FOCUS_KEY)));
     }
 
     public static void set(ServerPlayer player, int amount) {
         int clamped = Math.max(
                 0,
-                Math.min(MAX_FOCUS, amount)
-        );
+                Math.min(MAX_FOCUS, amount));
 
         savedData(player).putInt(FOCUS_KEY, clamped);
     }
@@ -102,8 +98,7 @@ public final class BlackFlashFocus {
     public static void failedAttempt(ServerPlayer player) {
         set(
                 player,
-                get(player) - FAILED_ATTEMPT_PENALTY
-        );
+                get(player) - FAILED_ATTEMPT_PENALTY);
     }
 
     public static void consumeFocus(ServerPlayer player) {
@@ -193,9 +188,7 @@ public final class BlackFlashFocus {
             event.getEntity().getPersistentData().put(
                     Player.PERSISTED_NBT_TAG,
                     originalData.getCompound(
-                            Player.PERSISTED_NBT_TAG
-                    ).copy()
-            );
+                            Player.PERSISTED_NBT_TAG).copy());
         }
     }
 

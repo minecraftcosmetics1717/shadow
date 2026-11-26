@@ -58,8 +58,7 @@ public class DomainSkyBlock extends Block {
     public boolean skipRendering(
             BlockState state,
             BlockState adjacentState,
-            net.minecraft.core.Direction direction
-    ) {
+            net.minecraft.core.Direction direction) {
         return adjacentState.getBlock() instanceof DomainSkyBlock;
     }
 
@@ -70,8 +69,7 @@ public class DomainSkyBlock extends Block {
             BlockPos pos,
             BlockState state2,
             LivingEntity entity,
-            int numberOfParticles
-    ) {
+            int numberOfParticles) {
         // Prevent missing-texture particles
         // when entities land on domain sky blocks.
         return true;
@@ -82,8 +80,7 @@ public class DomainSkyBlock extends Block {
             BlockState state,
             Level level,
             BlockPos pos,
-            Entity entity
-    ) {
+            Entity entity) {
         // Prevent missing-texture particles
         // when players sprint on domain sky blocks.
         return true;

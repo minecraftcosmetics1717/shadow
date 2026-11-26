@@ -15,8 +15,7 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(
         modid = "abyss",
-        value = Dist.CLIENT
-)
+        value = Dist.CLIENT)
 public final class GojoFlightClient {
 
     private static final int DOUBLE_TAP_TICKS = 7;
@@ -39,8 +38,7 @@ public final class GojoFlightClient {
     private static boolean eligible(LocalPlayer player) {
         JujutsucraftModVariables.PlayerVariables vars =
                 player.getCapability(
-                        JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY
-                ).orElse(null);
+                        JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY).orElse(null);
 
         return vars != null
                 && vars.FlagSixEyes
@@ -55,8 +53,7 @@ public final class GojoFlightClient {
 
         if (mode != lastSentMode || refreshTicks >= 5) {
             ModNetwork.CHANNEL.sendToServer(
-                    new PacketGojoFlightInput(mode)
-            );
+                    new PacketGojoFlightInput(mode));
             lastSentMode = mode;
             refreshTicks = 0;
         }
@@ -65,8 +62,7 @@ public final class GojoFlightClient {
     private static void reset(LocalPlayer player) {
         if (active || pendingActivation || lastSentMode > 0) {
             ModNetwork.CHANNEL.sendToServer(
-                    new PacketGojoFlightInput(GojoFlightHandler.OFF)
-            );
+                    new PacketGojoFlightInput(GojoFlightHandler.OFF));
         }
 
         if (active) {
@@ -201,8 +197,7 @@ public final class GojoFlightClient {
             player.setDeltaMovement(
                     motion.x,
                     newY,
-                    motion.z
-            );
+                    motion.z);
 
             sendMode(GojoFlightHandler.ASCEND);
 

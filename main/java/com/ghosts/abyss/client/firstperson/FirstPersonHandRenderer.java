@@ -15,8 +15,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(
         modid = "abyss",
         value = Dist.CLIENT,
-        bus = Mod.EventBusSubscriber.Bus.FORGE
-)
+        bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class FirstPersonHandRenderer {
 
     private FirstPersonHandRenderer() {}
@@ -32,8 +31,7 @@ public final class FirstPersonHandRenderer {
 
         float progress =
                 FirstPersonAnimationManager.getProgress(
-                        event.getPartialTick()
-                );
+                        event.getPartialTick());
 
         if (progress <= 0.0F) {
             return;
@@ -70,8 +68,7 @@ public final class FirstPersonHandRenderer {
                     event.getPackedLight(),
                     player,
                     renderer,
-                    progress
-            );
+                    progress);
         }
     }
 }

@@ -59,6 +59,7 @@ public class DomainInstanceManager {
     }
 
     public static void clearArena(ServerLevel domainLevel, DomainInstance inst) {
+        HakariSubwayStage.clear(domainLevel, inst);
         DomainDimBlockGuard.open();
         try {
             int r = DomainDimension.OUTER_RADIUS + 2;

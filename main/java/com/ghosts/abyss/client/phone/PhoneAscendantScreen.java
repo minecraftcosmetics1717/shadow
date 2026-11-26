@@ -326,8 +326,7 @@ public class PhoneAscendantScreen extends Screen {
                 title,
                 (int) (cx / PERK_TITLE_SCALE),
                 (int) (y / PERK_TITLE_SCALE),
-                COL_HEADER
-        );
+                COL_HEADER);
 
         pose.popPose();
     }

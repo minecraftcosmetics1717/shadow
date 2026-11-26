@@ -19,8 +19,7 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(
         modid = Abyss.MOD_ID,
-        bus = Mod.EventBusSubscriber.Bus.FORGE
-)
+        bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class BloodPoisoningHandler {
 
     private static final ResourceKey<DamageType> CURSE_DAMAGE =
@@ -28,9 +27,7 @@ public final class BloodPoisoningHandler {
                     Registries.DAMAGE_TYPE,
                     new ResourceLocation(
                             "jujutsucraft",
-                            "damage_combat"
-                    )
-            );
+                            "damage_combat"));
 
     private BloodPoisoningHandler() {}
 
@@ -49,8 +46,7 @@ public final class BloodPoisoningHandler {
 
     @SubscribeEvent
     public static void onLivingDamage(
-            LivingDamageEvent event
-    ) {
+            LivingDamageEvent event) {
 
         LivingEntity victim = event.getEntity();
 
@@ -74,9 +70,7 @@ public final class BloodPoisoningHandler {
                                     + " | Skill: "
                                     + debugPlayer.getPersistentData().getDouble("skill")
                                     + " | Damage: "
-                                    + event.getAmount()
-                    )
-            );
+                                    + event.getAmount()));
         }
         // Only handle Jujutsucraft technique damage.
         if (!event.getSource().is(CURSE_DAMAGE)) {
@@ -114,9 +108,7 @@ public final class BloodPoisoningHandler {
                         0,
                         false,
                         true,
-                        true
-                ),
-                attacker
-        );
+                        true),
+                attacker);
     }
 }

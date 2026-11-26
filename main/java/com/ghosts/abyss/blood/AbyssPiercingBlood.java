@@ -37,8 +37,7 @@ public final class AbyssPiercingBlood {
     private AbyssPiercingBlood() {}
 
     private static void playPiercingBloodAnimation(
-            ServerPlayer player
-    ) {
+            ServerPlayer player) {
         AttributeInstance animation = player.getAttribute(
                 JujutsucraftModAttributes.ANIMATION_1.get()
         );
@@ -53,8 +52,7 @@ public final class AbyssPiercingBlood {
 
         PlayAnimationProcedure.execute(
                 player.level(),
-                player
-        );
+                player);
     }
 
     public static void execute(
@@ -62,8 +60,7 @@ public final class AbyssPiercingBlood {
             double x,
             double y,
             double z,
-            Entity entity
-    ) {
+            Entity entity) {
         // The original Piercing Blood procedure
         // is intentionally disabled.
         //
@@ -137,8 +134,7 @@ public final class AbyssPiercingBlood {
     }
     private static void syncFirstPersonPose(
             ServerPlayer player,
-            boolean active
-    ) {
+            boolean active) {
         CompoundTag data = player.getPersistentData();
         if (data.getBoolean(POSE_KEY) == active) {
             return;
@@ -148,8 +144,7 @@ public final class AbyssPiercingBlood {
 
         ModNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new PacketPiercingBloodPose(active)
-        );
+                new PacketPiercingBloodPose(active));
     }
     private static void applySlowness(
             ServerPlayer player
@@ -162,14 +157,11 @@ public final class AbyssPiercingBlood {
                         SLOWNESS_AMPLIFIER,
                         false,
                         false,
-                        false
-                )
-        );
+                        false));
     }
 
     private static void spawnPreparationParticles(
-            ServerPlayer player
-    ) {
+            ServerPlayer player) {
 
         if (!(player.level() instanceof ServerLevel level)) {
             return;
@@ -188,8 +180,7 @@ public final class AbyssPiercingBlood {
                 player.getBbHeight() * 0.4D,
                 player.getBbWidth() * 0.6D,
 
-                0.03D
-        );
+                0.03D);
     }
 
     private static boolean isRunning(Entity entity) {
@@ -216,8 +207,7 @@ public final class AbyssPiercingBlood {
                 TechniqueCooldownManager.startCooldown(
                         player,
                         1007,
-                        100
-                );
+                        100);
             }
         }
 
@@ -239,8 +229,7 @@ public final class AbyssPiercingBlood {
             // whether a technique is active.
             player.removeEffect(
                     JujutsucraftModMobEffects
-                            .CURSED_TECHNIQUE.get()
-            );
+                            .CURSED_TECHNIQUE.get());
         }
 
         // Do not remove JC's cooldown effects.
@@ -257,8 +246,7 @@ public final class AbyssPiercingBlood {
     }
 
     private static boolean consumeFiringEnergy(
-            ServerPlayer player
-    ) {
+            ServerPlayer player) {
         // Creative players do not consume CE.
         if (player.isCreative()) {
             return true;

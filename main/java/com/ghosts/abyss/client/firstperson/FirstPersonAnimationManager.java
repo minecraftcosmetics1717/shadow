@@ -25,8 +25,7 @@ public final class FirstPersonAnimationManager {
 
 
     public static void setAnimation(
-            FirstPersonAnimationType animation
-    ) {
+            FirstPersonAnimationType animation) {
         if (animation == FirstPersonAnimationType.NONE) {
             current = FirstPersonAnimationType.NONE;
             progress = 0.0F;

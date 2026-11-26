@@ -20,7 +20,6 @@ public class DomainIntBlock extends Block {
                 .isValidSpawn((state, level, pos, type) -> false)
                 .isRedstoneConductor((state, level, pos) -> false)
                 .isSuffocating((state, level, pos) -> false)
-                .isViewBlocking((state, level, pos) -> false)
-        );
+                .isViewBlocking((state, level, pos) -> false));
     }
 }

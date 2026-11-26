@@ -11,19 +11,16 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(
         modid = "abyss",
         bus = Mod.EventBusSubscriber.Bus.MOD,
-        value = Dist.CLIENT
-)
+        value = Dist.CLIENT)
 public final class PiercingBloodClientRegistration {
 
     private PiercingBloodClientRegistration() {}
 
     @SubscribeEvent
     public static void registerRenderers(
-            EntityRenderersEvent.RegisterRenderers event
-    ) {
+            EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(
                 JujutsuSlopEntities.PIERCING_BLOOD.get(),
-                PiercingBloodEntityRenderer::new
-        );
+                PiercingBloodEntityRenderer::new);
     }
 }

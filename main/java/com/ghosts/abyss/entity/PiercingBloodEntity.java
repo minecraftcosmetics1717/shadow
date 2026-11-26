@@ -3,7 +3,7 @@ package com.ghosts.abyss.entity;
 
 import com.ghosts.abyss.blood.AbyssPiercingBlood;
 import com.ghosts.abyss.init.JujutsuSlopEntities;
-
+import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -26,19 +26,20 @@ public class PiercingBloodEntity extends Entity {
     private static final EntityDataAccessor<Integer> OWNER_ID =
             SynchedEntityData.defineId(
                     PiercingBloodEntity.class,
-                    EntityDataSerializers.INT
-            );
+                    EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> BEAM_LENGTH =
             SynchedEntityData.defineId(
                     PiercingBloodEntity.class,
-                    EntityDataSerializers.FLOAT
-            );
+                    EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> WATER_VARIANT =
+            SynchedEntityData.defineId(
+                    PiercingBloodEntity.class,
+                    EntityDataSerializers.BOOLEAN);
     private UUID ownerUUID;
 
     public PiercingBloodEntity(
             EntityType<? extends PiercingBloodEntity> type,
-            Level level
-    ) {
+            Level level) {
         super(type, level);
         this.noPhysics = true;
     }
@@ -53,12 +54,12 @@ public class PiercingBloodEntity extends Entity {
     protected void defineSynchedData() {
         entityData.define(OWNER_ID, -1);
         entityData.define(BEAM_LENGTH, 48.0F);
+        entityData.define(WATER_VARIANT, false);
     }
     public void setBeamLength(float length) {
         entityData.set(
                 BEAM_LENGTH,
-                Math.max(0.0F, Math.min(48.0F, length))
-        );
+                Math.max(0.0F, Math.min(48.0F, length)));
     }
 
     public float getBeamLength() {
@@ -67,6 +68,21 @@ public class PiercingBloodEntity extends Entity {
     public void setOwner(Player player) {
         ownerUUID = player.getUUID();
         entityData.set(OWNER_ID, player.getId());
+
+        boolean water = player.getCapability(
+                JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY).map(vars -> {
+            double technique = vars.SecondTechnique
+                    ? vars.PlayerCurseTechnique2
+                    : vars.PlayerCurseTechnique;
+
+            return technique == 6.0D;
+        }).orElse(false);
+
+        entityData.set(WATER_VARIANT, water);
+    }
+
+    public boolean isWaterVariant() {
+        return entityData.get(WATER_VARIANT);
     }
 
     public Player getOwnerPlayer() {
@@ -85,8 +101,7 @@ public class PiercingBloodEntity extends Entity {
         setPos(
                 eye.x,
                 eye.y - 0.28D,
-                eye.z
-        );
+                eye.z);
 
         setYRot(player.getYRot());
         setXRot(player.getXRot());

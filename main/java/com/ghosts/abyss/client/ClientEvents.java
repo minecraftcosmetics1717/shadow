@@ -24,23 +24,20 @@ public class ClientEvents {
             "key.abyss.shadow_inventory",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_B,
-            "key.categories.abyss"
-    );
+            "key.categories.abyss");
 
     public static final KeyMapping OPEN_LIFE_CHARMS = new KeyMapping(
             "key.abyss.life_charms",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_P,
-            "key.categories.abyss"
-    );
+            "key.categories.abyss");
 
     // I = Phone
     public static final KeyMapping OPEN_PHONE = new KeyMapping(
             "key.abyss.phone",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_I,
-            "key.categories.abyss"
-    );
+            "key.categories.abyss");
 
     @Mod.EventBusSubscriber(modid = "abyss", bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ModBusEvents {

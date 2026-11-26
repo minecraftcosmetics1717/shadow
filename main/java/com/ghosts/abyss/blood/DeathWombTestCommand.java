@@ -14,8 +14,7 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(
         modid = Abyss.MOD_ID,
-        bus = Mod.EventBusSubscriber.Bus.FORGE
-)
+        bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class DeathWombTestCommand {
 
     private DeathWombTestCommand() {}
@@ -28,8 +27,7 @@ public final class DeathWombTestCommand {
                         .then(
                                 Commands.argument(
                                         "enabled",
-                                        BoolArgumentType.bool()
-                                ).executes(context -> {
+                                        BoolArgumentType.bool()).executes(context -> {
 
                                     ServerPlayer player =
                                             context.getSource().getPlayerOrException();
@@ -37,25 +35,19 @@ public final class DeathWombTestCommand {
                                     boolean enabled =
                                             BoolArgumentType.getBool(
                                                     context,
-                                                    "enabled"
-                                            );
+                                                    "enabled");
 
                                     DeathWombPainting.set(
                                             player,
-                                            enabled
-                                    );
+                                            enabled);
 
                                     context.getSource().sendSuccess(
                                             () -> Component.literal(
                                                     "Death Womb Painting: "
-                                                            + enabled
-                                            ),
-                                            false
-                                    );
+                                                            + enabled),
+                                            false);
 
                                     return 1;
-                                })
-                        )
-        );
+                                })));
     }
 }

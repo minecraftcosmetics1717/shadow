@@ -44,12 +44,10 @@ public final class CursedTechniqueEvents {
             try {
                 Class<?> varsClass = Class.forName(
                         "net.mcreator.jujutsucraft.network."
-                                + "JujutsucraftModVariables"
-                );
+                                + "JujutsucraftModVariables");
 
                 Field capField = varsClass.getDeclaredField(
-                        "PLAYER_VARIABLES_CAPABILITY"
-                );
+                        "PLAYER_VARIABLES_CAPABILITY");
 
                 capField.setAccessible(true);
 

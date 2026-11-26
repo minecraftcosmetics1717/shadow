@@ -45,8 +45,7 @@ public final class YutaDomainFog {
         BlockPos floorPos = new BlockPos(
                 mc.player.getBlockX(),
                 DomainDimension.CENTER_Y,
-                mc.player.getBlockZ()
-        );
+                mc.player.getBlockZ());
 
         if (!mc.level.hasChunkAt(floorPos)) {
             return false;
@@ -59,8 +58,7 @@ public final class YutaDomainFog {
 
     @SubscribeEvent
     public static void onFogDistance(
-            ViewportEvent.RenderFog event
-    ) {
+            ViewportEvent.RenderFog event) {
         if (!isInsideYutaDomain()) return;
 
         event.setNearPlaneDistance(FOG_START);
@@ -70,8 +68,7 @@ public final class YutaDomainFog {
 
     @SubscribeEvent
     public static void onFogColor(
-            ViewportEvent.ComputeFogColor event
-    ) {
+            ViewportEvent.ComputeFogColor event) {
         if (!isInsideYutaDomain()) return;
 
         event.setRed(RED);

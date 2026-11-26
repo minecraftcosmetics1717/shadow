@@ -172,12 +172,10 @@ public class PhoneBlackFlashScreen extends Screen {
                              boolean canBuy, String btnLabel, Perk perk) {
         List<FormattedCharSequence> lines = font.split(
                 Component.literal(desc),
-                (int) ((w - 16) / DESC_SCALE)
-        );
+                (int) ((w - 16) / DESC_SCALE));
 
         int descHeight = (int) Math.ceil(
-                lines.size() * 10 * DESC_SCALE
-        );
+                lines.size() * 10 * DESC_SCALE);
 
         int boxH = 64 + descHeight;
 
@@ -192,8 +190,7 @@ public class PhoneBlackFlashScreen extends Screen {
                 title,
                 (int) (cx / PERK_TITLE_SCALE),
                 (int) ((y + 6) / PERK_TITLE_SCALE),
-                COL_HEADER
-        );
+                COL_HEADER);
 
         pose.popPose();
 
@@ -211,8 +208,7 @@ public class PhoneBlackFlashScreen extends Screen {
                     line,
                     (int) (cx / DESC_SCALE),
                     scaledY,
-                    COL_LABEL
-            );
+                    COL_LABEL);
             scaledY += 10;
         }
 
@@ -251,12 +247,10 @@ public class PhoneBlackFlashScreen extends Screen {
         String desc = "The pinnacle of black flashes. Put your full focus onto getting a definite black flash";
         List<FormattedCharSequence> lines = font.split(
                 Component.literal(desc),
-                (int) ((w - 16) / DESC_SCALE)
-        );
+                (int) ((w - 16) / DESC_SCALE));
 
         int descHeight = (int) Math.ceil(
-                lines.size() * 10 * DESC_SCALE
-        );
+                lines.size() * 10 * DESC_SCALE);
 
         int boxH = 58 + descHeight + (unlocked ? 10 : 12);
 
@@ -270,8 +264,7 @@ public class PhoneBlackFlashScreen extends Screen {
                 "At-Will Black Flash",
                 (int) (cx / PERK_TITLE_SCALE),
                 (int) ((y + 6) / PERK_TITLE_SCALE),
-                COL_HEADER
-        );
+                COL_HEADER);
 
         pose.popPose();
 
@@ -289,8 +282,7 @@ public class PhoneBlackFlashScreen extends Screen {
                     line,
                     (int) (cx / DESC_SCALE),
                     scaledY,
-                    COL_LABEL
-            );
+                    COL_LABEL);
             scaledY += 10;
         }
 
@@ -314,8 +306,7 @@ public class PhoneBlackFlashScreen extends Screen {
                     mark + " Max Black Flash Chance tier",
                     (int) (cx / REQ_SCALE),
                     (int) ((dy + 4) / REQ_SCALE),
-                    reqColor
-            );
+                    reqColor);
 
             reqPose.popPose();
 
