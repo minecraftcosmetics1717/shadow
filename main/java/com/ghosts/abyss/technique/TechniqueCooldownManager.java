@@ -248,16 +248,21 @@ public final class TechniqueCooldownManager {
     // Apply 2 minutes of cursed technique burnout
     // after a domain ends or the caster loses a clash.
     public static void startPostDomainCooldown(LivingEntity entity) {
+        startPostDomainCooldown(entity, POST_DOMAIN_COOLDOWN_TICKS);
+    }
+
+    public static void startPostDomainCooldown(
+            LivingEntity entity, int durationTicks
+    ) {
         if (!(entity instanceof ServerPlayer player)) {
             return;
         }
 
         CompoundTag data = player.getPersistentData();
 
-        long endTick = now(player) + POST_DOMAIN_COOLDOWN_TICKS;
+        long endTick = now(player) + durationTicks;
         long previousEnd = data.getLong(POST_DOMAIN_COOLDOWN_KEY);
 
-        // Never shorten an existing burnout.
         if (endTick > previousEnd) {
             data.putLong(POST_DOMAIN_COOLDOWN_KEY, endTick);
         }

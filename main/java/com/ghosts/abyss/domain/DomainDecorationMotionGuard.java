@@ -1,4 +1,3 @@
-
 package com.ghosts.abyss.domain;
 
 import net.minecraft.resources.ResourceLocation;
@@ -34,7 +33,9 @@ public final class DomainDecorationMotionGuard {
             id("entity_heart"),
             id("entity_domain_uro"),
             id("entity_jupiter"),
-            id("palm_tree")
+            id("palm_tree"),
+            id("entity_guillotine"),
+            id("judgeman")
     );
 
     private static ResourceLocation id(String name) {

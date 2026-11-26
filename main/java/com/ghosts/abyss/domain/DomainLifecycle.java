@@ -28,8 +28,7 @@ public class DomainLifecycle {
     private static boolean hasPlayersInArena(
             MinecraftServer server,
             ServerLevel domainLevel,
-            DomainInstance inst
-    ) {
+            DomainInstance inst) {
         if (domainLevel == null) return false;
 
         BlockPos center = inst.arenaCenter;
@@ -43,16 +42,13 @@ public class DomainLifecycle {
             }
 
             double dx = Math.abs(
-                    player.getX() - (center.getX() + 0.5)
-            );
+                    player.getX() - (center.getX() + 0.5));
 
             double dy = Math.abs(
-                    player.getY() - center.getY()
-            );
+                    player.getY() - center.getY());
 
             double dz = Math.abs(
-                    player.getZ() - (center.getZ() + 0.5)
-            );
+                    player.getZ() - (center.getZ() + 0.5));
 
             if (dx <= radius
                     && dy <= radius
@@ -66,16 +62,55 @@ public class DomainLifecycle {
                 return true;
             }
         }
-
         return false;
     }
+    private static boolean hasLivingEntitiesInArena(
+            MinecraftServer server,
+            ServerLevel domainLevel,
+            DomainInstance inst) {
+        if (domainLevel == null) return false;
 
+        // Preserve the existing player safety checks.
+        if (hasPlayersInArena(server, domainLevel, inst)) {
+            return true;
+        }
+
+        int r = DomainDimension.OUTER_RADIUS + 4;
+        BlockPos c = inst.arenaCenter;
+
+        AABB box = new AABB(
+                c.getX() - r,
+                c.getY() - r,
+                c.getZ() - r,
+                c.getX() + r,
+                c.getY() + r,
+                c.getZ() + r);
+
+        // Check the owner separately in case they were
+        // displaced outside the normal arena bounds.
+        LivingEntity owner = DomainArenaService.findLivingIn(
+                domainLevel,
+                inst.ownerId);
+
+        if (owner != null && owner.isAlive()
+                && !owner.isDeadOrDying()) {
+            return true;
+        }
+
+        // Check for surviving NPCs and other participants.
+        return !domainLevel.getEntitiesOfClass(
+                LivingEntity.class,
+                box,
+                e -> e.isAlive()
+                        && !e.isDeadOrDying()
+                        && !e.getPersistentData().getBoolean(
+                        "abyss_domain_decoration")).isEmpty();
+    }
     // Schedule another cleanup attempt without creating
 // multiple overlapping scheduled tasks.
     private static void scheduleSafeEndRetry(
             MinecraftServer server,
-            DomainInstance inst
-    ) {
+            DomainInstance inst) {
         if (!END_RETRY_PENDING.add(inst)) {
             return;
         }
@@ -181,8 +216,7 @@ public class DomainLifecycle {
         DomainOverworldShell.place(
                 overworld,
                 overCenter,
-                AbyssDomainCast.OVERWORLD_RADIUS
-        );
+                AbyssDomainCast.OVERWORLD_RADIUS);
 
         if (owner instanceof Mob mob) {
             mob.setTarget(null);
@@ -194,16 +228,14 @@ public class DomainLifecycle {
         Vec3 spawn = DomainSpawnPositions.casterSpawn(inst);
 
         owner.getPersistentData().putBoolean(
-                "abyss_domain_transferring", true
-        );
+                "abyss_domain_transferring", true);
 
         DomainTeleport.teleport(
                 owner,
                 domainLevel,
                 spawn.x,
                 spawn.y,
-                spawn.z
-        );
+                spawn.z);
 
         scheduleFinishEnter(server, owner.getUUID(), inst, overCenter, catchRadius, 0);
     }
@@ -224,8 +256,7 @@ public class DomainLifecycle {
             }
 
             owner.getPersistentData().putBoolean(
-                    "abyss_domain_pending", false
-            );
+                    "abyss_domain_pending", false);
 
             return;
         }
@@ -266,24 +297,21 @@ public class DomainLifecycle {
         DomainOverworldShell.place(
                 overworld,
                 overCenter,
-                AbyssDomainCast.OVERWORLD_RADIUS
-        );
+                AbyssDomainCast.OVERWORLD_RADIUS);
 
         inst.returnPositions.put(owner.getUUID(), owner.position());
 
         Vec3 spawn = DomainSpawnPositions.casterSpawn(inst);
 
         owner.getPersistentData().putBoolean(
-                "abyss_domain_transferring", true
-        );
+                "abyss_domain_transferring", true);
 
         DomainTeleport.teleport(
                 owner,
                 domainLevel,
                 spawn.x,
                 spawn.y,
-                spawn.z
-        );
+                spawn.z);
 
         scheduleFinishEnter(server, owner.getUUID(), inst, overCenter, catchRadius, 0);
     }
@@ -293,8 +321,7 @@ public class DomainLifecycle {
             DomainInstance expectedInstance,
             Vec3 overCenter,
             double catchRadius,
-            int attempt
-    ) {
+            int attempt) {
         int when = server.getTickCount() + OWNER_VERIFY_DELAY;
 
         server.tell(new TickTask(when, () ->
@@ -303,9 +330,7 @@ public class DomainLifecycle {
                         expectedInstance,
                         overCenter,
                         catchRadius,
-                        attempt
-                )
-        ));
+                        attempt)));
     }
 
     private static void finishEnter(
@@ -326,8 +351,7 @@ public class DomainLifecycle {
                     "[Abyss Domain Debug] Ignored stale finishEnter " +
                             "owner={} slot={}",
                     ownerId,
-                    expectedInstance.slot
-            );
+                    expectedInstance.slot);
             return;
         }
 
@@ -363,8 +387,7 @@ public class DomainLifecycle {
                         inst,
                         overCenter,
                         catchRadius,
-                        attempt + 1
-                );
+                        attempt + 1);
 
                 return;
             }
@@ -379,8 +402,7 @@ public class DomainLifecycle {
                     inst.arenaCenter,
                     domainLevel == null
                             ? "NULL"
-                            : domainLevel.dimension().location()
-            );
+                            : domainLevel.dimension().location());
 
             softAbort(inst, domainLevel, overworld, ownerId);
             return;
@@ -416,12 +438,10 @@ public class DomainLifecycle {
                     "[Abyss Domain] Arrival confirmed. " +
                             "Started domain duration for owner={} slot={}",
                     ownerId,
-                    inst.slot
-            );
+                    inst.slot);
         }
         var jcDomain = ForgeRegistries.MOB_EFFECTS.getValue(
-                DomainEvents.DOMAIN_EFFECT_ID
-        );
+                DomainEvents.DOMAIN_EFFECT_ID);
 
         if (jcDomain != null && !ownerInDim.hasEffect(jcDomain)) {
             ownerInDim.addEffect(
@@ -431,9 +451,7 @@ public class DomainLifecycle {
                             0,
                             false,
                             false,
-                            true
-                    )
-            );
+                            true));
         }
 
         pullOthers(overworld, domainLevel, inst, overCenter, catchRadius, ownerInDim);
@@ -444,8 +462,7 @@ public class DomainLifecycle {
             DomainInstance inst,
             ServerLevel domainLevel,
             ServerLevel overworld,
-            UUID ownerId
-    ) {
+            UUID ownerId) {
         // Never let an old scheduled task interfere
         // with a newer domain using the same slot.
         if (DomainInstanceManager.getBySlot(inst.slot) != inst
@@ -465,23 +482,21 @@ public class DomainLifecycle {
             com.ghosts.abyss.Abyss.LOGGER.error(
                     "[Abyss Domain] Recovery postponed: " +
                             "return dimension unavailable, slot={}",
-                    inst.slot
-            );
+                    inst.slot);
 
             scheduleAbortRecovery(
-                    server, inst, ownerId
-            );
+                    server, inst, ownerId);
             return;
         }
 
         // First restore the overworld terrain.
         // This also disables new domain_int entries,
         // preventing returned players from re-entering.
+        DomainArenaService.loadReturnArea(overworld, inst);
         DomainOverworldShell.clear(
                 overworld,
                 inst.overworldCenter,
-                AbyssDomainCast.OVERWORLD_RADIUS
-        );
+                AbyssDomainCast.OVERWORLD_RADIUS);
 
         if (domainLevel != null) {
 
@@ -490,14 +505,7 @@ public class DomainLifecycle {
             DomainArenaService.evacuateArena(
                     domainLevel,
                     overworld,
-                    inst
-            );
-
-            // Remove leftover JC summons/decorations.
-            DomainArenaService.cleanupDomainMobs(
-                    domainLevel,
-                    inst
-            );
+                    inst);
 
             // Check whether any living entity remains
             // in the arena after evacuation.
@@ -510,8 +518,7 @@ public class DomainLifecycle {
                     c.getZ() - r,
                     c.getX() + r,
                     c.getY() + r,
-                    c.getZ() + r
-            );
+                    c.getZ() + r);
 
             List<LivingEntity> remaining =
                     domainLevel.getEntitiesOfClass(
@@ -520,9 +527,7 @@ public class DomainLifecycle {
                             e -> e.isAlive()
                                     && !e.getPersistentData()
                                     .getBoolean(
-                                            "abyss_domain_decoration"
-                                    )
-                    );
+                                            "abyss_domain_decoration"));
 
             // Check the owner separately as well.
             // A failed transition could leave their
@@ -573,7 +578,9 @@ public class DomainLifecycle {
             return;
         }
 
-        // Only now is it safe to remove the arena.
+        DomainArenaService.cleanupDomainMobs(
+                domainLevel, inst);
+
         if (domainLevel != null) {
             DomainInstanceManager.clearArena(
                     domainLevel, inst);
@@ -654,8 +661,7 @@ public class DomainLifecycle {
             DomainInstance inst,
             Vec3 center,
             double radius,
-            LivingEntity ownerInDim
-    ) {
+            LivingEntity ownerInDim) {
         AABB box = new AABB(
                 center.x - radius,
                 center.y - radius,
@@ -725,8 +731,7 @@ public class DomainLifecycle {
 
         if (currentServer != null
                 && OpenDomainLifecycle.endByOwnerId(
-                currentServer, ownerId
-        )) {
+                currentServer, ownerId)) {
             return;
         }
         DomainInstance inst = DomainInstanceManager.getByOwner(ownerId);
@@ -741,7 +746,7 @@ public class DomainLifecycle {
 
         final ServerLevel over = returnLevel;
         final Vec3 overCenter = inst.overworldCenter;
-
+        DomainArenaService.loadReturnArea(returnLevel, inst);
         DomainOverworldShell.clear(returnLevel, overCenter, AbyssDomainCast.OVERWORLD_RADIUS);
         over.getChunkAt(BlockPos.containing(overCenter));
 
@@ -755,7 +760,7 @@ public class DomainLifecycle {
                     inst);
 
             // Never destroy an arena containing a player.
-            if (hasPlayersInArena(server, domainLevel, inst)) {
+            if (hasLivingEntitiesInArena(server, domainLevel, inst)) {
 
                 com.ghosts.abyss.Abyss.LOGGER.warn(
                         "[Abyss Domain] End delayed for slot={} " +
@@ -929,7 +934,7 @@ public class DomainLifecycle {
         entity.getPersistentData().putDouble("x_pos_doma", asOwner.overworldCenter.x);
         entity.getPersistentData().putDouble("y_pos_doma", asOwner.overworldCenter.y);
         entity.getPersistentData().putDouble("z_pos_doma", asOwner.overworldCenter.z);
-        returnLevel.getChunkAt(BlockPos.containing(asOwner.overworldCenter));
+        DomainArenaService.loadReturnArea(returnLevel, asOwner);
         DomainOverworldShell.clear(returnLevel, asOwner.overworldCenter, AbyssDomainCast.OVERWORLD_RADIUS);
 
         if (domainLevel != null) {
@@ -941,7 +946,7 @@ public class DomainLifecycle {
 
             // Do not remove the arena if a player
             // has not successfully returned.
-            if (hasPlayersInArena(
+            if (hasLivingEntitiesInArena(
                     server,
                     domainLevel,
                     asOwner)) {
@@ -980,9 +985,21 @@ public class DomainLifecycle {
                 () -> DomainOverworldCleanup.triggerJcDomainBreak(over, overCenter)));
 
 
-        DomainInstanceManager.release(entity.getUUID());
-        clearCastState(entity);
-        TechniqueCooldownManager.startPostDomainCooldown(entity);
-        DomainCooldown.apply(entity);
+        UUID ownerId = asOwner.ownerId;
+
+// Find the actual caster after dimension transfer.
+        LivingEntity returnedOwner =
+                DomainArenaService.findLivingIn(
+                        returnLevel,
+                        ownerId);
+
+        LivingEntity cleanupOwner =
+                returnedOwner != null ? returnedOwner : entity;
+
+        DomainInstanceManager.release(ownerId);
+
+        clearCastState(cleanupOwner);
+        TechniqueCooldownManager.startPostDomainCooldown(cleanupOwner);
+        DomainCooldown.apply(cleanupOwner);
 
     }}

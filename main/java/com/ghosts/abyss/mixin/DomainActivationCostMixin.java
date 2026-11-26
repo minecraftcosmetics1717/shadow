@@ -1,4 +1,3 @@
-
 package com.ghosts.abyss.mixin;
 
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
@@ -66,7 +65,7 @@ public class DomainActivationCostMixin {
 
             boolean abyssDomain = switch (id) {
                 case 1, 2, 4, 5, 6, 8, 9, 10,
-                     12, 15, 18, 19, 24, 29, 38, 39 -> true;
+                     12, 15, 18, 19, 24, 27, 29, 38, 39 -> true;
                 default -> false;
             };
 

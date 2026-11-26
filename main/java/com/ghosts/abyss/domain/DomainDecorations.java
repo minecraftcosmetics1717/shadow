@@ -1,4 +1,3 @@
-
 package com.ghosts.abyss.domain;
 
 import net.mcreator.jujutsucraft.init.JujutsucraftModEntities;
@@ -61,13 +60,18 @@ public final class DomainDecorations {
         }
 
         if (hasDecoration(level, inst, participant.entityId)) return;
+
+        // Higuruma — Deadly Sentencing.
+        if ((int) participant.skillDomain == 27) {
+            spawnHigurumaDecorations(level, inst, participant);
+            return;
+        }
 // Ryu Ishigori — All-Satiating Flavor Festival
         if ((int) participant.skillDomain == 12) {
             RyuDomainDecorations.spawnInitial(
                     level,
                     inst,
-                    participant
-            );
+                    participant);
             return;
         }
 
@@ -189,8 +193,7 @@ public final class DomainDecorations {
                     3.0D,
                     offsetZ,
                     yaw,
-                    participant.entityId
-            );
+                    participant.entityId);
         }
     }
 
@@ -198,16 +201,14 @@ public final class DomainDecorations {
         return !level.getEntities((Entity) null, arenaBox(inst), entity ->
                 entity.getPersistentData().getBoolean("abyss_domain_decoration")
                         && entity.getPersistentData().hasUUID("abyss_decoration_owner")
-                        && casterId.equals(entity.getPersistentData().getUUID("abyss_decoration_owner"))
-        ).isEmpty();
+                        && casterId.equals(entity.getPersistentData().getUUID("abyss_decoration_owner"))).isEmpty();
     }
 
     public static void sync(ServerLevel level, DomainInstance inst) {
         if (level == null || inst == null) return;
         cleanupDefeatedMegumiSummons(level, inst);
         inst.yutaDecorationsSpawned.removeIf(
-                casterId -> !inst.participants.contains(casterId)
-        );
+                casterId -> !inst.participants.contains(casterId));
         for (Entity entity : level.getEntities((Entity) null, arenaBox(inst), e ->
                 e.getPersistentData().getBoolean("abyss_domain_decoration"))) {
             if (!entity.getPersistentData().hasUUID("abyss_decoration_owner")
@@ -220,8 +221,7 @@ public final class DomainDecorations {
     }
 
     public static void tick(
-            ServerLevel level
-    ) {
+            ServerLevel level) {
         if (level == null) return;
 
         // Limit particle spawning to every 4 ticks.
@@ -240,11 +240,9 @@ public final class DomainDecorations {
         }
     }
 
-
     private static void spawnGojoParticles(
             ServerLevel level,
-            DomainInstance inst
-    ) {
+            DomainInstance inst) {
         RandomSource random = level.random;
 
         double cx = inst.arenaCenter.getX() + 0.5;
@@ -275,8 +273,7 @@ public final class DomainDecorations {
                     x, y, z,
                     1,
                     0.0, 0.0, 0.0,
-                    0.0
-            );
+                    0.0);
         }
 
         // A smaller number of End Rod particles
@@ -297,10 +294,8 @@ public final class DomainDecorations {
                     x, y, z,
                     1,
                     0.0, 0.0, 0.0,
-                    0.0
-            );
+                    0.0);
         }
-
 
         // Larger Unlimited Void splashes.
         // Spread across the outer portion of the sphere,
@@ -330,8 +325,7 @@ public final class DomainDecorations {
                     x, y, z,
                     1,
                     0.0, 0.0, 0.0,
-                    0.0
-            );
+                    0.0);
         }
 
         // Jujutsucraft's white splash effects.
@@ -351,8 +345,7 @@ public final class DomainDecorations {
                     x, y, z,
                     1,
                     0.0, 0.0, 0.0,
-                    0.0
-            );
+                    0.0);
         }
     }
 
@@ -369,8 +362,7 @@ public final class DomainDecorations {
                 (Entity) null,
                 arenaBox(inst),
                 e -> e.getPersistentData()
-                        .getBoolean("abyss_domain_decoration")
-        )) {
+                        .getBoolean("abyss_domain_decoration"))) {
             entity.discard();
         }
 
@@ -388,11 +380,9 @@ public final class DomainDecorations {
             double offsetY,
             double offsetZ,
             float yaw,
-            UUID casterId
-    ) {
+            UUID casterId) {
         EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(
-                new ResourceLocation(entityId)
-        );
+                new ResourceLocation(entityId));
 
         if (type == null) return;
 
@@ -407,7 +397,6 @@ public final class DomainDecorations {
         entity.moveTo(x, y, z, yaw, 0.0F);
         entity.setInvulnerable(true);
         entity.setNoGravity(true);
-
 
 // Enlarge domain decorations with Pehkui.
 
@@ -424,11 +413,13 @@ public final class DomainDecorations {
 
             // Hakari's ticket gates remain 2x.
             ScaleTypes.BASE.getScaleData(entity).setScale(2.0F);
+
+        } else if ("jujutsucraft:entity_guillotine".equals(entityId)
+                || "jujutsucraft:judgeman".equals(entityId)) {
+
+            // Higuruma's courtroom decorations are 2x.
+            ScaleTypes.BASE.getScaleData(entity).setScale(2.0F);
         }
-
-
-
-
 
         if (entity instanceof LivingEntity living) {
             living.setYHeadRot(yaw);
@@ -439,18 +430,51 @@ public final class DomainDecorations {
         }
 
         entity.getPersistentData().putBoolean(
-                "abyss_domain_decoration", true
-        );
+                "abyss_domain_decoration", true);
 
         entity.getPersistentData().putUUID("abyss_decoration_owner", casterId);
         level.addFreshEntity(entity);
     }
 
+    private static void spawnHigurumaDecorations(
+            ServerLevel level,
+            DomainInstance inst,
+            DomainClashParticipants.Participant participant) {
+        final int decorationCount = 20;
+        final double radius = 48.0D;
+
+        for (int i = 0; i < decorationCount; i++) {
+            double angle = Math.PI * 2.0D * i / decorationCount;
+            double offsetX = Math.cos(angle) * radius;
+            double offsetZ = Math.sin(angle) * radius;
+            float yaw = (float) Math.toDegrees(angle) + 90.0F;
+
+            spawnDecoration(level, inst,
+                    "jujutsucraft:entity_guillotine",
+                    offsetX, 1.0D, offsetZ, yaw,
+                    participant.entityId);
+        }
+
+        double judgeX = 0.0D;
+        double judgeZ = 0.0D;
+        float judgeYaw = 0.0F;
+
+        switch (participant.side) {
+            case NORTH -> { judgeZ = -18.0D; judgeYaw = 0.0F; }
+            case SOUTH -> { judgeZ = 18.0D; judgeYaw = 180.0F; }
+            case WEST -> { judgeX = -18.0D; judgeYaw = 270.0F; }
+            case EAST -> { judgeX = 18.0D; judgeYaw = 90.0F; }
+        }
+
+        spawnDecoration(level, inst, "jujutsucraft:judgeman",
+                judgeX, 1.0D, judgeZ, judgeYaw,
+                participant.entityId);
+    }
+
     private static void spawnHakariGates(
             ServerLevel level,
             DomainInstance inst,
-            DomainClashParticipants.Participant participant
-    ) {
+            DomainClashParticipants.Participant participant) {
         // 6 ticket gates per side, 12 total.
         final int gatesPerSide = 6;
         final double rowOffset = 43.0;
@@ -491,8 +515,7 @@ public final class DomainDecorations {
                         1.0,
                         z,
                         yaw,
-                        participant.entityId
-                );
+                        participant.entityId);
             }
         }
     }
@@ -511,8 +534,7 @@ public final class DomainDecorations {
     private static void spawnYutaDecorations(
             ServerLevel level,
             DomainInstance inst,
-            DomainClashParticipants.Participant participant
-    ) {
+            DomainClashParticipants.Participant participant) {
         UUID casterId = participant.entityId;
 
         // Prevent duplicate spawning, including after
@@ -541,9 +563,7 @@ public final class DomainDecorations {
         Item swordItem = ForgeRegistries.ITEMS.getValue(
                 new ResourceLocation(
                         "jujutsucraft",
-                        "sword_okkotsu_yuta"
-                )
-        );
+                        "sword_okkotsu_yuta"));
 
         EntityDataAccessor<Boolean> swordDecorationAccessor =
                 getYutaSwordDecorationAccessor();
@@ -585,15 +605,13 @@ public final class DomainDecorations {
 
                     living.setItemSlot(
                             EquipmentSlot.HEAD,
-                            new ItemStack(swordItem)
-                    );
+                            new ItemStack(swordItem));
                 }
 
                 try {
                     sword.getEntityData().set(
                             swordDecorationAccessor,
-                            true
-                    );
+                            true);
                 } catch (Exception ignored) {
                     continue;
                 }
@@ -691,8 +709,7 @@ public final class DomainDecorations {
 
     private static void markYutaDecoration(
             Entity entity,
-            UUID casterId
-    ) {
+            UUID casterId) {
         entity.getPersistentData().putBoolean(
                 "abyss_domain_decoration",
                 true
@@ -700,27 +717,23 @@ public final class DomainDecorations {
 
         entity.getPersistentData().putUUID(
                 "abyss_decoration_owner",
-                casterId
-        );
+                casterId);
 
         // Compatibility with Jujutsucraft's original
         // decoration ownership conventions.
         entity.getPersistentData().putString(
                 "OWNER_UUID",
-                casterId.toString()
-        );
+                casterId.toString());
     }
 
     private static EntityDataAccessor<Boolean>
     getYutaSwordDecorationAccessor() {
         try {
             Class<?> cls = Class.forName(
-                    "net.mcreator.jujutsucraft.entity.EntityItemEntity"
-            );
+                    "net.mcreator.jujutsucraft.entity.EntityItemEntity");
 
             Field field = cls.getDeclaredField(
-                    "DATA_domain_decoration"
-            );
+                    "DATA_domain_decoration");
 
             field.setAccessible(true);
 
@@ -737,23 +750,19 @@ public final class DomainDecorations {
 
     private static void cleanupDefeatedMegumiSummons(
             ServerLevel level,
-            DomainInstance inst
-    ) {
+            DomainInstance inst) {
         TagKey<EntityType<?>> tenShadowsTag = TagKey.create(
                 Registries.ENTITY_TYPE,
                 new ResourceLocation(
                         "jujutsucraft",
-                        "ten_shadows_technique"
-                )
-        );
+                        "ten_shadows_technique"));
 
         for (Entity summoned : level.getEntities(
                 (Entity) null,
                 arenaBox(inst),
                 e -> e.getPersistentData()
                         .getBoolean("domain_entity")
-                        && e.getType().is(tenShadowsTag)
-        )) {
+                        && e.getType().is(tenShadowsTag))) {
 
             String ownerUuid = summoned.getPersistentData()
                     .getString("OWNER_UUID");
@@ -785,8 +794,7 @@ public final class DomainDecorations {
     private static void updateUroDecorationPosition(
             ServerLevel level,
             DomainInstance inst,
-            DomainClashParticipants.Participant participant
-    ) {
+            DomainClashParticipants.Participant participant) {
         // Center when alone, halfway to the wall
         // on Uro's side during clashes.
         double distance = inst.participants.size() > 1
@@ -815,8 +823,7 @@ public final class DomainDecorations {
                         .hasUUID("abyss_decoration_owner")
                         && participant.entityId.equals(
                         e.getPersistentData()
-                                .getUUID("abyss_decoration_owner"))
-        )) {
+                                .getUUID("abyss_decoration_owner")))) {
             // Avoid unnecessary position updates.
             if (entity.distanceToSqr(x, y, z) > 0.01D) {
                 entity.setPos(x, y, z);
@@ -827,8 +834,7 @@ public final class DomainDecorations {
     private static void spawnDagonPalmTrees(
             ServerLevel level,
             DomainInstance inst,
-            DomainClashParticipants.Participant participant
-    ) {
+            DomainClashParticipants.Participant participant) {
         final int TREE_COUNT = 16;
         final double MIN_SPACING = 8.0D;
 
@@ -882,8 +888,7 @@ public final class DomainDecorations {
 
             // Palm trees only belong in raised grass.
             if (DagonDomainTerrain.regionAt(
-                    x, z, participant.side
-            ) != DagonDomainTerrain.Region.GRASS) {
+                    x, z, participant.side) != DagonDomainTerrain.Region.GRASS) {
                 continue;
             }
 
@@ -921,8 +926,7 @@ public final class DomainDecorations {
                         .hasUUID("abyss_decoration_owner")
                         && participant.entityId.equals(
                         e.getPersistentData()
-                                .getUUID("abyss_decoration_owner"))
-        )) {
+                                .getUUID("abyss_decoration_owner")))) {
             int index = entity.getPersistentData()
                     .getInt("abyss_dagon_palm_index");
 
@@ -939,8 +943,7 @@ public final class DomainDecorations {
             BlockPos grassPos = inst.arenaCenter.offset(
                     offset.getX(),
                     1,
-                    offset.getZ()
-            );
+                    offset.getZ());
 
             BlockPos sandPos = grassPos.below();
 
@@ -998,25 +1001,21 @@ public final class DomainDecorations {
 
             tree.getPersistentData().putBoolean(
                     "abyss_domain_decoration",
-                    true
-            );
+                    true);
 
             tree.getPersistentData().putUUID(
                     "abyss_decoration_owner",
-                    participant.entityId
-            );
+                    participant.entityId);
 
             tree.getPersistentData().putInt(
                     "abyss_dagon_palm_index",
-                    i
-            );
+                    i);
 
             // Keep compatibility with the owner data
             // used by Jujutsucraft decorations.
             tree.getPersistentData().putString(
                     "OWNER_UUID",
-                    participant.entityId.toString()
-            );
+                    participant.entityId.toString());
 
             level.addFreshEntity(tree);
         }
@@ -1025,8 +1024,7 @@ public final class DomainDecorations {
     private static void syncSukunaShrine(
             ServerLevel level,
             DomainInstance inst,
-            DomainClashParticipants.Participant participant
-    ) {
+            DomainClashParticipants.Participant participant) {
         // Put the shrine in the center when there is
         // only one domain in the arena.
         //
@@ -1073,9 +1071,7 @@ public final class DomainDecorations {
                         .hasUUID("abyss_decoration_owner")
                         && participant.entityId.equals(
                         e.getPersistentData()
-                                .getUUID("abyss_decoration_owner")
-                )
-        )) {
+                                .getUUID("abyss_decoration_owner")))) {
             if (existing == null) {
                 existing = entity;
             } else {
@@ -1127,18 +1123,15 @@ public final class DomainDecorations {
         // to track this shrine.
         shrine.getPersistentData().putBoolean(
                 "abyss_domain_decoration",
-                true
-        );
+                true);
 
         shrine.getPersistentData().putBoolean(
                 "abyss_sukuna_shrine",
-                true
-        );
+                true);
 
         shrine.getPersistentData().putUUID(
                 "abyss_decoration_owner",
-                participant.entityId
-        );
+                participant.entityId);
 
         level.addFreshEntity(shrine);
     }

@@ -25,10 +25,15 @@ public final class DomainArenaService {
     private static final TicketType<ChunkPos> DOMAIN_TICKET =
             TicketType.create(
                     "abyss:domain",
-                    Comparator.comparingLong(ChunkPos::toLong)
-            );
-    private static final int TICKET_RADIUS = 5;
+                    Comparator.comparingLong(ChunkPos::toLong));
+    private static final int TICKET_RADIUS = 7;
+    private static final TicketType<ChunkPos> RETURN_TICKET =
+            TicketType.create(
+                    "abyss:domain_return",
+                    Comparator.comparingLong(ChunkPos::toLong),
+                    100);
 
+    private static final int RETURN_TICKET_RADIUS = 4;
     private DomainArenaService() {}
 
     public static void forceLoadArena(ServerLevel level, DomainInstance inst) {
@@ -41,7 +46,39 @@ public final class DomainArenaService {
         ChunkPos cp = new ChunkPos(inst.arenaCenter);
         level.getChunkSource().removeRegionTicket(DOMAIN_TICKET, cp, TICKET_RADIUS, cp);
     }
+    public static void loadReturnArea(
+            ServerLevel level,
+            DomainInstance inst) {
+        if (level == null || inst == null) return;
 
+        BlockPos center = BlockPos.containing(inst.overworldCenter);
+        ChunkPos chunk = new ChunkPos(center);
+
+        level.getChunkSource().addRegionTicket(
+                RETURN_TICKET,
+                chunk,
+                RETURN_TICKET_RADIUS,
+                chunk);
+
+        level.getChunkAt(center);
+    }
+
+    public static void loadReturnPosition(
+            ServerLevel level,
+            Vec3 position) {
+        if (level == null || position == null) return;
+
+        BlockPos pos = BlockPos.containing(position);
+        ChunkPos chunk = new ChunkPos(pos);
+
+        level.getChunkSource().addRegionTicket(
+                RETURN_TICKET,
+                chunk,
+                2,
+                chunk);
+
+        level.getChunkAt(pos);
+    }
     public static LivingEntity findLivingIn(ServerLevel level, UUID id) {
         if (level == null) return null;
         Entity e = level.getEntity(id);
@@ -58,8 +95,7 @@ public final class DomainArenaService {
     public static void evacuateArena(
             ServerLevel domainLevel,
             ServerLevel returnLevel,
-            DomainInstance inst
-    ) {
+            DomainInstance inst) {
         if (domainLevel == null || returnLevel == null || inst == null) {
             return;
         }
@@ -73,17 +109,14 @@ public final class DomainArenaService {
                 c.getZ() - r,
                 c.getX() + r,
                 c.getY() + r,
-                c.getZ() + r
-        );
+                c.getZ() + r);
 
         List<LivingEntity> toSend = new ArrayList<>(
                 domainLevel.getEntitiesOfClass(
                         LivingEntity.class,
                         box,
                         e -> !e.getPersistentData()
-                                .getBoolean("abyss_domain_decoration")
-                )
-        );
+                                .getBoolean("abyss_domain_decoration")));
 
         for (LivingEntity living : toSend) {
             if (living.isDeadOrDying()) continue;
@@ -93,25 +126,23 @@ public final class DomainArenaService {
             Vec3 back = DomainSpawnPositions.returnPosition(
                     returnLevel,
                     inst,
-                    living
-            );
-
+                    living);
+// Ensure the destination chunk remains loaded
+// throughout the dimension transfer.
+            loadReturnPosition(returnLevel, back);
             living.getPersistentData().putBoolean(
                     "abyss_domain_transferring",
-                    true
-            );
+                    true);
 
             LivingEntity returned = DomainTeleport.sendBack(
                     living,
                     returnLevel,
-                    back
-            );
+                    back);
 
             if (returned != null) {
                 returned.getPersistentData().putBoolean(
                         "abyss_domain_transferring",
-                        false
-                );
+                        false);
 
                 // Apply cleanup to the actual returned entity,
                 // not an old instance from the previous dimension.
@@ -119,8 +150,7 @@ public final class DomainArenaService {
             } else {
                 living.getPersistentData().putBoolean(
                         "abyss_domain_transferring",
-                        false
-                );
+                        false);
             }
         }
     }
@@ -163,13 +193,11 @@ public final class DomainArenaService {
         BlockPos c = inst.arenaCenter;
         AABB box = new AABB(
                 c.getX() - r, c.getY() - r, c.getZ() - r,
-                c.getX() + r, c.getY() + r, c.getZ() + r
-        );
+                c.getX() + r, c.getY() + r, c.getZ() + r);
 
         Vec3 dropAt = inst.overworldCenter;
         List<ItemEntity> items = new ArrayList<>(
-                domainLevel.getEntitiesOfClass(ItemEntity.class, box, e -> true)
-        );
+                domainLevel.getEntitiesOfClass(ItemEntity.class, box, e -> true));
 
         for (ItemEntity item : items) {
             ItemStack stack = item.getItem().copy();
@@ -192,8 +220,7 @@ public final class DomainArenaService {
         BlockPos c = inst.arenaCenter;
         AABB box = new AABB(
                 c.getX() - r, c.getY() - r, c.getZ() - r,
-                c.getX() + r, c.getY() + r, c.getZ() + r
-        );
+                c.getX() + r, c.getY() + r, c.getZ() + r);
 
         for (Entity e : domainLevel.getEntities((Entity) null, box, ent -> true)) {
             if (e instanceof Player) continue;

@@ -434,11 +434,16 @@ public class DomainEvents {
 
         if (domainLevel == null) return;
 
-        // Update active domain clashes and territory visuals.
-        DomainClashController.tick(domainLevel);
+        // Keep the dimension awake while any arena is active.
+        for (int slot = 0; slot < DomainDimension.MAX_SLOTS; slot++) {
+            if (DomainInstanceManager.getBySlot(slot) != null) {
+                domainLevel.resetEmptyTime();
+                break;
+            }
+        }
 
-        // Run the active owner's JC domain combat effect
-        // when no other domain is challenging it.
+        // Existing domain logic.
+        DomainClashController.tick(domainLevel);
         DomainSureHit.tick(domainLevel);
         DomainFishDebug.tick(domainLevel);
         DomainDecorations.tick(domainLevel);

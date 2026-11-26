@@ -134,7 +134,10 @@
     "MahitoToggleKeyMixin",
     "MahitoFormsExecuteMixin",
     "MahitoBladeAttacksMixin",
-    "MahitoAbilityScanMixin"
+    "MahitoAbilityScanMixin",
+    "JudgemanDecorationMixin",
+    "HigurumaDomainExecuteMixin",
+    "HigurumaWitnessStandMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

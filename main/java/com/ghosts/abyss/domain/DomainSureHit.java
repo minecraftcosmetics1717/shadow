@@ -1,4 +1,3 @@
-
 package com.ghosts.abyss.domain;
 
 import net.mcreator.jujutsucraft.procedures.DomainActiveProcedure;
@@ -180,27 +179,31 @@ public final class DomainSureHit {
 
                 }
 
-            else if (skill == 9.0D) {
+                else if (skill == 9.0D) {
 
-                // Yuki Tsukumo's domain.
-                // Run the original JC combat behavior
-                // once every 5 ticks.
-                //
-                // This prevents the effect from activating
-                // every tick if JC's original domain effect
-                // is missing.
+                    // Yuki Tsukumo's domain.
+                    // Run the original JC combat behavior
+                    // once every 5 ticks.
+                    //
+                    // This prevents the effect from activating
+                    // every tick if JC's original domain effect
+                    // is missing.
 
-                if (domainLevel.getGameTime() % 5L == 0L) {
-                    TsukumoDomainExpansionActiveProcedure.execute(
-                            domainLevel,
-                            owner
-                    );
-                }}
+                    if (domainLevel.getGameTime() % 5L == 0L) {
+                        TsukumoDomainExpansionActiveProcedure.execute(
+                                domainLevel,
+                                owner
+                        );
+                    }}
                 else if (skill == 12.0D) {
 
                     // Ryu's decorations were already updated
                     // before the sure-hit and clash checks.
                     // No additional sure-hit behavior yet.
+
+                } else if (skill == 27.0D) {
+                    // Deadly Sentencing: Abyss will manage trials.
+                    // Do not run JC's original trial procedure.
 
                 } else {
 

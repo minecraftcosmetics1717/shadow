@@ -31,6 +31,7 @@ public final class AbyssDomainCast {
     public static final double YOROZU_SKILL_DOMAIN = 39.0;
     public static final double URO_SKILL_DOMAIN = 38.0;
     public static final double YUKI_SKILL_DOMAIN = 9.0;
+    public static final double HIGURUMA_SKILL_DOMAIN = 27.0;
 
     /** Same as CreateBarrier: long-press finishes when cnt3 reaches 20. */
     public static final int LONG_PRESS_MAX = 20;
@@ -85,6 +86,10 @@ public final class AbyssDomainCast {
     public static void tickYukiDomain(LevelAccessor world, LivingEntity entity) {
         tickCustomDomain(world, entity, YUKI_SKILL_DOMAIN);}
 
+
+    public static void tickHigurumaDomain(LevelAccessor world, LivingEntity entity) {
+        tickCustomDomain(world, entity, HIGURUMA_SKILL_DOMAIN);
+    }
 
     private static boolean payDomainActivationCost(
             LivingEntity entity) {

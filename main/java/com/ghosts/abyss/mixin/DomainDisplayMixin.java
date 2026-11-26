@@ -1,4 +1,3 @@
-
 package com.ghosts.abyss.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -56,6 +55,7 @@ public class DomainDisplayMixin {
             case 18 -> "Womb Profusion"; // Kenjaku
             case 19 -> "Time Cell Moon Palace"; // Naoya Zenin
             case 24 -> "Distant Winds of Commitment"; // Uraume
+            case 27 -> "Deadly Sentencing"; // Higuruma
             case 29 -> "Idle Death Gamble"; // Kinji Hakari
             case 38 -> "Haven of the Forsaken"; //Uro
             case 39 -> "Threefold Affliction"; // Yorozu

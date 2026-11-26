@@ -40,6 +40,11 @@ public final class DomainSpawnPositions {
                 z -= 30.0;
             }
 
+            // Higuruma — Deadly Sentencing.
+            case 27 -> {
+                z -= 12.0D;
+            }
+
             default -> {
                 // All other domains spawn at the center.
             }
