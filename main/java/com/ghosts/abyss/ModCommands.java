@@ -4,8 +4,10 @@ import com.ghosts.abyss.blackflash.BlackFlashPoints;
 import com.ghosts.abyss.command.TotalityCommand;
 import com.ghosts.abyss.domain.OpenDomain;
 import com.ghosts.abyss.domain.RefinementPoints;
+import com.ghosts.abyss.event.FirstJoinTechniqueHandler;
 import com.ghosts.abyss.progression.AdvTechPoints;
 import com.ghosts.abyss.rct.RctPoints;
+import com.ghosts.abyss.technique.TechniqueTransferService;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.ghosts.abyss.network.PacketRequestUnlockOpenDomain;
@@ -162,7 +164,12 @@ public class ModCommands {
               .executes(ctx -> grantCOT(ctx.getSource(), ctx.getSource().getPlayerOrException()))
               .then(Commands.argument("player", EntityArgument.player())
                       .executes(ctx -> grantCOT(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))));
-
+       root.then(Commands.literal("transfertechnique")
+               .executes(ctx ->
+                       TechniqueTransferService.executeTest(ctx.getSource())));
+       root.then(Commands.literal("migratestarter")
+               .executes(ctx ->
+                       FirstJoinTechniqueHandler.migrateLegacyStarter(ctx.getSource())));
       event.getDispatcher().register(root);
        TotalityCommand.register(event.getDispatcher());
    }

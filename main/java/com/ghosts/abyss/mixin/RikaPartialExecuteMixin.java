@@ -140,6 +140,9 @@ public class RikaPartialExecuteMixin {
                         );
 
                         if (rika != null) {
+                           rika.getPersistentData()
+                                   .putBoolean("abyss_partial_rika", true);
+
                            rika.setYRot(player.getYRot());
                            rika.setXRot(0.0F);
 
@@ -208,7 +211,11 @@ public class RikaPartialExecuteMixin {
          }
 
          if (entity != null && entity.isAlive()) {
-            entity.getPersistentData().putDouble("despawn_flag", 2.0D);
+            entity.getPersistentData()
+                    .putBoolean("abyss_partial_rika", true);
+
+            entity.getPersistentData()
+                    .putDouble("despawn_flag", 2.0D);
          }
 
          player.getPersistentData().remove("jslop_partial_rika_uuid");

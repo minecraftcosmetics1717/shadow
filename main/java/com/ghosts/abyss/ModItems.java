@@ -5,6 +5,7 @@ import com.ghosts.abyss.item.BindingVowItem;
 import com.ghosts.abyss.item.CursedFingerItem;
 import com.ghosts.abyss.item.HeadwearItem;
 
+import com.ghosts.abyss.item.TechniqueImprintItem;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -36,4 +37,23 @@ public class ModItems {
            ITEMS.register(
                    "sunglasses",
                    HeadwearItem::new);
+   public static final RegistryObject<Item> IMPRINT_INFINITY =
+           ITEMS.register("imprint_infinity",
+                   () -> new TechniqueImprintItem(2));
+
+   public static final RegistryObject<Item> IMPRINT_SHRINE =
+           ITEMS.register("imprint_shrine",
+                   () -> new TechniqueImprintItem(1));
+
+   public static final RegistryObject<Item> IMPRINT_SHADOWS =
+           ITEMS.register("imprint_shadows",
+                   () -> new TechniqueImprintItem(6));
+
+   public static final RegistryObject<Item> IMPRINT_SOUL =
+           ITEMS.register("imprint_soul",
+                   () -> new TechniqueImprintItem(15));
+
+   public static final RegistryObject<Item> IMPRINT_COPY =
+           ITEMS.register("imprint_copy",
+                   () -> new TechniqueImprintItem(5));
 }

@@ -3,6 +3,14 @@ package com.ghosts.abyss.event;
 
 import com.ghosts.abyss.Abyss;
 import com.ghosts.abyss.ability.CursedTechniqueEvents;
+import com.ghosts.abyss.technique.TechniqueIds;
+import com.ghosts.abyss.technique.CursedEnergyCapacity;
+import net.mcreator.jujutsucraft.procedures.KeyResetTechniqueOnKeyPressedProcedure;
+import net.mcreator.jujutsucraft.init.JujutsucraftModMobEffects;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
+import com.ghosts.abyss.domain.DomainDimension;
 
 import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
 
@@ -29,7 +37,7 @@ public final class FirstJoinTechniqueHandler {
             "abyss_starting_technique_initialized";
 
     // Starting technique IDs.
-    private static final double DEFAULT_TECHNIQUE = 601.0D;
+    private static final double DEFAULT_TECHNIQUE = TechniqueIds.NO_INNATE_TECHNIQUE;
     private static final double MAKI_TECHNIQUE = -1.0D;
 
     // One roll out of 100.
@@ -155,17 +163,26 @@ public final class FirstJoinTechniqueHandler {
 
         } else {
 
-            // 93%: Normal Insect starter.
+            // 93%: No innate cursed technique.
             grantAdvancement(player, INSECT_ADVANCEMENT);
 
             outcome = "NORMAL";
         }
 
         capability.PlayerCurseTechnique = technique;
+        capability.PlayerCurseTechnique2 = technique;
+        capability.SecondTechnique = false;
+        if (technique == DEFAULT_TECHNIQUE) {
+            CursedEnergyCapacity.refresh(player);
+            capability.PlayerCursePower = capability.PlayerCursePowerMAX;
+        } else if ("HEAVENLY_RESTRICTION".equals(outcome)) {
+            capability.PlayerCursePower = 0.0D;
+            capability.PlayerCursePowerFormer = 0.0D;
+            capability.PlayerCursePowerMAX = 0.0D;
+        }
         capability.syncPlayerVariables(player);
 
-        // Refresh Abyss's ability data after assigning the technique.
-        CursedTechniqueEvents.initializePlayer(player);
+        refreshSelection(player);
 
         // Save the result permanently.
         savedData.putBoolean(INITIALIZED, true);
@@ -182,6 +199,45 @@ public final class FirstJoinTechniqueHandler {
                 outcome,
                 technique
         );
+    }
+
+    /** Optional OP-only migration. Never automatically claim Jujutsucraft V's ID 601. */
+    public static int migrateLegacyStarter(CommandSourceStack source) throws CommandSyntaxException {
+        if (!source.hasPermission(2)) return 0;
+        ServerPlayer player = source.getPlayerOrException();
+        var data = player.getPersistentData();
+        var saved = data.getCompound(Player.PERSISTED_NBT_TAG);
+        String outcome = saved.getString("abyss_starting_outcome");
+        var vars = player.getCapability(JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY).orElse(null);
+        if (!saved.getBoolean(INITIALIZED) || !("NORMAL".equals(outcome) || "SIX_EYES".equals(outcome))
+                || vars == null || vars.PlayerCurseTechnique != 601.0D
+                || (vars.PlayerCurseTechnique2 != 601.0D && vars.PlayerCurseTechnique2 != 0.0D)
+                || vars.SecondTechnique || data.getBoolean("jujutsuslop_absorbed_active")
+                || (data.contains("jujutsuslop_secondary_ct") && data.getDouble("jujutsuslop_secondary_ct") >= 0.0D)
+                || (data.contains("jujutsuslop_original_ct") && data.getDouble("jujutsuslop_original_ct") >= 0.0D)
+                || player.hasEffect(JujutsucraftModMobEffects.SUKUNA_EFFECT.get())) {
+            source.sendFailure(Component.literal("This is not an eligible legacy Abyss starter."));
+            return 0;
+        }
+        if (!player.isAlive() || player.isSpectator() || player.level().dimension().equals(DomainDimension.ID)
+                || data.getBoolean("PRESS_Z") || player.hasEffect(JujutsucraftModMobEffects.CURSED_TECHNIQUE.get())
+                || player.hasEffect(JujutsucraftModMobEffects.DOMAIN_EXPANSION.get())) {
+            source.sendFailure(Component.literal("Finish active abilities before migrating."));
+            return 0;
+        }
+        vars.PlayerCurseTechnique = DEFAULT_TECHNIQUE;
+        vars.PlayerCurseTechnique2 = DEFAULT_TECHNIQUE;
+        vars.SecondTechnique = false;
+        vars.syncPlayerVariables(player);
+        CursedEnergyCapacity.refresh(player);
+        refreshSelection(player);
+        source.sendSuccess(() -> Component.literal("Migrated legacy Abyss starter 601 to 9101."), false);
+        return 1;
+    }
+
+    private static void refreshSelection(ServerPlayer player) {
+        CursedTechniqueEvents.initializePlayer(player);
+        KeyResetTechniqueOnKeyPressedProcedure.execute(player.serverLevel(), player.getX(), player.getY(), player.getZ(), player);
     }
 
     private static void grantAdvancement(

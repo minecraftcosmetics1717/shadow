@@ -46,18 +46,6 @@ public class DomainArenaBuilder {
     private static BlockState abyssBirch() {
         return ModBlocks.DOMAIN_BIRCH.get().defaultBlockState();
     }
-    private static BlockState abyssTiles() {
-        return ModBlocks.DOMAIN_TILES.get().defaultBlockState();
-    }
-    private static BlockState abyssTilesWall() {
-        return ModBlocks.DOMAIN_WALL_TILES.get().defaultBlockState();
-    }
-    private static BlockState abyssTilesRoof() {
-        return ModBlocks.DOMAIN_ROOF_TILES.get().defaultBlockState();
-    }
-    private static BlockState abyssTilesRoofH() {
-        return ModBlocks.DOMAIN_ROOF_TILESH.get().defaultBlockState();
-    }
     private static BlockState abyssWhite() {
         return ModBlocks.DOMAIN_WHITE.get().defaultBlockState();
     }
@@ -154,8 +142,7 @@ public class DomainArenaBuilder {
     public static void rebuildAfterClash(
             ServerLevel level,
             BlockPos center,
-            double winningSkill
-    ) {
+            double winningSkill) {
         if (level == null || center == null) return;
 
         int radius = DomainDimension.INNER_RADIUS;
@@ -191,8 +178,7 @@ public class DomainArenaBuilder {
                         level.setBlock(
                                 pos,
                                 Blocks.AIR.defaultBlockState(),
-                                2
-                        );
+                                2);
                     }
                 }
             }
@@ -223,8 +209,7 @@ public class DomainArenaBuilder {
 
             DomainClashController.boostSkyForArena(
                     level,
-                    inst
-            );
+                    inst);
 
             break;
         }
@@ -290,11 +275,7 @@ public class DomainArenaBuilder {
 // Dagon's domain has its own three-region terrain.
                 if (id == 8) {
                     DagonDomainTerrain.placeColumn(
-                            level,
-                            center,
-                            x,
-                            z
-                    );
+                            level, center, x, z);
                     continue;
                 }
                 level.setBlock(new BlockPos(cx + x, cy - 1, cz + z), under, 2);

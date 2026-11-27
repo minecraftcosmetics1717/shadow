@@ -139,7 +139,8 @@
     "HigurumaDomainExecuteMixin",
     "HigurumaWitnessStandMixin",
     "HakariCardAiMixin",
-    "HakariNativeGambleMixin"
+    "HakariNativeGambleMixin",
+    "StarterTechniqueSelectionMixin"
   ],
   "client": [
     "GojoVoidHoleScaleMixin",

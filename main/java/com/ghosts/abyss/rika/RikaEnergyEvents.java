@@ -1,278 +1,67 @@
-
 package com.ghosts.abyss.rika;
 
-import java.lang.reflect.Field;
-
-import net.minecraft.advancements.Advancement;
+import com.ghosts.abyss.technique.CursedEnergyCapacity;
+import net.mcreator.jujutsucraft.network.JujutsucraftModVariables;
+import net.mcreator.jujutsucraft.procedures.LocateRikaProcedure;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.LevelAccessor;
-
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.registries.ForgeRegistries;
 
-/**
- * Handles Rika's cursed energy capacity and regeneration.
- *
- * Prepared replacement for EventListeners.
- * Not registered to the Forge event bus yet.
- */
+/** Keeps Copy's permanent capacity separate from Rika's summon/regen bonus. */
 public final class RikaEnergyEvents {
-
-    private static final String NBT_BOOSTED =
-            "jslop_rika_ce_boosted";
-
-    private static final String NBT_BASE_MAX =
-            "jslop_rika_base_ce_max";
-
-    private static final String NBT_LAST_SET_MAX =
-            "jslop_rika_last_set_max";
+    private static final String NBT_BOOSTED = "jslop_rika_ce_boosted";
+    private static final String NBT_BASE_MAX = "jslop_rika_base_ce_max";
+    private static final String NBT_LAST_SET_MAX = "jslop_rika_last_set_max";
 
     private RikaEnergyEvents() {}
 
-    /**
-     * Called once per server player tick after migration.
-     */
+    // Already called on the server by AbyssEventDispatcher.
     public static void onPlayerTick(ServerPlayer player) {
-        applyRikaCEBoost(player);
-    }
+        if (player.tickCount % 10 != 0) return;
 
-    private static void applyRikaCEBoost(ServerPlayer player) {
+        // Re-evaluate after grade changes, respawns, external technique
+        // changes and acquisition of skill_curseis_lifted.
+        CursedEnergyCapacity.refresh(player);
 
-        if (player.tickCount % 10 != 0 || player.isSpectator()) {
+        var vars = player.getCapability(JujutsucraftModVariables.PLAYER_VARIABLES_CAPABILITY)
+                .orElse(null);
+        if (vars == null || player.isSpectator()) return;
+
+        // Old temporary capacity values must never restore a stale max.
+        var data = player.getPersistentData();
+        data.remove(NBT_BASE_MAX);
+        data.remove(NBT_LAST_SET_MAX);
+
+        if (vars.PlayerCurseTechnique != 5.0D
+                || !LocateRikaProcedure.execute(player.level(), player)) {
+            data.remove(NBT_BOOSTED);
             return;
         }
 
-        try {
-            Class<?> varsClass = Class.forName(
-                    "net.mcreator.jujutsucraft.network."
-                            + "JujutsucraftModVariables"
-            );
-
-            Field capField = varsClass.getDeclaredField(
-                    "PLAYER_VARIABLES_CAPABILITY"
-            );
-
-            capField.setAccessible(true);
-
-            @SuppressWarnings("unchecked")
-            Capability<Object> cap =
-                    (Capability<Object>) capField.get(null);
-
-            Object vars = player.getCapability(cap, null)
-                    .orElse(null);
-
-            if (vars == null) {
-                return;
+        // Retain the existing refill on Rika's first activation, but refill
+        // only to the permanent cap (never multiply that cap).
+        if (!data.getBoolean(NBT_BOOSTED)) {
+            data.putBoolean(NBT_BOOSTED, true);
+            if (vars.PlayerCursePower < vars.PlayerCursePowerMAX) {
+                vars.PlayerCursePower = vars.PlayerCursePowerMAX;
+                vars.syncPlayerVariables(player);
             }
-
-            Field ctField = vars.getClass()
-                    .getDeclaredField("PlayerCurseTechnique");
-
-            ctField.setAccessible(true);
-
-            if ((Double) ctField.get(vars) == 0.0D) {
-                return;
-            }
-
-            boolean rikaPresent = (Boolean) Class.forName(
-                    "net.mcreator.jujutsucraft.procedures."
-                            + "LocateRikaProcedure"
-            ).getMethod(
-                    "execute",
-                    LevelAccessor.class,
-                    Entity.class
-            ).invoke(
-                    null,
-                    player.level(),
-                    player
-            );
-
-            Field ceField = vars.getClass()
-                    .getDeclaredField("PlayerCursePower");
-
-            Field ceMaxField = vars.getClass()
-                    .getDeclaredField("PlayerCursePowerMAX");
-
-            Field lvlField = vars.getClass()
-                    .getDeclaredField("PlayerLevel");
-
-            ceField.setAccessible(true);
-            ceMaxField.setAccessible(true);
-            lvlField.setAccessible(true);
-
-            double currentCE = (Double) ceField.get(vars);
-            double currentMax = (Double) ceMaxField.get(vars);
-            double playerLevel = (Double) lvlField.get(vars);
-
-            boolean currentlyBoosted =
-                    player.getPersistentData()
-                            .getBoolean(NBT_BOOSTED);
-
-            double storedBaseMax =
-                    player.getPersistentData()
-                            .getDouble(NBT_BASE_MAX);
-
-            double lastSetMax =
-                    player.getPersistentData()
-                            .getDouble(NBT_LAST_SET_MAX);
-
-            if (rikaPresent) {
-
-                boolean hasPureLove = hasAdvancement(
-                        player,
-                        "jujutsucraft:skill_curseis_lifted"
-                );
-
-                double multiplier = hasPureLove ? 5.0D : 2.0D;
-
-                // First activation
-                if (!currentlyBoosted || storedBaseMax <= 0.0D) {
-
-                    player.getPersistentData().putDouble(
-                            NBT_BASE_MAX,
-                            currentMax
-                    );
-
-                    player.getPersistentData().putBoolean(
-                            NBT_BOOSTED,
-                            true
-                    );
-
-                    double fillMax = currentMax * multiplier;
-
-                    ceMaxField.set(vars, fillMax);
-                    ceField.set(vars, fillMax);
-
-                    syncVariables(vars, player);
-
-                    player.getPersistentData().putDouble(
-                            NBT_LAST_SET_MAX,
-                            fillMax
-                    );
-
-                    return;
-                }
-
-                // Detect external changes to maximum CE
-                if (lastSetMax > 0.0D
-                        && Math.abs(currentMax - lastSetMax) > 1.0D) {
-
-                    storedBaseMax = currentMax;
-
-                    player.getPersistentData().putDouble(
-                            NBT_BASE_MAX,
-                            currentMax
-                    );
-                }
-
-                double newMax = storedBaseMax * multiplier;
-
-                // Base cursed-energy regeneration
-                double baseRegen =
-                        1.0D
-                                + ((2.0D + playerLevel) / 1.1D)
-                                * 0.2D;
-
-                if (player.getHealth() >= player.getMaxHealth()) {
-                    baseRegen *= 2.0D;
-                }
-
-                MobEffect zoneFx =
-                        ForgeRegistries.MOB_EFFECTS.getValue(
-                                new ResourceLocation(
-                                        "jujutsucraft",
-                                        "zone"
-                                )
-                        );
-
-                if (zoneFx != null && player.hasEffect(zoneFx)) {
-                    baseRegen *= 1.2D;
-                }
-
-                double bonusRegen =
-                        (double) Math.round(baseRegen)
-                                * (multiplier - 1.0D);
-
-                double newCE = Math.min(
-                        currentCE + bonusRegen,
-                        newMax
-                );
-
-                boolean changed = false;
-
-                if (currentMax != newMax) {
-                    ceMaxField.set(vars, newMax);
-                    changed = true;
-                }
-
-                if (newCE != currentCE) {
-                    ceField.set(vars, newCE);
-                    changed = true;
-                }
-
-                if (changed) {
-                    syncVariables(vars, player);
-                }
-
-                player.getPersistentData().putDouble(
-                        NBT_LAST_SET_MAX,
-                        newMax
-                );
-
-            } else if (currentlyBoosted && storedBaseMax > 0.0D) {
-
-                // Rika is no longer present.
-                // Restore the original cursed-energy capacity.
-                if (lastSetMax <= 0.0D
-                        || Math.abs(currentMax - lastSetMax) < 2.0D) {
-
-                    ceMaxField.set(vars, storedBaseMax);
-
-                    ceField.set(
-                            vars,
-                            Math.min(currentCE, storedBaseMax)
-                    );
-
-                    syncVariables(vars, player);
-                }
-
-                player.getPersistentData().remove(NBT_BOOSTED);
-                player.getPersistentData().remove(NBT_BASE_MAX);
-                player.getPersistentData().remove(NBT_LAST_SET_MAX);
-            }
-
-        } catch (Exception ignored) {
-            // Preserve original behavior.
+            return;
         }
-    }
 
-    private static boolean hasAdvancement(
-            ServerPlayer player,
-            String id) {
+        // Preserve the old regeneration bonus: 2x normal Rika, 5x awakened.
+        double multiplier = CursedEnergyCapacity.hasCurseLifted(player) ? 5.0D : 2.0D;
+        double baseRegen = 1.0D + ((2.0D + vars.PlayerLevel) / 1.1D) * 0.2D;
+        if (player.getHealth() >= player.getMaxHealth()) baseRegen *= 2.0D;
+        MobEffect zone = ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation("jujutsucraft", "zone"));
+        if (zone != null && player.hasEffect(zone)) baseRegen *= 1.2D;
 
-        Advancement advancement =
-                player.server.getAdvancements()
-                        .getAdvancement(new ResourceLocation(id));
-
-        return advancement != null
-                && player.getAdvancements()
-                .getOrStartProgress(advancement)
-                .isDone();
-    }
-
-    private static void syncVariables(
-            Object vars,
-            ServerPlayer player
-    ) throws Exception {
-
-        vars.getClass()
-                .getMethod(
-                        "syncPlayerVariables",
-                        Entity.class
-                )
-                .invoke(vars, player);
+        double bonus = Math.round(baseRegen) * (multiplier - 1.0D);
+        double current = Math.min(vars.PlayerCursePower + bonus, vars.PlayerCursePowerMAX);
+        if (Double.compare(vars.PlayerCursePower, current) != 0) {
+            vars.PlayerCursePower = current;
+            vars.syncPlayerVariables(player);
+        }
     }
 }

@@ -5,6 +5,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.mcreator.jujutsucraft.entity.RikaEntity;
+import net.mcreator.jujutsucraft.entity.Rika2Entity;
 
 public final class TechniqueCooldownManager {
 
@@ -131,6 +134,9 @@ public final class TechniqueCooldownManager {
             // ===== Jinichi Zenin =====
             2205, 2207, 2208, 2210,
 
+            // ===== Yuta Okkotsu / Copy =====
+            503, 504, 505, 506, 507, 510, 511, 515,
+
             // ===== Hazenoki =====
             4505, 4510,
 
@@ -214,7 +220,11 @@ public final class TechniqueCooldownManager {
                         || skillId == 3107
 
                         // ===== Takaba =====
-                        || skillId == 1706;
+                        || skillId == 1706
+
+                        // ===== Yuta Okkotsu =====
+                        || skillId == 503
+                        || skillId == 504;
 
     }
 
@@ -235,7 +245,58 @@ public final class TechniqueCooldownManager {
 
         return (int) Math.round(technique * 100.0D + slot);
     }
+    private static final ThreadLocal<Entity> DESPAWNING_RIKA =
+            new ThreadLocal<>();
 
+    public static void beginRikaDespawn(Entity entity) {
+        DESPAWNING_RIKA.remove();
+
+        if (entity instanceof RikaEntity
+                || entity instanceof Rika2Entity) {
+            DESPAWNING_RIKA.set(entity);
+        }
+    }
+
+    public static void endRikaDespawn() {
+        DESPAWNING_RIKA.remove();
+    }
+
+    public static boolean captureRikaDespawnCooldown(
+            ServerPlayer player, int durationTicks
+    ) {
+        Entity rika = DESPAWNING_RIKA.get();
+
+        if (rika == null || durationTicks <= 0) {
+            return false;
+        }
+
+        if (!player.getStringUUID().equals(
+                rika.getPersistentData().getString("OWNER_UUID"))) {
+            return false;
+        }
+
+        boolean partial = rika.getPersistentData()
+                .getBoolean("abyss_partial_rika");
+
+        var data = player.getPersistentData();
+
+        if (data.hasUUID("jslop_partial_rika_uuid")
+                && data.getUUID("jslop_partial_rika_uuid")
+                .equals(rika.getUUID())) {
+
+            partial = true;
+            data.remove("jslop_partial_rika_uuid");
+        }
+
+        startCooldown(
+                player,
+                partial ? 511 : 510,
+                durationTicks
+        );
+
+        DESPAWNING_RIKA.remove();
+        return true;
+    }
     // Use the overworld's persistent game clock so
     // cooldowns survive ordinary reconnects/restarts.
     private static long now(ServerPlayer player) {

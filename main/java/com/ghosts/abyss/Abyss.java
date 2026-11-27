@@ -76,6 +76,14 @@ public class Abyss {
       if (event.getTabKey() == CreativeModeTabs.COMBAT) {
          event.accept(ROCK);
       }
+
+      if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
+         event.accept(ModItems.IMPRINT_INFINITY);
+         event.accept(ModItems.IMPRINT_SHRINE);
+         event.accept(ModItems.IMPRINT_SHADOWS);
+         event.accept(ModItems.IMPRINT_SOUL);
+         event.accept(ModItems.IMPRINT_COPY);
+      }
    }
 
    private void onEntityAttributeCreation(EntityAttributeCreationEvent event) {

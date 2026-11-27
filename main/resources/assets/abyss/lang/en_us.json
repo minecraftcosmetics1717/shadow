@@ -177,5 +177,11 @@
   "item.abyss.sunglasses": "Sunglasses",
   "key.abyss.rct_burnout": "[Abyss] Reverse Cursed Technique Burnout",
   "advancements.abyss.true_form.title": "True Form",
-  "advancements.abyss.true_form.description": "Land two consecutive Black Flashes as Mahito"
+  "advancements.abyss.true_form.description": "Land two consecutive Black Flashes as Mahito",
+  "item.abyss.imprint_infinity": "Imprint of Infinity",
+  "item.abyss.imprint_shrine": "Imprint of Shrine",
+  "item.abyss.imprint_shadows": "Imprint of Shadows",
+  "item.abyss.imprint_soul": "Imprint of the Soul",
+  "item.abyss.imprint_copy": "Imprint of Copy",
+  "tooltip.abyss.technique_imprint": "A remnant of an innate cursed technique."
 }

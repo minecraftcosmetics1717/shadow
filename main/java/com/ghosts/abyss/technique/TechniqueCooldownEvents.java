@@ -50,7 +50,17 @@ public final class TechniqueCooldownEvents {
         if (!isMagicCooldown && !isCombatCooldown) {
             return;
         }
+// Capture Rika's cooldown independently of
+// whichever skill the owner currently has selected.
+        if (isMagicCooldown
+                && TechniqueCooldownManager.captureRikaDespawnCooldown(
+                player,
+                event.getEffectInstance().getDuration()
+        )) {
 
+            event.setResult(Event.Result.DENY);
+            return;
+        }
         // Prefer the skill actually being executed by JC.
         int skillId = (int) Math.round(
                 player.getPersistentData().getDouble("skill")
